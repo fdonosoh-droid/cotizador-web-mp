@@ -137,7 +137,7 @@ VISTA OPERATIVA:
 
 ### TABLA 3 — `unidad`
 **Fuente:** hoja STOCK NUEVOS (8.646 filas, 21 columnas)
-**Columna eliminada:** SUPERFICIE TERRENO (100% vacía)
+**Nota:** SUPERFICIE TERRENO se mantiene en el modelo para uso en Casas — se importa con valor `0` cuando el campo está vacío en el stock
 **Surrogate PK** obligatoria: (nemo+tipo_unidad+num_unidad) tiene 73 duplicados y 916 nulls
 **Mantenedor admin:** CRUD + importación masiva desde Excel (con normalización)
 
@@ -152,6 +152,7 @@ VISTA OPERATIVA:
 | `orientacion` | TEXT | NULL | NORTE, SUR, ORIENTE, PONIENTE, combinaciones |
 | `dormitorios` | TEXT | NULL | '1', '2', '3', '1-1/2', 'BO', '#N/A' |
 | `banios` | INTEGER | NULL | 1 o 2 |
+| `superficie_terreno_m2` | REAL | NOT NULL DEFAULT 0 | Casas; departamentos y estac/bodegas importan 0 |
 | `superficie_util_m2` | REAL | NULL | Parseado de texto con coma: '43,35' → 43.35 |
 | `superficie_terraza_m2` | REAL | NULL | Parseado ídem |
 | `superficie_total_m2` | REAL | CHECK ≥ 0, NOT NULL | |
@@ -163,6 +164,7 @@ VISTA OPERATIVA:
 
 **Normalización obligatoria en importación:**
 - `'DISPONIBLE'` → `'Disponible'` (677 registros con case incorrecto)
+- `superficie_terreno_m2`: vacío en el Excel → importar como `0`
 - `superficie_util_m2`: replace `','` por `'.'` y convertir a REAL
 - `superficie_terraza_m2`: ídem
 
@@ -357,6 +359,6 @@ No es una tabla de referencia. Contiene un cálculo de ejemplo (CH = $76.677.781
 | Texto con coma decimal | STOCK NUEVOS | SUPERFICIE UTIL, SUPERFICIE TERRAZA | No es REAL directamente | `replace(',', '.')` antes de parsear |
 | NUMERO UNIDAD nulo | STOCK NUEVOS | NUMERO UNIDAD | 916 filas sin número (10.6%) | Permitir NULL + surrogate PK |
 | Duplicados (nemo+tipo+num) | STOCK NUEVOS | clave natural | 73 duplicados | Surrogate PK + unique parcial |
-| SUPERFICIE TERRENO vacía | STOCK NUEVOS | SUPERFICIE TERRENO | Columna inútil | Eliminar en importación |
+| SUPERFICIE TERRENO vacía | STOCK NUEVOS | SUPERFICIE TERRENO | Actualmente 0 para todos los deptos; se usará en Casas | Importar como `0` cuando está vacía |
 | BIENES CONJUNTOS texto | STOCK NUEVOS | BIENES CONJUNTOS | No hay FK directa a unidad | Parsear y poblar `bien_conjunto` en import |
 | PERIODO ENTREGA sin normalizar | PROYECTOS | PERIODO ENTREGA | Variaciones de case: '1er semestre' vs '1er Semestre' | Normalizar en import |

@@ -87,7 +87,6 @@ CREATE TRIGGER IF NOT EXISTS trg_proyecto_upd
 -- TABLA 3: unidad
 -- ============================================================
 -- Fuente    : hoja STOCK NUEVOS (8.646 filas, 21 columnas)
--- Eliminada : SUPERFICIE TERRENO (100 % nula)
 -- Normalizado: ESTADO STOCK → solo valores canónicos (ver constraint)
 --              SUPERFICIE UTIL / TERRAZA → texto con coma → REAL
 -- Surrogate PK: necesaria porque (nemo + tipo_unidad + num_unidad)
@@ -104,6 +103,7 @@ CREATE TABLE IF NOT EXISTS unidad (
   orientacion           TEXT      NULL,
   dormitorios           TEXT      NULL,      -- puede ser '1', '2', '1-1/2', 'BO', '#N/A'
   banios                INTEGER   NULL,
+  superficie_terreno_m2 REAL      NOT NULL DEFAULT 0,  -- Casas; 0 para departamentos
   superficie_util_m2    REAL      NULL,      -- parseado desde texto '43,35' → 43.35
   superficie_terraza_m2 REAL      NULL,      -- parseado desde texto '5,03'  →  5.03
   superficie_total_m2   REAL      NOT NULL,
@@ -379,6 +379,7 @@ SELECT
   u.orientacion,
   u.dormitorios,
   u.banios,
+  u.superficie_terreno_m2,
   u.superficie_util_m2,
   u.superficie_terraza_m2,
   u.superficie_total_m2,
