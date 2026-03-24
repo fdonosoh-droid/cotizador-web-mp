@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-23 21:00:51<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->bf69df8<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->actualiza  borrador modelo datos<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-23 21:05:36<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->e7a851d<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->crea ERD para  modelo datos<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 31 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
