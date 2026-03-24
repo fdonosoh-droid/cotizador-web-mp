@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-24 16:37:47<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->a1fc7ba<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->RESPALDO ANALISIS MODELO DATOS<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-24<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->067668e<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->auto: actualiza maestro de desarrollo antes del push<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 31 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 35 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -15,13 +15,14 @@
 
 | # | Etapa | Substages | Estado |
 |---|---|---|---|
-| 1 | Infraestructura de datos y stock | 1.1 → 1.5 | 🔴 PENDIENTE |
-| 2 | Selección de proyecto y unidad | 2.1 → 2.4 | 🔴 PENDIENTE |
-| 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ⚠️ BLOQUEADO — requiere respuestas P3.B1–P3.B5 |
+| 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ⚠️ BLOQUEADO — requiere decisiones ES.1–ES.4 |
+| 1 | Infraestructura de datos y stock | 1.1 → 1.5 | ⚠️ BLOQUEADO — depende de Etapa 0 (correcciones C2, I3) |
+| 2 | Selección de proyecto y unidad | 2.1 → 2.4 | ⚠️ BLOQUEADO — depende de Etapa 0 (corrección I2) |
+| 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ⚠️ BLOQUEADO — requiere respuestas P3.B1–P3.B5 + Etapa 0 (C1, I1) |
 | 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ⚠️ BLOQUEADO — depende de Etapa 3 |
 | 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ⚠️ BLOQUEADO — depende de Etapa 4 |
 | 6 | Evaluación de inversión a 5 años | 6.1 → 6.4 | ⚠️ BLOQUEADO — depende de Etapa 5 |
-| 7 | Output, PDF y cotización final | 7.1 → 7.4 | 🔴 PENDIENTE |
+| 7 | Output, PDF y cotización final | 7.1 → 7.4 | ⚠️ BLOQUEADO — depende de Etapa 0 (I4) + P6.1–P6.4 |
 
 ---
 
@@ -73,6 +74,82 @@
 - [ ] **P6.3** ¿Debe registrarse quién generó cada cotización y cuándo (historial)?
 - [ ] **P6.4** ¿La cotización requiere aprobación antes de enviarse al cliente?
 
+### Bloque G — Correcciones al schema (bloquea Etapa 0 completa)
+
+> Decisiones técnicas requeridas antes de aplicar correcciones al `schema.sql`.
+> Identificadas en [EVALUACIÓN_SCHEMA_DATOS.md](EVALUACIÓN_SCHEMA_DATOS.md) (2026-03-24).
+
+- [ ] **ES.1** ¿Se crea tabla maestra `programa` o se define un CHECK constraint con los valores válidos de programa en `unidad`? *(bloquea 0.1 → problema C2)*
+- [ ] **ES.2** ¿Los escenarios CAE/resultados de la cotización se normalizan en tabla hija `cotizacion_escenario` ahora, o se deja como deuda técnica para v2? *(bloquea 0.2 → problema I1)*
+- [ ] **ES.3** ¿Se agrega el discriminador `modalidad_pago` a `condicion_comercial` ahora o tras responder P3.C1–P3.C3? *(bloquea 0.3 → mejora M1)*
+- [ ] **ES.4** ¿Se implementa la entidad `broker` en esta versión o se deja `nombre_broker TEXT` para v1? *(bloquea 0.4 → problema I4)*
+
+---
+
+## ETAPA 0 — CORRECCIONES AL MODELO DE DATOS
+
+> **Objetivo:** Aplicar las correcciones identificadas en la evaluación de `schema.sql` antes de iniciar el desarrollo de las etapas funcionales. Garantiza integridad del histórico de cotizaciones, confiabilidad de joins y consistencia de tipos de datos.
+> **Referencia:** [EVALUACIÓN_SCHEMA_DATOS.md](EVALUACIÓN_SCHEMA_DATOS.md)
+> **Prerrequisito:** Respuestas a ES.1–ES.4.
+
+---
+
+### 0.1 — Correcciones críticas: snapshot y join de programa
+<!-- SUBSTAGE:0.1 -->
+**Estado:** `⚠️ BLOQUEADO`
+**Archivos esperados:** `scripts/schema.sql` | `scripts/schema_v2.sql`
+**Preguntas bloqueantes:** ES.1
+**Descripción:** Resolver los dos problemas que afectan la integridad del negocio: (C1) la tabla `cotizacion` no guarda snapshot de las condiciones comerciales usadas, y (C2) `programa` es clave de JOIN sin validación.
+**Faltantes para completar:**
+- [ ] **C1** — Agregar campos snapshot en `cotizacion`: `descuento_pct_snapshot`, `bono_pie_pct_snapshot`, `aporte_inmob_pct_snapshot`, `reserva_clp_snapshot`, `tipo_financiamiento`
+- [ ] **C2** — Crear tabla `programa` (opción A) o agregar CHECK constraint sobre `unidad.programa` (opción B) — requiere respuesta ES.1
+- [ ] Actualizar `v_stock_cotizable` para incluir `id_condicion` en el resultado y validar join de programa
+- [ ] Migración: script de conversión si ya hay datos en tabla `cotizacion`
+<!-- /SUBSTAGE -->
+
+---
+
+### 0.2 — Normalización de datos: dormitorios y tipo_unidad
+<!-- SUBSTAGE:0.2 -->
+**Estado:** `⚠️ BLOQUEADO`
+**Archivos esperados:** `scripts/schema.sql` | `scripts/import/normalize.py`
+**Preguntas bloqueantes:** Ninguna (corrección técnica sin ambigüedad)
+**Descripción:** Resolver problemas de tipado y valores canónicos que impiden filtros numéricos y generan lógica defensiva en queries.
+**Faltantes para completar:**
+- [ ] **I2** — Separar `unidad.dormitorios TEXT` en `dormitorios_num INTEGER NULL` + `dormitorios_display TEXT NULL`
+- [ ] **I3** — Reducir CHECK constraint de `tipo_unidad` a valores canónicos sin duplicados de case (`'Local Comercial'`, `'Local comercial'` y `'Local'` → un único valor)
+- [ ] **M3** — Definir ciclo de vida de `unidad.bienes_conjuntos`: marcar como campo de trazabilidad de importación (nunca usar en lógica de negocio)
+- [ ] Actualizar script de importación para normalizar estos campos en la carga
+<!-- /SUBSTAGE -->
+
+---
+
+### 0.3 — Corrección estructural: escenarios CAE y modalidad de pago
+<!-- SUBSTAGE:0.3 -->
+**Estado:** `⚠️ BLOQUEADO`
+**Archivos esperados:** `scripts/schema.sql`
+**Preguntas bloqueantes:** ES.2, ES.3
+**Descripción:** Resolver la denormalización de los 3 escenarios CAE en columnas de `cotizacion` y agregar discriminador de modalidad a `condicion_comercial`.
+**Faltantes para completar:**
+- [ ] **I1** — Decidir si crear tabla `cotizacion_escenario` ahora o diferir a v2 (requiere ES.2)
+- [ ] **M1** — Agregar campo `modalidad_pago TEXT` a `condicion_comercial` con CHECK `('ESTANDAR', 'CONSTRUCCION', 'CREDITO_DIRECTO')` — requiere respuestas P3.C1–P3.C3 y ES.3
+- [ ] Si se crea `cotizacion_escenario`: mover columnas `cae_1/2/3`, `arriendo_1/2/3_clp`, `roi_anual`, `cap_rate` a la tabla hija
+<!-- /SUBSTAGE -->
+
+---
+
+### 0.4 — Entidad Broker
+<!-- SUBSTAGE:0.4 -->
+**Estado:** `⚠️ BLOQUEADO`
+**Archivos esperados:** `scripts/schema.sql`
+**Preguntas bloqueantes:** ES.4, P6.3
+**Descripción:** Definir si el broker es una entidad de primera clase en el modelo (con autenticación y permisos) o solo un texto libre en la cotización para v1.
+**Faltantes para completar:**
+- [ ] **I4** — Crear tabla `broker (id_broker, nombre, email, activo)` y reemplazar `cotizacion.nombre_broker TEXT` por FK — requiere ES.4
+- [ ] Definir si broker tiene login propio o si el campo es solo descriptivo
+- [ ] Evaluar si se necesitan permisos por broker (qué proyectos puede cotizar)
+<!-- /SUBSTAGE -->
+
 ---
 
 ## ETAPA 1 — INFRAESTRUCTURA DE DATOS Y STOCK
@@ -84,11 +161,12 @@
 
 ### 1.1 — Modelo de datos del stock
 <!-- SUBSTAGE:1.1 -->
-**Estado:** `🔴 PENDIENTE`
+**Estado:** `⚠️ BLOQUEADO`
 **Archivos esperados:** `src/models/stock.ts` | `src/types/stock.ts`
-**Preguntas bloqueantes:** P1.1, P1.2, P1.3
+**Preguntas bloqueantes:** P1.1, P1.2, P1.3 + **Etapa 0.2 completada** (I2: dormitorios_num, I3: tipo_unidad canónico)
 **Descripción:** Definir el schema/tipo del objeto Unidad con todos los campos de STOCK NUEVOS.
 **Faltantes para completar:**
+- [ ] Completar substage 0.2 antes de definir tipos (dormitorios_num, tipo_unidad canónico)
 - [ ] Confirmar campos obligatorios vs opcionales por inmobiliaria
 - [ ] Definir tipos de datos (SUPERFICIE UTIL viene como texto con coma decimal → normalizar)
 - [ ] Definir enum de ESTADO STOCK (Disponible, Arrendado, ¿otros?)
@@ -186,11 +264,12 @@
 
 ### 2.2 — Filtros de unidades disponibles
 <!-- SUBSTAGE:2.2 -->
-**Estado:** `🔴 PENDIENTE`
+**Estado:** `⚠️ BLOQUEADO`
 **Archivos esperados:** `src/components/UnitFilter.tsx`
-**Preguntas bloqueantes:** P2.2
+**Preguntas bloqueantes:** P2.2 + **Etapa 0.2 completada** (I2: `dormitorios_num` requerido para filtro numérico)
 **Descripción:** Filtrar el listado de unidades del proyecto seleccionado. Solo mostrar ESTADO=Disponible.
 **Faltantes para completar:**
+- [ ] Completar substage 0.2 (campo `dormitorios_num INTEGER`) antes de implementar filtro por dormitorios
 - [ ] Confirmar filtros que el usuario puede aplicar (tipología, piso, orientación, precio) — P2.2
 - [ ] Regla base: solo unidades con ESTADO STOCK = 'Disponible'
 - [ ] Confirmar si otros estados (Reservado, Bloqueado) deben o no aparecer (P1.2)
@@ -280,7 +359,7 @@ total_desc = suma de los tres
 <!-- SUBSTAGE:3.3 -->
 **Estado:** `⚠️ BLOQUEADO`
 **Archivos esperados:** `src/calculators/bonoPie.ts`
-**Preguntas bloqueantes:** P3.B1, P3.B2, P3.B3, P3.B4, P3.B5
+**Preguntas bloqueantes:** P3.B1, P3.B2, P3.B3, P3.B4, P3.B5 + **Etapa 0.1 completada** (C1: snapshot condiciones en `cotizacion`)
 **Descripción:** El Bono Pie es el campo más crítico y diferenciador entre inmobiliarias. Su lógica exacta está pendiente de confirmación.
 **Hipótesis actual (basada en COTIZADOR Excel MAESTRA):**
 ```
@@ -659,14 +738,28 @@ roi_anual = (1 + roi_5a)^(1/5) - 1
 
 ### 7.4 — Historial de cotizaciones
 <!-- SUBSTAGE:7.4 -->
-**Estado:** `🔴 PENDIENTE`
+**Estado:** `⚠️ BLOQUEADO`
 **Archivos esperados:** `src/services/historialService.ts` | `src/components/Historial.tsx`
-**Preguntas bloqueantes:** P6.3, P6.4
+**Preguntas bloqueantes:** P6.3, P6.4 + **Etapa 0.4 completada** (I4: entidad `broker` definida)
 **Faltantes para completar:**
+- [ ] Completar substage 0.4 (definir si broker es entidad o texto libre)
 - [ ] Confirmar si se registra historial (P6.3)
-- [ ] Definir campos a registrar: broker, cliente, unidad, fecha, valores
+- [ ] Definir campos a registrar: broker, cliente, unidad, fecha, valores snapshot
 - [ ] Confirmar si hay flujo de aprobación antes de enviar (P6.4)
 <!-- /SUBSTAGE -->
+
+---
+
+## DOCUMENTOS DE REFERENCIA
+
+| Documento | Descripción |
+|---|---|
+| [scripts/schema.sql](scripts/schema.sql) | DDL SQLite — 8 tablas, 1 vista, 19 índices, 5 triggers |
+| [EVALUACIÓN_SCHEMA_DATOS.md](EVALUACIÓN_SCHEMA_DATOS.md) | Evaluación técnica del schema con 9 problemas identificados y plan de corrección |
+| [MODELO_DATOS_COTIZADOR.md](MODELO_DATOS_COTIZADOR.md) | Documentación completa del modelo de datos |
+| [ERD_COTIZADOR.md](ERD_COTIZADOR.md) | Diagrama entidad-relación (Mermaid) |
+| [MODELO_DATOS_COTIZADOR.xlsx](MODELO_DATOS_COTIZADOR.xlsx) | Modelo en Excel con PKs, FKs, índices, constraints y datos semilla |
+| [REGLAS_COTIZADOR.xlsx](REGLAS_COTIZADOR.xlsx) | Reglas de cálculo y selección documentadas desde el COTIZADOR Excel |
 
 ---
 
@@ -675,6 +768,8 @@ roi_anual = (1 + roi_5a)^(1/5) - 1
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-03-24 | — | main | Evaluación técnica schema.sql → EVALUACIÓN_SCHEMA_DATOS.md (9 problemas identificados) |
+| 2026-03-24 | — | main | Genera MODELO_DATOS_COTIZADOR.xlsx (6 hojas: resumen, columnas, relaciones, índices, constraints, semilla) |
 | 2026-03-23 | d0eea66 | main | carga archivo para determinar logicas y calculos |
 | 2026-03-23 | 1f000af | main | crea docs de trabajo |
 <!-- HISTORIAL_END -->
