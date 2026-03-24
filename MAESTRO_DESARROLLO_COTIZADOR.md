@@ -4,7 +4,7 @@
 | Campo | Valor |
 |---|---|
 | **Última actualización** | <!-- LAST_UPDATED -->2026-03-24 09:41:59<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->02155fb<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->upd maestro<!-- /COMMIT_MSG --> |
+| **Último commit** | <!-- COMMIT_HASH -->bc43f07<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->auto: actualiza maestro de desarrollo antes del push<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 31 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
