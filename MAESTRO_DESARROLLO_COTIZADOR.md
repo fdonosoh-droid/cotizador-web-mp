@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-24 09:19:18<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->cd138ca<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->crea access para ver modelo de datos<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-24 09:34:56<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->2550a3f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->crea modelo de datos en ms access<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 31 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
