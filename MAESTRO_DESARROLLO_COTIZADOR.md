@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-23 20:54:25<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->0be5bd0<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->restaura SUPERFICIE TERRENO a modelo de datos<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-23 20:59:53<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->29b7d8f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->actualiza  borrador modelo datos<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 31 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
