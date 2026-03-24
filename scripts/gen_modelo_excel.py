@@ -271,6 +271,7 @@ INDEXES = [
     # (tabla, nombre, columnas, tipo, proposito)
     ("proyecto",            "idx_proyecto_inmobiliaria", "id_inmobiliaria",                                   "Normal",         "Lookup FK"),
     ("proyecto",            "idx_proyecto_activo",       "activo, id_inmobiliaria",                           "Normal",         "Filtro de proyectos activos por inmobiliaria"),
+    ("proyecto",            "idx_proyecto_cascada",      "comuna, tipo_entrega, id_inmobiliaria, activo  WHERE activo=1", "Parcial", "Dropdown en cascada: Comuna → Entrega → Inmobiliaria → Proyecto"),
     ("unidad",              "uq_unidad_por_proyecto",    "id_proyecto, tipo_unidad, numero_unidad",           "Único PARCIAL WHERE numero_unidad IS NOT NULL", "Integridad: no duplicados reales. Permite múltiples NULLs"),
     ("unidad",              "idx_unidad_proyecto",       "id_proyecto",                                       "Normal",         "Lookup FK"),
     ("unidad",              "idx_unidad_disponibles",    "id_proyecto, estado_stock, tipo_unidad",            "Normal",         "Filtro principal del cotizador (unidades disponibles)"),

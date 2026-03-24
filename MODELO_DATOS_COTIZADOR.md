@@ -129,6 +129,7 @@ VISTA OPERATIVA:
 **Índices:**
 - `idx_proyecto_inmobiliaria` → (id_inmobiliaria)
 - `idx_proyecto_activo` → (activo, id_inmobiliaria)
+- `idx_proyecto_cascada` → (comuna, tipo_entrega, id_inmobiliaria, activo) WHERE activo=1 — **cubre los 4 pasos del dropdown en cascada del cotizador**
 - UK de nemotecnico ya crea índice
 
 **FK:** `id_inmobiliaria` → ON UPDATE CASCADE, ON DELETE RESTRICT

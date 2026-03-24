@@ -183,6 +183,7 @@ erDiagram
 |---|---|---|---|---|
 | `idx_proyecto_inmobiliaria` | proyecto | (id_inmobiliaria) | Normal | Lookup FK |
 | `idx_proyecto_activo` | proyecto | (activo, id_inmobiliaria) | Normal | Filtro UI |
+| `idx_proyecto_cascada` | proyecto | (comuna, tipo_entrega, id_inmobiliaria, activo) WHERE activo=1 | Parcial | Dropdown en cascada: Comuna → Entrega → Inmobiliaria → Proyecto |
 | `uq_unidad_por_proyecto` | unidad | (id_proyecto, tipo_unidad, numero_unidad) | Único parcial | Integridad sin bloquear NULLs |
 | `idx_unidad_proyecto` | unidad | (id_proyecto) | Normal | Lookup FK |
 | `idx_unidad_disponibles` | unidad | (id_proyecto, estado_stock, tipo_unidad) | Normal | Filtro cotizador |

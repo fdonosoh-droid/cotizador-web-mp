@@ -6,7 +6,7 @@
 | **Última actualización** | <!-- LAST_UPDATED -->2026-03-24 16:54:51<!-- /LAST_UPDATED --> |
 | **Último commit** | <!-- COMMIT_HASH -->7076965<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza MAESTRO DESARROLLO<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 35 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -17,7 +17,7 @@
 |---|---|---|---|
 | 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ⚠️ BLOQUEADO — requiere decisiones ES.1–ES.4 |
 | 1 | Infraestructura de datos y stock | 1.1 → 1.5 | ⚠️ BLOQUEADO — depende de Etapa 0 (correcciones C2, I3) |
-| 2 | Selección de proyecto y unidad | 2.1 → 2.4 | ⚠️ BLOQUEADO — depende de Etapa 0 (corrección I2) |
+| 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ⚠️ BLOQUEADO — depende de Etapa 0 (corrección I2) |
 | 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ⚠️ BLOQUEADO — requiere respuestas P3.B1–P3.B5 + Etapa 0 (C1, I1) |
 | 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ⚠️ BLOQUEADO — depende de Etapa 3 |
 | 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ⚠️ BLOQUEADO — depende de Etapa 4 |
@@ -38,7 +38,8 @@
 - [ ] **P1.4** ¿Se usa API externa para el valor UF (CMF/Mindicador) o el archivo Excel? ¿Qué pasa si falla?
 
 ### Bloque B — Selección (bloquea Etapa 2)
-- [ ] **P2.1** ¿La jerarquía de selección es siempre Inmobiliaria → Proyecto → Unidad, o hay flujos alternativos?
+- [x] **P2.1** ¿La jerarquía de selección es siempre Inmobiliaria → Proyecto → Unidad, o hay flujos alternativos?
+  > **Respondida:** El orden es **Comuna → Entrega Aprox → Inmobiliaria → Proyecto → N° Unidad** (ver REGLAS 2.1–3.2). Cada filtro depende de todos los anteriores.
 - [ ] **P2.2** ¿El usuario puede filtrar unidades por tipología, orientación, piso, precio antes de seleccionar?
 - [ ] **P2.3** ¿El campo BIENES CONJUNTOS indica que estac/bodega está incluido en el precio lista del depto?
 
@@ -240,70 +241,144 @@
 
 ---
 
-## ETAPA 2 — SELECCIÓN DE PROYECTO Y UNIDAD
+## ETAPA 2 — SELECCIÓN EN CASCADA
 
-> **Objetivo:** UI funcional de selección en cascada Inmobiliaria → Proyecto → Unidad con filtros.
-> **Prerrequisito:** Etapa 1 completa. Respuestas P2.1, P2.2, P2.3.
+> **Objetivo:** UI de selección encadenada **Comuna → Entrega Aprox → Inmobiliaria → Proyecto → N° Unidad**. Cada dropdown se recarga al cambiar el anterior. La selección de N° Unidad dispara el auto-completado de todas las características de la propiedad.
+> **Prerrequisito:** Etapa 1 completa. Respuesta P2.1 ✅ (respondida). Respuestas P2.2, P2.3 pendientes.
+> **Reglas de referencia:** REGLAS_COTIZADOR.xlsx — Sección 2 (2.1–2.4) y Sección 3 (3.1–3.2).
 
 ---
 
-### 2.1 — Selector de Inmobiliaria y Proyecto
+### 2.1 — Selector de Comuna
 <!-- SUBSTAGE:2.1 -->
 **Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/ProjectSelector.tsx`
-**Preguntas bloqueantes:** P2.1
-**Descripción:** Dropdowns en cascada. Al cambiar inmobiliaria se recarga lista de proyectos.
+**Archivos esperados:** `src/components/CascadeSelector/ComunaSelector.tsx`
+**Preguntas bloqueantes:** Ninguna — es el punto de entrada, sin prerequisitos.
+**Descripción:** Primer filtro de la cascada. El usuario elige la comuna. Sin selección no se habilita ningún filtro siguiente. Fuente: `proyecto.comuna`.
+**Regla (REGLAS 2.1):**
+```
+comunas = SELECT DISTINCT comuna FROM proyecto WHERE activo = 1 ORDER BY comuna ASC
+```
 **Faltantes para completar:**
-- [ ] Confirmar jerarquía de selección (P2.1)
-- [ ] Obtener lista de inmobiliarias únicas del stock
-- [ ] Filtrar proyectos por inmobiliaria seleccionada
-- [ ] Mostrar tipo de entrega junto al nombre del proyecto
+- [ ] Dropdown con lista de comunas únicas activas (`proyecto.comuna`)
+- [ ] Al cambiar: resetear 2.2, 2.3, 2.4 y todos los campos de unidad
+- [ ] Normalizar mayúsculas/minúsculas de comunas al cargar el stock
+- [ ] Deshabilitar filtros 2.2–2.4 hasta que se seleccione una comuna
 <!-- /SUBSTAGE -->
 
 ---
 
-### 2.2 — Filtros de unidades disponibles
+### 2.2 — Selector de Entrega Aprox.
 <!-- SUBSTAGE:2.2 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/components/UnitFilter.tsx`
-**Preguntas bloqueantes:** P2.2 + **Etapa 0.2 completada** (I2: `dormitorios_num` requerido para filtro numérico)
-**Descripción:** Filtrar el listado de unidades del proyecto seleccionado. Solo mostrar ESTADO=Disponible.
+**Estado:** `🔴 PENDIENTE`
+**Archivos esperados:** `src/components/CascadeSelector/EntregaSelector.tsx`
+**Preguntas bloqueantes:** Ninguna — prerequisito cubierto por 2.1.
+**Descripción:** Segundo filtro. Muestra los tipos de entrega disponibles en la comuna seleccionada. Fuente: `proyecto.tipo_entrega`. Prerequisito: **2.1 completado**.
+**Regla (REGLAS 2.2):**
+```
+entregas = SELECT DISTINCT tipo_entrega FROM proyecto
+           WHERE comuna = comuna_sel AND activo = 1
+```
 **Faltantes para completar:**
-- [ ] Completar substage 0.2 (campo `dormitorios_num INTEGER`) antes de implementar filtro por dormitorios
-- [ ] Confirmar filtros que el usuario puede aplicar (tipología, piso, orientación, precio) — P2.2
-- [ ] Regla base: solo unidades con ESTADO STOCK = 'Disponible'
-- [ ] Confirmar si otros estados (Reservado, Bloqueado) deben o no aparecer (P1.2)
-- [ ] Ordenamiento por defecto (piso, precio, N° unidad)
+- [ ] Dropdown `['Entrega Inmediata', 'Entrega Futura']` filtrado por `comuna_sel`
+- [ ] Si solo hay un valor posible: pre-seleccionar automáticamente
+- [ ] Al cambiar: resetear 2.3, 2.4 y campos de unidad
+- [ ] Bloquear si `comuna_sel` es NULL
 <!-- /SUBSTAGE -->
 
 ---
 
-### 2.3 — Selector de N° Unidad y auto-completado
+### 2.3 — Selector de Inmobiliaria
 <!-- SUBSTAGE:2.3 -->
 **Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/UnitSelector.tsx` | `src/hooks/useUnitLookup.ts`
-**Preguntas bloqueantes:** P2.3
-**Descripción:** Al seleccionar unidad, auto-completar todos los campos de características (piso, orientación, tipología, superficies).
+**Archivos esperados:** `src/components/CascadeSelector/InmobiliariaSelector.tsx`
+**Preguntas bloqueantes:** Ninguna — prerequisitos cubiertos por 2.1 + 2.2.
+**Descripción:** Tercer filtro. Lista solo las inmobiliarias con proyectos en la comuna y tipo de entrega seleccionados. Prerequisito: **2.1 + 2.2 completados**.
+**Regla (REGLAS 2.3):**
+```
+inmobiliarias = SELECT DISTINCT i.nombre FROM inmobiliaria i
+                JOIN proyecto p ON p.id_inmobiliaria = i.id_inmobiliaria
+                WHERE p.comuna = comuna_sel AND p.tipo_entrega = entrega_sel
+                  AND p.activo = 1 AND i.activo = 1
+```
+**Query cubierto por:** `idx_proyecto_cascada ON proyecto (comuna, tipo_entrega, id_inmobiliaria, activo)`
 **Faltantes para completar:**
-- [ ] Lookup de todos los campos por NUMERO UNIDAD (clave)
-- [ ] Normalizar SUPERFICIE UTIL y TERRAZA (texto con coma → float)
-- [ ] Confirmar manejo de BIENES CONJUNTOS (P2.3): ¿incluye estac/bodega en precio?
-- [ ] Mostrar precio lista en UF y CLP al seleccionar unidad
+- [ ] Dropdown de inmobiliarias filtrado por `comuna_sel` + `entrega_sel`
+- [ ] Al cambiar: resetear 2.4 y campos de unidad
+- [ ] Bloquear si 2.1 o 2.2 son NULL
 <!-- /SUBSTAGE -->
 
 ---
 
-### 2.4 — Formulario de datos del broker/cliente
+### 2.4 — Selector de Proyecto
 <!-- SUBSTAGE:2.4 -->
+**Estado:** `🔴 PENDIENTE`
+**Archivos esperados:** `src/components/CascadeSelector/ProyectoSelector.tsx`
+**Preguntas bloqueantes:** Ninguna — prerequisitos cubiertos por 2.1 + 2.2 + 2.3.
+**Descripción:** Cuarto filtro. Muestra proyectos que coinciden con los tres filtros anteriores. Al seleccionar, exponer `periodo_entrega` como campo de solo lectura. Prerequisito: **2.1 + 2.2 + 2.3 completados**.
+**Regla (REGLAS 2.4):**
+```
+proyectos = SELECT id_proyecto, nombre_proyecto, periodo_entrega FROM proyecto
+            WHERE comuna = comuna_sel AND tipo_entrega = entrega_sel
+              AND id_inmobiliaria = inmobiliaria_sel AND activo = 1
+```
+**Faltantes para completar:**
+- [ ] Dropdown de proyectos filtrado por los tres parámetros anteriores
+- [ ] Mostrar `periodo_entrega` como campo de solo lectura al seleccionar proyecto
+- [ ] Al cambiar: resetear N° Unidad y todos los campos de propiedad (3.3–3.10)
+- [ ] Bloquear si 2.1, 2.2 o 2.3 son NULL
+<!-- /SUBSTAGE -->
+
+---
+
+### 2.5 — Selector de N° Unidad y auto-completado
+<!-- SUBSTAGE:2.5 -->
+**Estado:** `⚠️ BLOQUEADO`
+**Archivos esperados:** `src/components/CascadeSelector/UnidadSelector.tsx` | `src/hooks/useUnitLookup.ts`
+**Preguntas bloqueantes:** P2.2 (filtros adicionales), P2.3 (bienes conjuntos) + **Etapa 0.2 completada** (I2: `dormitorios_num`)
+**Descripción:** Quinto y último filtro de la cascada. Lista unidades disponibles del proyecto seleccionado. Al elegir N° Unidad se dispara el auto-completado de todos los campos en rojo (reglas 3.3–3.10). Prerequisito: **2.1 + 2.2 + 2.3 + 2.4 completados**.
+**Regla (REGLAS 3.1 + 3.2):**
+```
+unidades = SELECT id_unidad, numero_unidad, tipo_unidad, programa FROM unidad
+           WHERE id_proyecto = proyecto_sel AND estado_stock = 'Disponible'
+           ORDER BY numero_unidad ASC
+-- Al seleccionar:
+unidad = SELECT * FROM v_stock_cotizable WHERE id_unidad = numero_unidad_sel
+```
+**Auto-completado al seleccionar (campos en rojo → solo lectura):**
+| Campo (REGLAS) | Fuente DB | Notas |
+|---|---|---|
+| Piso (3.3) | `unidad.piso_producto` | Entero |
+| Orientación (3.4) | `unidad.orientacion` | Puede ser NULL |
+| Tipología (3.5) | `unidad.programa` | Ej: '2D1B' |
+| Dormitorios (3.6) | `unidad.dormitorios_num` / `dormitorios_display` | Requiere Etapa 0.2 |
+| Baños (3.7) | `unidad.banios` | Puede ser NULL |
+| Sup. Útil m2 (3.8) | `unidad.superficie_util_m2` | Normalizada en importación |
+| Sup. Terraza m2 (3.9) | `unidad.superficie_terraza_m2` | Puede ser NULL |
+| Sup. Total m2 (3.10) | `unidad.superficie_total_m2` | NOT NULL |
+**Faltantes para completar:**
+- [ ] Completar substage 0.2 antes de implementar (campo `dormitorios_num`)
+- [ ] Dropdown de N° Unidad filtrado por `proyecto_sel` + `estado_stock='Disponible'`
+- [ ] Lookup completo de `v_stock_cotizable` al seleccionar unidad
+- [ ] Normalizar SUPERFICIE UTIL y TERRAZA (texto con coma → float, ya resuelto en importación)
+- [ ] Confirmar manejo de BIENES CONJUNTOS (P2.3): ¿incluye estac/bodega en precio?
+- [ ] Mostrar precio lista en UF y CLP al seleccionar unidad
+- [ ] Si proyecto no tiene unidades disponibles: mostrar aviso y bloquear avance
+<!-- /SUBSTAGE -->
+
+---
+
+### 2.6 — Formulario de datos del broker/cliente
+<!-- SUBSTAGE:2.6 -->
 **Estado:** `🔴 PENDIENTE`
 **Archivos esperados:** `src/components/BrokerForm.tsx`
 **Preguntas bloqueantes:** Ninguna
-**Descripción:** Campos manuales del encabezado de la cotización.
+**Descripción:** Campos manuales del encabezado de la cotización. Independiente de la cascada — puede completarse en paralelo.
 **Faltantes para completar:**
 - [ ] Campos: Nombre Broker, Nombre Cliente, Rut, E-mail, Celular
-- [ ] Validación de formato email
+- [ ] Validación de formato e-mail
 - [ ] Validación de formato RUT chileno (con guión y dígito verificador)
-- [ ] Definir si Nombre Broker viene pre-completado desde sesión del usuario
+- [ ] Definir si Nombre Broker viene pre-completado desde sesión del usuario (depende de Etapa 0.4)
 <!-- /SUBSTAGE -->
 
 ---
@@ -768,6 +843,7 @@ roi_anual = (1 + roi_5a)^(1/5) - 1
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-03-24 | — | main | Rediseño filtrado en cascada: Comuna→Entrega→Inmobiliaria→Proyecto→Unidad (Etapa 2: 4→6 substages, nuevo idx_proyecto_cascada) |
 | 2026-03-24 | — | main | Evaluación técnica schema.sql → EVALUACIÓN_SCHEMA_DATOS.md (9 problemas identificados) |
 | 2026-03-24 | — | main | Genera MODELO_DATOS_COTIZADOR.xlsx (6 hojas: resumen, columnas, relaciones, índices, constraints, semilla) |
 | 2026-03-23 | d0eea66 | main | carga archivo para determinar logicas y calculos |

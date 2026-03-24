@@ -196,6 +196,9 @@ unique_idx(td, "uq_proyecto_nemotecnico", ["nemotecnico"])
 unique_idx(td, "uq_proyecto_nombre",     ["id_inmobiliaria", "nombre_proyecto"])
 reg_idx(td,   "idx_proyecto_inmobiliaria", ["id_inmobiliaria"])
 reg_idx(td,   "idx_proyecto_activo",       ["activo", "id_inmobiliaria"])
+# idx_proyecto_cascada: cubre dropdown en cascada Comuna → Entrega → Inmobiliaria → Proyecto
+# Access no soporta índices parciales (WHERE activo=1) → se crea como índice regular
+reg_idx(td,   "idx_proyecto_cascada",      ["comuna", "tipo_entrega", "id_inmobiliaria", "activo"])
 append_table(td)
 
 # ── 3. unidad ─────────────────────────────────────────────────────────────────

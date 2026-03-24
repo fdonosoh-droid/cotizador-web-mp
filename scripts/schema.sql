@@ -74,6 +74,11 @@ CREATE TABLE IF NOT EXISTS proyecto (
 
 CREATE INDEX IF NOT EXISTS idx_proyecto_inmobiliaria ON proyecto (id_inmobiliaria);
 CREATE INDEX IF NOT EXISTS idx_proyecto_activo       ON proyecto (activo, id_inmobiliaria);
+-- Índice para la cascada de selección: Comuna → Entrega Aprox → Inmobiliaria → Proyecto
+-- Cubre los 4 pasos del dropdown en cascada del cotizador (REGLAS 2.1 → 2.4)
+CREATE INDEX IF NOT EXISTS idx_proyecto_cascada
+  ON proyecto (comuna, tipo_entrega, id_inmobiliaria, activo)
+  WHERE activo = 1;
 -- idx sobre nemotecnico ya cubierto por el UNIQUE
 
 CREATE TRIGGER IF NOT EXISTS trg_proyecto_upd
