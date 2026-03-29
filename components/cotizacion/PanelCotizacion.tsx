@@ -3,8 +3,8 @@
 // PANEL COTIZACIÓN — resultados con escenarios CAE/pie/plazo
 // ============================================================
 
-import { useState, useTransition } from 'react'
-import { getBienesConjuntos, getUFdelDia } from '@/app/actions/stock'
+import { useRef, useState, useTransition } from 'react'
+import { getBienesConjuntos, getUFdelDia, getNumeroCotizacion } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -14,12 +14,15 @@ import {
 import { formatCLP, formatUF } from '@/lib/data/uf-service'
 import { CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
+import type { BrokerData } from '@/components/broker/BrokerForm'
+import CotizacionTemplate from './CotizacionTemplate'
 
 interface Props {
   unidad: UnidadCotizable
+  broker: BrokerData
 }
 
-export default function PanelCotizacion({ unidad }: Props) {
+export default function PanelCotizacion({ unidad, broker }: Props) {
   const [isPending, startTransition] = useTransition()
 
   // Parámetros editables
@@ -29,9 +32,48 @@ export default function PanelCotizacion({ unidad }: Props) {
   const [arriendo,  setArriendo]  = useState<string>('')
   const [plusvalia, setPlusvalia] = useState(2)
 
-  // Resultado
-  const [resultado, setResultado] = useState<ResultadoCotizacion | null>(null)
-  const [errorMsg,  setErrorMsg]  = useState<string | null>(null)
+  // Resultado + modo cotización
+  const [resultado,       setResultado]       = useState<ResultadoCotizacion | null>(null)
+  const [arriendoCLPCalc, setArriendoCLPCalc] = useState(0)
+  const [showDoc,         setShowDoc]         = useState(false)
+  const [errorMsg,        setErrorMsg]        = useState<string | null>(null)
+  const [pdfLoading,      setPdfLoading]      = useState(false)
+
+  // Número de cotización (generado al crear el documento)
+  const [numeroCot, setNumeroCot] = useState('')
+  const [fechaCot,  setFechaCot]  = useState('')
+
+  async function handleDescargarPDF() {
+    if (!resultado) return
+    setPdfLoading(true)
+    try {
+      const res = await fetch('/api/cotizacion/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numero:             numeroCot,
+          fecha:              fechaCot,
+          broker,
+          unidad,
+          resultado,
+          arriendoMensualCLP: arriendoCLPCalc,
+          plusvaliaAnual:     plusvalia,
+        }),
+      })
+      if (!res.ok) throw new Error('Error al generar PDF')
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `cotizacion-${numeroCot}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setPdfLoading(false)
+    }
+  }
 
   function handleCotizar() {
     const arriendoCLP = parseInt(arriendo.replace(/\D/g, ''), 10)
@@ -63,6 +105,8 @@ export default function PanelCotizacion({ unidad }: Props) {
         plusvaliaAnual:     plusvalia / 100,
       }
       setResultado(calcularCotizacion(input))
+      setArriendoCLPCalc(arriendoCLP)
+      setShowDoc(false)
     })
   }
 
@@ -154,17 +198,76 @@ export default function PanelCotizacion({ unidad }: Props) {
         ))}
       </div>
 
-      {/* Botón */}
-      <button
-        onClick={handleCotizar}
-        disabled={isPending}
-        className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-      >
-        {isPending ? 'Calculando…' : 'Generar Cotización'}
-      </button>
+      {/* Botones */}
+      <div className="flex gap-3 flex-wrap">
+        <button
+          onClick={handleCotizar}
+          disabled={isPending}
+          className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isPending ? 'Calculando…' : 'Generar Cotización'}
+        </button>
 
-      {/* ── Resultado ─────────────────────────────────── */}
-      {resultado && <ResultadoPanel r={resultado} />}
+        {resultado && !showDoc && (
+          <button
+            onClick={async () => {
+              const numero = await getNumeroCotizacion()
+              const now    = new Date()
+              setNumeroCot(numero)
+              setFechaCot(now.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }))
+              setShowDoc(true)
+            }}
+            className="rounded-md border border-blue-600 px-6 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+          >
+            Ver Documento
+          </button>
+        )}
+
+        {showDoc && (
+          <>
+            <button
+              onClick={() => window.print()}
+              className="rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            >
+              🖨 Imprimir
+            </button>
+            <button
+              onClick={handleDescargarPDF}
+              disabled={pdfLoading}
+              className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {pdfLoading ? 'Generando PDF…' : '⬇ Descargar PDF'}
+            </button>
+          </>
+        )}
+
+        {showDoc && (
+          <button
+            onClick={() => setShowDoc(false)}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            ← Volver
+          </button>
+        )}
+      </div>
+
+      {/* ── Resultado resumido ────────────────────────── */}
+      {resultado && !showDoc && <ResultadoPanel r={resultado} />}
+
+      {/* ── Documento de cotización ──────────────────── */}
+      {resultado && showDoc && (
+        <div id="print-cotizacion" className="mt-6 border border-gray-200 rounded-lg p-8 bg-white shadow-sm">
+          <CotizacionTemplate
+            numero={numeroCot}
+            fecha={fechaCot}
+            broker={broker}
+            unidad={unidad}
+            resultado={resultado}
+            arriendoMensualCLP={arriendoCLPCalc}
+            plusvaliaAnual={plusvalia}
+          />
+        </div>
+      )}
     </div>
   )
 }

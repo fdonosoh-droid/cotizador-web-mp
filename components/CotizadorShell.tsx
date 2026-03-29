@@ -120,10 +120,10 @@ export default function CotizadorShell() {
       )}
 
       {/* ── Paso 3: Cotización ───────────────────────────── */}
-      {step === 'quote' && unidad && (
+      {step === 'quote' && unidad && broker && (
         <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-gray-800">3. Cotización</h2>
-          <PanelCotizacion unidad={unidad} />
+          <PanelCotizacion unidad={unidad} broker={broker} />
         </section>
       )}
     </div>

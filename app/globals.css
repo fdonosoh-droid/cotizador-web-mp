@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+/* ── Estilos globales impresión ───────────────────────────────── */
+
+@media print {
+  /* Ocultar todo excepto el documento de cotización */
+  body > * {
+    display: none !important;
+  }
+  #print-cotizacion {
+    display: block !important;
+  }
+
+  /* Configuración de página */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
+
+  /* Reset colores para impresión */
+  #print-cotizacion .cotizacion-doc {
+    font-size: 10pt;
+    color: #111 !important;
+  }
+
+  /* Evitar cortes de página dentro de secciones */
+  #print-cotizacion .cotizacion-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Forzar colores de fondo en tablas */
+  #print-cotizacion .cotizacion-table thead tr {
+    background-color: #1d4ed8 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #print-cotizacion .cotizacion-table tr.bg-gray-50,
+  #print-cotizacion .cotizacion-table tr.bg-blue-50 {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Header */
+  #print-cotizacion .cotizacion-header {
+    margin-bottom: 12pt;
+  }
+
+  /* Footer en última página */
+  #print-cotizacion .cotizacion-footer {
+    margin-top: 12pt;
+  }
+}

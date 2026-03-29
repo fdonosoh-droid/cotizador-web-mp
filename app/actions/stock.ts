@@ -6,6 +6,7 @@
 
 import { stockRepository } from '@/lib/data'
 import type { ProyectoRow, UnidadCotizable } from '@/lib/data'
+import { siguienteNumeroCotizacion } from '@/lib/utils/correlativo'
 
 export async function getComunas(): Promise<string[]> {
   return stockRepository.getComunas()
@@ -45,4 +46,9 @@ export async function getBienesConjuntos(
 
 export async function getUFdelDia(): Promise<number> {
   return stockRepository.getUFdelDia()
+}
+
+/** Genera y persiste el siguiente número correlativo de cotización */
+export async function getNumeroCotizacion(): Promise<string> {
+  return siguienteNumeroCotizacion()
 }

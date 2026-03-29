@@ -9,3 +9,6 @@ next-env.d.ts
 .env.*.local
 .DS_Store
 Thumbs.db
+
+# Correlativo de cotizaciones (estado local dev)
+.cotizaciones-seq.json
