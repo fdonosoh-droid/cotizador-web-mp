@@ -1,10 +1,16 @@
 -- ============================================================
--- SCHEMA: COTIZADOR WEB MERCADO PRIMARIO
--- Motor:  SQLite (embebido, convive dentro de la aplicación)
+-- SCHEMA: COTIZADOR WEB MERCADO PRIMARIO — SQLite (DESARROLLO)
+-- Motor:  SQLite — fase inicial / prototipo local
+-- Stack:  React 19 + Next.js 15 (fase Excel) → PostgreSQL (producción)
 -- Fuente: INPUT_FILES.xlsx — hojas STOCK NUEVOS, CONDICIONES_COMERCIALES,
 --         PROYECTOS, UF, aux
 -- ============================================================
--- Convenciones:
+-- USO:
+--   • Este archivo es el schema de DESARROLLO (SQLite local).
+--   • El schema de PRODUCCIÓN (PostgreSQL) está en scripts/schema_pg.sql.
+--   • Migración: Excel (INPUT_FILES.xlsx) → SQLite (dev) → PostgreSQL (prod)
+-- ============================================================
+-- Convenciones SQLite:
 --   • Surrogate PK INTEGER en todas las entidades
 --   • TEXT en lugar de VARCHAR (SQLite ignora longitud, documenta intención)
 --   • Booleanos como INTEGER 0/1 (SQLite no tiene BOOLEAN nativo)

@@ -1,7 +1,9 @@
 # ERD — COTIZADOR WEB MERCADO PRIMARIO
 
-> **Motor:** SQLite embebido
-> **DDL completo:** [scripts/schema.sql](scripts/schema.sql)
+> **Stack:** React 19 + Next.js 15
+> **Motor inicial (dev):** SQLite — DDL: [scripts/schema.sql](scripts/schema.sql)
+> **Motor producción:** PostgreSQL 15+ — DDL: [scripts/schema_pg.sql](scripts/schema_pg.sql)
+> **Fuente de datos:** `INPUT_FILES.xlsx` (Excel) → PostgreSQL (migración)
 > **Modelo documentado:** [MODELO_DATOS_COTIZADOR.md](MODELO_DATOS_COTIZADOR.md)
 > **Renderizado:** VSCode con extensión *Markdown Preview Mermaid Support*, GitHub, Notion, GitLab
 

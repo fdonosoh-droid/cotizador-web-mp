@@ -1,7 +1,9 @@
 # MODELO DE DATOS — COTIZADOR WEB MERCADO PRIMARIO
 
-> Motor: **SQLite embebido** — convive dentro de la aplicación, sin conexión a bases de datos externas.
-> DDL completo: [scripts/schema.sql](scripts/schema.sql)
+> **Stack:** React 19 + Next.js 15
+> **Fase inicial (dev):** SQLite embebido — datos cargados desde `INPUT_FILES.xlsx`. DDL: [scripts/schema.sql](scripts/schema.sql)
+> **Fase producción:** PostgreSQL 15+ — misma estructura, tipos nativos mejorados (`BOOLEAN`, `DATE`, `NUMERIC`, `TIMESTAMPTZ`). DDL: [scripts/schema_pg.sql](scripts/schema_pg.sql)
+> **Patrón de acceso:** repositorio con adaptador intercambiable (`ExcelAdapter` → `PgAdapter`) sin cambios en la UI.
 
 ---
 

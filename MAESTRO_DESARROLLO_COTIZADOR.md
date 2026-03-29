@@ -32,10 +32,12 @@
 > Marcar con [x] cuando estén respondidas y documentadas.
 
 ### Bloque A — Datos y stock (bloquea Etapa 1)
-- [ ] **P1.1** ¿El stock se carga desde Excel manual, base de datos o API? ¿Frecuencia de actualización?
+- [x] **P1.1** ¿El stock se carga desde Excel manual, base de datos o API? ¿Frecuencia de actualización?
+  > **Respondida:** Fuente inicial = **Excel (INPUT_FILES.xlsx)**, hojas: STOCK NUEVOS, CONDICIONES_COMERCIALES, PROYECTOS, UF, aux. Fase producción = **PostgreSQL** (migración). Schema SQLite en `schema.sql` (dev), PostgreSQL en `schema_pg.sql` (prod). Actualización: carga manual.
 - [ ] **P1.2** ¿Qué estados de stock existen además de "Disponible" y "Arrendado"? ¿Cuáles permiten cotizar?
 - [ ] **P1.3** ¿Estacionamiento y Bodega se cotizan solo como añadido a un depto, o también como unidades independientes?
-- [ ] **P1.4** ¿Se usa API externa para el valor UF (CMF/Mindicador) o el archivo Excel? ¿Qué pasa si falla?
+- [x] **P1.4** ¿Se usa API externa para el valor UF (CMF/Mindicador) o el archivo Excel? ¿Qué pasa si falla?
+  > **Respondida:** Fase inicial = **hoja UF de INPUT_FILES.xlsx** (17.784 registros diarios 1977→2026, carga masiva única). Fase producción = API CMF (`api.cmfchile.cl`) con actualización diaria. Fallback: último valor registrado en tabla `uf_valor`.
 
 ### Bloque B — Selección (bloquea Etapa 2)
 - [x] **P2.1** ¿La jerarquía de selección es siempre Inmobiliaria → Proyecto → Unidad, o hay flujos alternativos?
@@ -180,15 +182,26 @@
 ### 1.2 — Carga y normalización del stock
 <!-- SUBSTAGE:1.2 -->
 **Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/services/stockService.ts` | `src/data/stock.json`
-**Preguntas bloqueantes:** P1.1
-**Descripción:** Mecanismo para cargar el stock (Excel → JSON, API, o DB). Normalizar tipos de datos.
+**Archivos esperados:** `src/lib/data/excel-adapter.ts` | `src/lib/data/pg-adapter.ts` | `src/lib/data/repository.ts`
+**Preguntas bloqueantes:** Ninguna — P1.1 respondida.
+**Descripción:** Carga del stock desde Excel (INPUT_FILES.xlsx) con patrón repositorio. La interfaz del repositorio es idéntica en fase Excel y fase PostgreSQL; solo cambia el adaptador.
+**Arquitectura de datos (Excel → PostgreSQL):**
+```
+src/lib/data/
+  types.ts           ← tipos compartidos (UnidadRow, ProyectoRow, etc.)
+  repository.ts      ← interfaz IStockRepository usada por toda la app
+  excel-adapter.ts   ← lee INPUT_FILES.xlsx con librería `xlsx`
+  pg-adapter.ts      ← lee PostgreSQL con `pg` / drizzle-orm
+  index.ts           ← exporta el adaptador activo según ENV
+```
 **Faltantes para completar:**
-- [ ] Definir fuente de datos (P1.1)
-- [ ] Parser de SUPERFICIE UTIL/TERRAZA (texto con coma → float)
+- [ ] Crear interfaz `IStockRepository` con métodos: `getComunas()`, `getEntregas(comuna)`, `getInmobiliarias(comuna, entrega)`, `getProyectos(...)`, `getUnidades(proyectoId)`, `getUFdelDia()`
+- [ ] Implementar `ExcelAdapter` usando librería `xlsx` para parsear INPUT_FILES.xlsx
+- [ ] Parser SUPERFICIE UTIL/TERRAZA (texto con coma → float): `'43,35'` → `43.35`
+- [ ] Normalizar `dormitorios` en importación (pendiente substage 0.2)
 - [ ] Validación de campos obligatorios al cargar
 - [ ] Manejo de registros con datos incompletos
-- [ ] Definir frecuencia y mecanismo de actualización
+- [ ] Implementar `PgAdapter` (stub pendiente hasta configurar DB en prod)
 <!-- /SUBSTAGE -->
 
 ---
@@ -196,14 +209,27 @@
 ### 1.3 — Servicio de valor UF
 <!-- SUBSTAGE:1.3 -->
 **Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/services/ufService.ts`
-**Preguntas bloqueantes:** P1.4
-**Descripción:** Obtener el valor UF del día. Cachear para evitar múltiples llamadas.
+**Archivos esperados:** `src/lib/uf/ufService.ts`
+**Preguntas bloqueantes:** Ninguna — P1.4 respondida.
+**Descripción:** Obtener el valor UF del día. Dos implementaciones según fase.
+**Fase inicial (Excel):**
+```typescript
+// Lee tabla uf_valor cargada desde hoja UF de INPUT_FILES.xlsx
+// Lookup por fecha del día → retorna el último disponible si no hay
+getUFdelDia(fecha?: string): Promise<number>
+```
+**Fase producción (PostgreSQL):**
+```typescript
+// Consulta tabla uf_valor en PostgreSQL
+// Si no hay registro del día → llama API CMF y persiste
+// Fallback: último valor registrado en uf_valor
+```
 **Faltantes para completar:**
-- [ ] Confirmar fuente: API externa (CMF/Mindicador) o tabla interna (P1.4)
-- [ ] Implementar cache diario del valor UF
-- [ ] Definir fallback si la API no responde
-- [ ] Formateo del valor UF para mostrar en cotización
+- [ ] Implementar `getUFdelDia()` con lookup en tabla `uf_valor` (fase Excel)
+- [ ] Fallback: si no hay registro del día, usar el más reciente (`ORDER BY fecha DESC LIMIT 1`)
+- [ ] Caché en memoria para evitar múltiples queries en la misma sesión
+- [ ] Formateo: `Intl.NumberFormat('es-CL', { minimumFractionDigits: 2 })`
+- [ ] Stub de integración con API CMF para fase PostgreSQL
 <!-- /SUBSTAGE -->
 
 ---
@@ -822,6 +848,50 @@ roi_anual = (1 + roi_5a)^(1/5) - 1
 - [ ] Definir campos a registrar: broker, cliente, unidad, fecha, valores snapshot
 - [ ] Confirmar si hay flujo de aprobación antes de enviar (P6.4)
 <!-- /SUBSTAGE -->
+
+---
+
+## TECH STACK DECIDIDO
+
+> Decisiones de arquitectura técnica confirmadas. Estas decisiones son vinculantes para todas las etapas.
+
+### Framework y runtime
+
+| Capa | Tecnología | Versión | Notas |
+|---|---|---|---|
+| **UI / Frontend** | React | **19** | Server Components, Actions, `use()` hook |
+| **Framework web** | Next.js | **15** (App Router) | Bundla React 19; Server Actions para data layer |
+| **Lenguaje** | TypeScript | 5.x | Strict mode |
+| **Estilos** | Tailwind CSS | 4.x | + shadcn/ui para componentes |
+
+### Base de datos y datos
+
+| Fase | Motor | Herramienta | Archivo de schema |
+|---|---|---|---|
+| **Desarrollo / inicial** | SQLite (embebido) | `better-sqlite3` | `scripts/schema.sql` |
+| **Producción** | **PostgreSQL 15+** | `drizzle-orm` + `postgres` | `scripts/schema_pg.sql` |
+| **Fuente de datos** | Excel | `xlsx` library | `INPUT_FILES.xlsx` |
+
+### Patrón de acceso a datos
+
+```
+src/lib/data/
+  types.ts          ← tipos compartidos
+  repository.ts     ← interfaz IStockRepository (misma API en ambas fases)
+  excel-adapter.ts  ← fase inicial: lee INPUT_FILES.xlsx
+  pg-adapter.ts     ← fase producción: lee PostgreSQL
+  index.ts          ← exporta el adaptador activo (ENV: DATA_SOURCE=excel|postgres)
+```
+
+### Librerías clave confirmadas
+
+| Propósito | Librería |
+|---|---|
+| Parser Excel | `xlsx` (SheetJS) |
+| PDF generation | `@react-pdf/renderer` |
+| PostgreSQL client | `postgres` (Drizzle) |
+| Validación formularios | `react-hook-form` + `zod` |
+| RUT chileno | `rutjs` o validación custom |
 
 ---
 

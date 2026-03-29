@@ -359,8 +359,8 @@ ws.row_dimensions[1].height = 30
 
 # Título principal
 ws.merge_cells("A1:G1")
-c = ws.cell(1, 1, "MODELO DE DATOS — COTIZADOR WEB MERCADO PRIMARIO")
-c.font      = Font(name="Calibri", bold=True, color=C_TITLE_FG, size=14)
+c = ws.cell(1, 1, "MODELO DE DATOS — COTIZADOR WEB MERCADO PRIMARIO  |  React 19 + Next.js 15  |  SQLite (dev) → PostgreSQL (prod)")
+c.font      = Font(name="Calibri", bold=True, color=C_TITLE_FG, size=12)
 c.fill      = fill(C_TITLE_BG)
 c.alignment = Alignment(horizontal="center", vertical="center")
 
@@ -382,7 +382,7 @@ for i, t in enumerate(TABLES, 1):
     ws.row_dimensions[row].height = 32
     fmt_cell(ws, row, 1, i,             bg=bg_row, bold=True, halign="center")
     fmt_cell(ws, row, 2, t["name"],     bg=bg_tbl, bold=True)
-    fmt_cell(ws, row, 3, "SQLite",      bg=bg_row, halign="center")
+    fmt_cell(ws, row, 3, "SQLite/PG",   bg=bg_row, halign="center")
     fmt_cell(ws, row, 4, f'{t["rows"]:,}' if t["rows"] else "—",
                                         bg=bg_row, halign="center")
     fmt_cell(ws, row, 5, t["fuente"],   bg=bg_row)
