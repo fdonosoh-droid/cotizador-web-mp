@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 15:06:24<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->60583b4<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Desarrollo Etapa 3: Motor de cálculo<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 15:30:39<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->ae3c337<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Camino A — Salida rápida: PDF imprimible (alta prioridad de negocio)<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
