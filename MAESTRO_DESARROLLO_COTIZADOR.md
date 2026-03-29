@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 11:15:55<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->f61dd4e<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->define codificacion proyecto con UTF8<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 15:06:24<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->60583b4<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Desarrollo Etapa 3: Motor de cálculo<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->17 de 37 substages completadas (46%) — scaffold ✅, 1.2–1.4 ✅, 2.1–2.6 ✅, 3.1–3.5 ✅<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
