@@ -231,6 +231,58 @@ export class ExcelAdapter implements IStockRepository {
     })
   }
 
+  async getBienesConjuntos(
+    nemotecnico: string,
+    bienesConjuntosRaw: string,
+  ): Promise<UnidadCotizable[]> {
+    if (!bienesConjuntosRaw) return []
+
+    // Formato "B - 64" → { tipo: 'Bodega', nro: 64 }
+    // Formato "E - 50" → { tipo: 'Estacionamiento', nro: 50 }
+    // Puede haber múltiples separados por coma: "B - 64, E - 50"
+    const refs = bienesConjuntosRaw.split(',').map((s) => s.trim()).filter(Boolean)
+    const resultado: UnidadCotizable[] = []
+
+    for (const ref of refs) {
+      const match = ref.match(/^([BE])\s*-\s*(\d+)/i)
+      if (!match) continue
+      const tipoPrefix = match[1].toUpperCase()
+      const nro = parseInt(match[2], 10)
+      const tipoUnidad = tipoPrefix === 'B' ? 'Bodega' : 'Estacionamiento'
+
+      // Buscar en stock del mismo proyecto
+      const all = stock().filter(
+        (s) =>
+          s.nemotecnico === nemotecnico &&
+          s.tipoUnidad === tipoUnidad &&
+          s.numeroUnidad === nro,
+      )
+      if (all.length > 0) {
+        // Enriquecer con condiciones
+        const [s] = all
+        const key = `${s.nemotecnico}|${s.tipoUnidad}|${s.programa}`
+        const condMap = new Map<string, import('./types').CondicionComercialRow>()
+        for (const c of condiciones()) {
+          const k = `${c.nemotecnico}|${c.tipoUnidad}|${c.programa}`
+          condMap.set(k, c)
+        }
+        const cond = condMap.get(key)
+        resultado.push({
+          ...s,
+          reserva:                cond?.reserva               ?? 0,
+          descuento:              cond?.descuento              ?? 0,
+          bonoPie:                cond?.bonoPie                ?? 0,
+          cuotasPie:              cond?.cuotasPie              ?? 0,
+          piePeriodoConstruccion: cond?.piePeriodoConstruccion ?? 0,
+          cuoton:                 cond?.cuoton                 ?? 0,
+          pieCreditoDirecto:      cond?.pieCreditoDirecto      ?? 0,
+        })
+      }
+    }
+
+    return resultado
+  }
+
   async getUFdelDia(): Promise<number> {
     const rows = uf()
     if (rows.length === 0) return 0

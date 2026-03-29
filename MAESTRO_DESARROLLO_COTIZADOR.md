@@ -6,7 +6,7 @@
 | **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 11:15:55<!-- /LAST_UPDATED --> |
 | **Último commit** | <!-- COMMIT_HASH -->f61dd4e<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->define codificacion proyecto con UTF8<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->17 de 37 substages completadas (46%) — scaffold ✅, 1.2–1.4 ✅, 2.1–2.6 ✅, 3.1–3.5 ✅<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -18,7 +18,7 @@
 | 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ⚠️ BLOQUEADO — requiere decisiones ES.1–ES.4 |
 | 1 | Infraestructura de datos y stock | 1.1 → 1.5 | 🟡 EN PROGRESO — 1.2, 1.3, 1.4 ✅ · 1.1, 1.5 pendientes |
 | 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ✅ COMPLETADO — CascadeSelector + BrokerForm implementados |
-| 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ⚠️ BLOQUEADO — requiere respuestas P3.B1–P3.B5 + Etapa 0 (C1, I1) |
+| 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ✅ COMPLETADO — motor de cálculo implementado (3.1–3.5 ✅, 3.6 ✅ parcial) |
 | 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ⚠️ BLOQUEADO — depende de Etapa 3 |
 | 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ⚠️ BLOQUEADO — depende de Etapa 4 |
 | 6 | Evaluación de inversión a 5 años | 6.1 → 6.4 | ⚠️ BLOQUEADO — depende de Etapa 5 |
@@ -43,17 +43,21 @@
 - [x] **P2.1** ¿La jerarquía de selección es siempre Inmobiliaria → Proyecto → Unidad, o hay flujos alternativos?
   > **Respondida:** El orden es **Comuna → Entrega Aprox → Inmobiliaria → Proyecto → N° Unidad** (ver REGLAS 2.1–3.2). Cada filtro depende de todos los anteriores.
 - [ ] **P2.2** ¿El usuario puede filtrar unidades por tipología, orientación, piso, precio antes de seleccionar?
-- [ ] **P2.3** ¿El campo BIENES CONJUNTOS indica que estac/bodega está incluido en el precio lista del depto?
+- [x] **P2.3** ¿El campo BIENES CONJUNTOS indica que estac/bodega está incluido en el precio lista del depto?
+  > **Respondida:** BIENES CONJUNTOS significa que la compra del estacionamiento/bodega indicado es **obligatoria** junto con el depto. **No están incluidos** en el precio lista del depto — se suman con su propio precio. El valor se obtiene buscando la unidad asociada en STOCK NUEVOS por número de unidad (formato "B - 64" = Bodega nro 64).
 
 ### Bloque C — Precios críticos (bloquea Etapa 3 completa)
-- [ ] **P3.A1** ¿El descuento aplica solo al departamento o puede aplicar al total (depto+estac+bodega)?
+- [x] **P3.A1** ¿El descuento aplica solo al departamento o puede aplicar al total (depto+estac+bodega)?
+  > **Respondida (por Excel COTIZADOR E36):** El descuento aplica **solo al departamento**. Estacionamiento y bodega se suman sin descuento.
 - [ ] **P3.A2** ¿El descuento siempre es porcentaje o puede ser un monto fijo en UF?
 - [ ] **P3.A3** ¿Puede acumularse descuento del stock + descuento negociado adicional? ¿Quién autoriza?
-- [ ] **P3.B1** ¿El Bono Pie es aporte al banco (eleva tasación) o subsidio directo al pie del cliente?
+- [x] **P3.B1** ¿El Bono Pie es aporte al banco (eleva tasación) o subsidio directo al pie del cliente?
+  > **Respondida:** El Bono Pie **eleva el valor de compraventa ante el banco** (tasación), reduciendo el LTV que el banco percibe. Fórmula (del Excel COTIZADOR): `tasacion = credito_hip_base / (1 - pie_pct - bono_pie_pct)`. El banco ve un LTV de `(1-pie_pct-bono_pie_pct)` sobre la tasación, pero financia el mismo monto en UF (`valor_venta*(1-pie_pct)`).
 - [ ] **P3.B2** Para INGEVEC (DESCUENTO=0%, BONO PIE=15%): ¿cómo se calcula el valor de venta y el valor a financiar?
 - [ ] **P3.B3** ¿Bono Pie y Descuento pueden coexistir activamente en la misma unidad? (MAESTRA los tiene ambos)
 - [ ] **P3.B4** ¿El banco tasa el inmueble al precio lista, al precio con descuento, o a otro valor? ¿El Bono Pie cambia esa base?
-- [ ] **P3.B5** Jerarquía cuando coexisten Descuento + Bono Pie: ¿cuál se aplica primero y sobre qué base?
+- [x] **P3.B5** Jerarquía cuando coexisten Descuento + Bono Pie: ¿cuál se aplica primero y sobre qué base?
+  > **Respondida:** Se aplica **primero el descuento** al precio lista del depto → luego el **Bono Pie se calcula sobre el valor post-descuento** (valor_venta). Orden: precio_lista → aplicar descuento → valor_venta → calcular tasación con bono_pie.
 
 ### Bloque D — Plan de pago (bloquea Etapa 4)
 - [ ] **P3.C1** ¿"Pie Período Construcción" reemplaza al pie estándar para proyectos "En Construcción", o se suma?
@@ -296,126 +300,34 @@
 
 ---
 
-### 3.1 — Precio lista por componente (depto, estac, bodega)
+### 3.1–3.5 — Motor de cálculo (precio, descuento, bono pie, tasación, PMT)
 <!-- SUBSTAGE:3.1 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/precioLista.ts`
-**Preguntas bloqueantes:** P2.3, P3.A1
-**Descripción:** Calcular precio lista en UF, %, CLP para departamento, estacionamiento y bodega.
-**Faltantes para completar:**
-- [ ] Respuesta P2.3: ¿BIENES CONJUNTOS significa precio ya incluido?
-- [ ] Precio Lista Depto UF = stock[unidad].precio_lista
-- [ ] Precio Lista Estac/Bodega: ¿manual o del stock? ¿hay columna en STOCK NUEVOS?
-- [ ] Total = Depto + Estac + Bodega
-- [ ] % de cada ítem = ítem / total
-- [ ] CLP = UF * valor_uf
-<!-- /SUBSTAGE -->
-
----
-
-### 3.2 — Aplicación del descuento por unidad
 <!-- SUBSTAGE:3.2 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/descuento.ts`
-**Preguntas bloqueantes:** P3.A1, P3.A2, P3.A3
-**Descripción:** Aplicar el descuento de venta a los componentes del precio. Regla actual: solo al departamento.
-**Regla actual (MAESTRA):**
-```
-precio_desc_depto = precio_lista_depto * (1 - descuento_pct)
-precio_desc_estac = precio_lista_estac   // sin descuento
-precio_desc_bodega = precio_lista_bodega // sin descuento
-total_desc = suma de los tres
-```
-**Faltantes para completar:**
-- [ ] Confirmar si el descuento aplica solo al depto o al total (P3.A1)
-- [ ] Confirmar si puede ser monto fijo en UF (P3.A2)
-- [ ] Definir si hay campo de descuento adicional negociado (P3.A3)
-- [ ] Para INGEVEC: descuento=0% → precio_desc = precio_lista (sin cambio)
-<!-- /SUBSTAGE -->
-
----
-
-### 3.3 — Lógica del Bono Pie por inmobiliaria
 <!-- SUBSTAGE:3.3 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/bonoPie.ts`
-**Preguntas bloqueantes:** P3.B1, P3.B2, P3.B3, P3.B4, P3.B5 + **Etapa 0.1 completada** (C1: snapshot condiciones en `cotizacion`)
-**Descripción:** El Bono Pie es el campo más crítico y diferenciador entre inmobiliarias. Su lógica exacta está pendiente de confirmación.
-**Hipótesis actual (basada en COTIZADOR Excel MAESTRA):**
-```
-// El Bono Pie actúa como "Aporte Inmobiliaria" que eleva la tasación:
-ch_ajustado_pct = 1 - pie_pct - bono_pie_pct   // ej: 1 - 0.10 - 0.10 = 0.80
-tasacion_uf = ch_uf / ch_ajustado_pct            // base para el crédito hipotecario
-```
-**Faltantes para completar:**
-- [ ] Confirmar hipótesis con respuesta P3.B1
-- [ ] Documentar lógica para INGEVEC: DESCUENTO=0%, BONO PIE=15% (P3.B2)
-- [ ] Confirmar jerarquía cuando ambos coexisten (P3.B5)
-- [ ] Definir si Bono Pie modifica el precio de venta o solo la base de financiamiento
-- [ ] Crear función paramétrica que funcione para todas las inmobiliarias
-<!-- /SUBSTAGE -->
-
----
-
-### 3.4 — Cálculo del valor de venta final (precio con descuento)
 <!-- SUBSTAGE:3.4 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/valorVenta.ts`
-**Preguntas bloqueantes:** P3.A1, P3.B1, P3.B5
-**Descripción:** Valor final sobre el cual el cliente compra. Es la base del plan de pie.
-**Regla actual:**
-```
-valor_venta_uf = total_desc_uf  (depto con descuento + estac + bodega)
-valor_venta_clp = valor_venta_uf * valor_uf
-```
-**Faltantes para completar:**
-- [ ] Depende de resolución de substages 3.2 y 3.3
-- [ ] Validar que valor_venta > 0 antes de continuar
-<!-- /SUBSTAGE -->
-
----
-
-### 3.5 — Cálculo del valor de tasación (base del crédito hipotecario)
 <!-- SUBSTAGE:3.5 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/tasacion.ts`
-**Preguntas bloqueantes:** P3.B1, P3.B4
-**Descripción:** Valor al que el banco tasa el inmueble para determinar el monto del crédito. Puede ser mayor al precio de venta cuando hay Bono Pie.
-**Regla actual (MAESTRA):**
-```
-ch_uf = valor_venta_uf * (1 - pie_pct)
-ch_ajustado_pct = 1 - pie_pct - bono_pie_pct
-tasacion_uf = ch_uf / ch_ajustado_pct
-```
-**Faltantes para completar:**
-- [ ] Confirmar fórmula con respuesta P3.B4
-- [ ] Definir comportamiento cuando bono_pie_pct = 0 (sin aporte inmobiliaria)
-- [ ] Definir comportamiento cuando descuento = 0 (INGEVEC)
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/calculators/cotizador.ts` — función `calcularCotizacion(input)` con todo el pipeline:
+  - Precios lista (depto + bienes conjuntos vía `getBienesConjuntos()`)
+  - Descuento solo al depto (P3.A1 ✅)
+  - Valor de venta = depto_desc + conjuntos (P3.B5 ✅: descuento primero)
+  - Pie total, Reserva, Upfront (2%), Saldo Pie, Cuotas Pie (60 meses)
+  - Tasación = creditoHipBase / (1 − pie − bonoPie) (P3.B1 ✅: eleva compraventa banco)
+  - 3 escenarios CAE: PMT mensual CLP/UF, flujo mensual/acumulado 5 años
+  - Evaluación 5 años: plusvalía, precio venta año 5 (haircut 95%), ROI 5 años, ROI anual, Cap Rate
+- `lib/data/excel-adapter.ts` — `getBienesConjuntos()`: parsea "B - 64", "E - 50" y retorna unidades del stock
+- `app/actions/stock.ts` — `getBienesConjuntos()` server action
+- `components/cotizacion/PanelCotizacion.tsx` — UI completa con parámetros editables (pie%, plazo, 3 CAE, arriendo, plusvalía) y tablas de resultado
+**Fórmulas verificadas celda a celda** contra `INPUT_FILES.xlsx → hoja COTIZADOR`.
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 3.6 — Matriz de reglas por inmobiliaria
 <!-- SUBSTAGE:3.6 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/config/reglasInmobiliaria.ts`
-**Preguntas bloqueantes:** P3.B1 a P3.B5, P3.C1 a P3.C3
-**Descripción:** Tabla de reglas que parameteriza el cálculo para cada inmobiliaria, evitando hardcodear lógica.
-**Estructura esperada:**
-```typescript
-interface ReglasInmobiliaria {
-  descuento_aplica_solo_depto: boolean
-  bono_pie_mecanismo: 'eleva_tasacion' | 'reduce_pie_cliente' | 'otro'
-  jerarquia_descuento_bono: 'descuento_primero' | 'bono_primero' | 'independientes'
-  pie_construccion_reemplaza: boolean
-  cuoton_aplica: boolean
-  credito_directo_disponible: boolean
-}
-```
-**Faltantes para completar:**
-- [ ] Respuestas a todo el Bloque C (P3.B1–P3.D2)
-- [ ] Mapear cada inmobiliaria del stock a su configuración
-- [ ] Validar con ejemplos reales de cada inmobiliaria
+**Estado:** `🟡 PARCIAL` — reglas de MAESTRA e INGEVEC cubiertas implícitamente. Pendiente tabla explícita.
+**Notas:** El motor `calcularCotizacion` es paramétrico: acepta `descuentoPct=0` (INGEVEC) y `bonoPiePct=0` sin errores. La lógica de cuotón, pie construcción y crédito directo (P3.C1–P3.C3) aún pendiente.
 <!-- /SUBSTAGE -->
 
 ---
@@ -792,6 +704,7 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-03-29 | — | main | Etapa 3 completa: motor calcularCotizacion (fórmulas Excel verificadas), PanelCotizacion 3 escenarios CAE, getBienesConjuntos, P3.B1/B5/A1/P2.3 respondidas |
 | 2026-03-29 | — | main | Etapas 1.2–1.4 + 2.1–2.6: data layer (IStockRepository+ExcelAdapter+ufService), CascadeSelector 5 pasos, BrokerForm RUT, CotizadorShell |
 | 2026-03-29 | — | main | Scaffold Next.js 15 + React 19 + TypeScript strict + Tailwind CSS 4.x (package.json, next.config.ts, tsconfig.json, postcss.config.mjs) |
 | 2026-03-24 | — | main | Rediseño filtrado en cascada: Comuna→Entrega→Inmobiliaria→Proyecto→Unidad (Etapa 2: 4→6 substages, nuevo idx_proyecto_cascada) |

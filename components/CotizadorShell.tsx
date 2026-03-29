@@ -1,13 +1,13 @@
 'use client'
 // ============================================================
 // COTIZADOR SHELL — orquesta la UI principal
-// Combina cascada de selección, datos de broker y (próximamente)
-// el panel de cotización con escenarios CAE/pie/plazo.
+// Pasos: 1. Selección unidad → 2. Datos corredor → 3. Cotización
 // ============================================================
 
 import { useState } from 'react'
 import CascadeSelector, { type CascadeSelection } from './cascade/CascadeSelector'
 import BrokerForm, { type BrokerData } from './broker/BrokerForm'
+import PanelCotizacion from './cotizacion/PanelCotizacion'
 
 type Step = 'select' | 'broker' | 'quote'
 
@@ -18,7 +18,6 @@ export default function CotizadorShell() {
 
   function handleSelectionChange(sel: CascadeSelection) {
     setSelection(sel)
-    // Si cambia la selección, volver al paso inicial
     if (step !== 'select') setStep('select')
   }
 
@@ -43,7 +42,6 @@ export default function CotizadorShell() {
         </p>
       </header>
 
-      {/* Pasos */}
       <StepIndicator current={step} />
 
       {/* ── Paso 1: Selección en cascada ─────────────────── */}
@@ -53,14 +51,30 @@ export default function CotizadorShell() {
         </h2>
         <CascadeSelector onSelectionChange={handleSelectionChange} />
 
-        {/* Resumen de unidad seleccionada */}
         {unidad && (
           <div className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800">
-            <strong>{unidad.nombreProyecto}</strong> —{' '}
+            <strong>{unidad.nombreProyecto}</strong>{' — '}
             Unidad {unidad.numeroUnidad} · {unidad.tipoUnidad} · {unidad.programa}
             {unidad.superficieTotal ? ` · ${unidad.superficieTotal} m²` : ''}
             {' · '}
-            <strong>{unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF</strong>
+            <strong>
+              {unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF
+            </strong>
+            {unidad.descuento > 0 && (
+              <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-800">
+                Dcto {(unidad.descuento * 100).toFixed(0)}%
+              </span>
+            )}
+            {unidad.bonoPie > 0 && (
+              <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800">
+                Bono Pie {(unidad.bonoPie * 100).toFixed(0)}%
+              </span>
+            )}
+            {unidad.bienesConjuntos && (
+              <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-800">
+                BC: {unidad.bienesConjuntos}
+              </span>
+            )}
           </div>
         )}
 
@@ -81,29 +95,35 @@ export default function CotizadorShell() {
       {/* ── Paso 2: Datos del corredor ───────────────────── */}
       {(step === 'broker' || step === 'quote') && (
         <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-gray-800">
-            2. Datos del corredor
-          </h2>
-          {step === 'broker' ? (
-            <BrokerForm onSubmit={handleBrokerSubmit} />
-          ) : broker ? (
-            <div className="text-sm text-gray-700">
-              <strong>{broker.nombre}</strong> · {broker.rut} · {broker.email}
-              {broker.empresa ? ` · ${broker.empresa}` : ''}
-            </div>
-          ) : null}
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-800">2. Datos del corredor</h2>
+            {step === 'quote' && (
+              <button
+                onClick={() => setStep('broker')}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Editar
+              </button>
+            )}
+          </div>
+          <div className="mt-4">
+            {step === 'broker' ? (
+              <BrokerForm onSubmit={handleBrokerSubmit} />
+            ) : broker ? (
+              <p className="text-sm text-gray-700">
+                <strong>{broker.nombre}</strong> · {broker.rut} · {broker.email}
+                {broker.empresa ? ` · ${broker.empresa}` : ''}
+              </p>
+            ) : null}
+          </div>
         </section>
       )}
 
-      {/* ── Paso 3: Cotización (próximamente) ────────────── */}
-      {step === 'quote' && (
+      {/* ── Paso 3: Cotización ───────────────────────────── */}
+      {step === 'quote' && unidad && (
         <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-gray-800">
-            3. Cotización
-          </h2>
-          <p className="text-sm text-gray-500">
-            Motor de cálculo en construcción (Etapa 3).
-          </p>
+          <h2 className="mb-4 text-base font-semibold text-gray-800">3. Cotización</h2>
+          <PanelCotizacion unidad={unidad} />
         </section>
       )}
     </div>
@@ -123,16 +143,16 @@ function StepIndicator({ current }: { current: Step }) {
   return (
     <nav className="flex gap-1">
       {steps.map((s, i) => {
-        const done    = order[current] > i
-        const active  = current === s.id
+        const done   = order[current] > i
+        const active = current === s.id
         return (
           <span
             key={s.id}
             className={[
               'flex-1 rounded px-3 py-1.5 text-center text-xs font-medium',
-              active  ? 'bg-blue-600 text-white'                       : '',
-              done    ? 'bg-green-100 text-green-700'                   : '',
-              !active && !done ? 'bg-gray-100 text-gray-400'            : '',
+              active           ? 'bg-blue-600 text-white'    : '',
+              done             ? 'bg-green-100 text-green-700' : '',
+              !active && !done ? 'bg-gray-100 text-gray-400'  : '',
             ].join(' ')}
           >
             {s.label}

@@ -25,6 +25,16 @@ export interface IStockRepository {
   /** Paso 5: unidades cotizables de un proyecto (join stock + condiciones) */
   getUnidades(nemotecnico: string): Promise<UnidadCotizable[]>
 
+  /**
+   * Paso 5b: bienes conjuntos obligatorios de una unidad.
+   * Parsea el campo bienesConjuntos ("B - 64", "E - 50") y retorna
+   * las unidades asociadas (Bodega/Estacionamiento) con su precio lista.
+   */
+  getBienesConjuntos(
+    nemotecnico: string,
+    bienesConjuntosRaw: string,
+  ): Promise<UnidadCotizable[]>
+
   /** Valor UF del día (o el último disponible si hoy no está en la BD) */
   getUFdelDia(): Promise<number>
 }

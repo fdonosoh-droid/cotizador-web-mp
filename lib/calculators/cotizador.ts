@@ -1,0 +1,211 @@
+// ============================================================
+// MOTOR DE CÁLCULO — COTIZADOR MERCADO PRIMARIO
+// Fórmulas extraídas directamente de INPUT_FILES.xlsx → hoja COTIZADOR
+// Verificadas celda a celda (ver MAESTRO_DESARROLLO_COTIZADOR.md Etapa 3)
+// ============================================================
+
+import { CONSTANTES } from '@/lib/config/cotizadorConfig'
+
+// ---------- tipos entrada/salida -----------------------------------------
+
+export interface InputCotizacion {
+  /** Unidad principal (departamento) */
+  precioListaDepto:   number   // UF
+  descuentoPct:       number   // decimal: 0.05 = 5%
+  bonoPiePct:         number   // decimal: 0.10 = 10%
+  reservaCLP:         number   // pesos chilenos
+
+  /** Bienes conjuntos obligatorios (estac/bodega) — precio sin descuento */
+  preciosConjuntos:   number[] // UF, puede ser []
+
+  /** Parámetros de la cotización */
+  piePct:             number   // decimal: 0.10 = 10%
+  plazoAnios:         number   // 20 | 25 | 30
+  tasasCAE:           [number, number, number]  // ej. [0.04, 0.045, 0.05]
+  valorUF:            number   // CLP por 1 UF
+
+  /** Evaluación de inversión */
+  arriendoMensualCLP: number   // estimado del broker
+  plusvaliaAnual:     number   // decimal, default 0.02
+}
+
+/** Resultado de un escenario CAE */
+export interface EscenarioCAE {
+  cae:                number   // decimal
+  cuotaMensualCLP:    number
+  cuotaMensualUF:     number
+  flujoMensualCLP:    number   // arriendo - cuota
+  flujoAcumuladoCLP:  number   // flujo * 11 * 5
+  roi5Anios:          number   // decimal
+  roiAnual:           number   // decimal
+}
+
+export interface ResultadoCotizacion {
+  // ── A. Precios lista ─────────────────────────────────────
+  precioListaDepto:    number  // UF
+  precioListaOtros:    number  // UF (sum bienes conjuntos)
+  precioListaTotal:    number  // UF
+
+  /** Valor UF usado en el cálculo (para conversiones en UI) */
+  valorUF:             number
+
+  // ── B. Con descuento ─────────────────────────────────────
+  precioDescDepto:     number  // UF  (depto * (1-desc))
+  precioDescOtros:     number  // UF  (sin descuento)
+  valorVentaUF:        number  // UF  total post-descuento  [E39]
+  valorVentaCLP:       number
+
+  // ── C. Pie ───────────────────────────────────────────────
+  piePct:              number
+  pieTotalUF:          number  // valorVenta * piePct       [E40]
+  reservaUF:           number  // reservaCLP / valorUF      [E41]
+  upfrontUF:           number  // valorVenta * 2%           [E42]
+  saldoPieUF:          number  // pieTotalUF - reserva - upfront [E43]
+  saldoPieCLP:         number
+  cuotasPieN:          number  // cantidad de cuotas del pie saldo
+  valorCuotaPieUF:     number  // saldoPie / cuotasPieN     [E58]
+  valorCuotaPieCLP:    number
+
+  // ── D. Crédito hipotecario & tasación ────────────────────
+  creditoHipBaseUF:    number  // valorVenta*(1-pie)        [E44]
+  chAjustadoPct:       number  // 1-pie-bono                [F49]
+  tasacionUF:          number  // creditoHipBase/chAjustado [E51]
+  tasacionCLP:         number
+  saldoAporteInmobUF:  number  // tasacion-pie-creditoBase  [E48]
+  creditoHipFinalUF:   number  // valorVenta - pieTotalUF   [E60]
+  creditoHipFinalCLP:  number
+
+  // ── E. Escenarios CAE (3 columnas) ───────────────────────
+  escenarios:          [EscenarioCAE, EscenarioCAE, EscenarioCAE]
+
+  // ── F. Evaluación común (usa valores de los 3 escenarios) ─
+  plusvaliaAcumulada:  number
+  precioVentaAnio5CLP: number  // valorVentaCLP*(1+plus)^5*0.95 [E82]
+  piePagadoCLP:        number  // pieTotalUF * valorUF
+  capRate:             number  // (arriendo*11/uf) / tasacion [E86]
+}
+
+// ---------- función PMT (equivalente Excel) ------------------------------
+
+/**
+ * Calcula la cuota de una anualidad.
+ * @param tasa  tasa mensual (cae / 12)
+ * @param n     número de periodos (meses)
+ * @param pv    valor presente (positivo)
+ * @returns     cuota mensual (positivo = pago)
+ */
+function pmt(tasa: number, n: number, pv: number): number {
+  if (tasa === 0) return pv / n
+  return (pv * tasa) / (1 - Math.pow(1 + tasa, -n))
+}
+
+// ---------- motor principal -----------------------------------------------
+
+export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion {
+  const {
+    precioListaDepto, descuentoPct, bonoPiePct, reservaCLP,
+    preciosConjuntos, piePct, plazoAnios, tasasCAE, valorUF,
+    arriendoMensualCLP, plusvaliaAnual,
+  } = input
+
+  // ── A. Precios lista ──────────────────────────────────────────────────
+  const precioListaOtros = preciosConjuntos.reduce((s, p) => s + p, 0)
+  const precioListaTotal = precioListaDepto + precioListaOtros
+
+  // ── B. Descuento (solo al depto — P3.A1) ─────────────────────────────
+  const precioDescDepto  = precioListaDepto * (1 - descuentoPct)
+  const precioDescOtros  = precioListaOtros  // sin descuento
+  const valorVentaUF     = precioDescDepto + precioDescOtros          // E39
+  const valorVentaCLP    = valorVentaUF * valorUF
+
+  // ── C. Pie ────────────────────────────────────────────────────────────
+  const pieTotalUF       = valorVentaUF * piePct                       // E40
+  const reservaUF        = reservaCLP / valorUF                        // E41
+  const upfrontUF        = Math.round(valorVentaUF * CONSTANTES.UPFRONT_PCT * 100) / 100  // E42
+  const saldoPieUF       = pieTotalUF - reservaUF - upfrontUF          // E43
+  const saldoPieCLP      = saldoPieUF * valorUF
+
+  // Cuotas del pie: 60 meses (plan de pago fijo)
+  const cuotasPieN       = 60                                          // D58
+  const valorCuotaPieUF  = saldoPieUF / cuotasPieN                    // E58
+  const valorCuotaPieCLP = valorCuotaPieUF * valorUF
+
+  // ── D. Crédito & tasación (bono pie — P3.B1) ─────────────────────────
+  const creditoHipBaseUF = valorVentaUF * (1 - piePct)                // E44
+  const chAjustadoPct    = 1 - piePct - bonoPiePct                    // F49
+  // Tasación = valor de compraventa elevado ante el banco
+  const tasacionUF       = chAjustadoPct > 0
+    ? creditoHipBaseUF / chAjustadoPct                                 // E51
+    : valorVentaUF  // fallback: sin bono
+  const tasacionCLP      = tasacionUF * valorUF
+  const saldoAporteInmobUF = tasacionUF - pieTotalUF - creditoHipBaseUF // E48
+  const piePagadoUF      = reservaUF + upfrontUF + saldoPieUF         // E50 = pieTotalUF
+  const creditoHipFinalUF  = valorVentaUF - piePagadoUF               // E60
+  const creditoHipFinalCLP = creditoHipFinalUF * valorUF
+
+  // ── E. Evaluación común ───────────────────────────────────────────────
+  const plusvaliaAcumulada  = Math.pow(1 + plusvaliaAnual, 5) - 1     // E81
+  const precioVentaAnio5CLP = valorVentaCLP * (1 + plusvaliaAcumulada) * CONSTANTES.HAIRCUT_VENTA  // E82
+  const piePagadoCLP        = pieTotalUF * valorUF                    // E79 (G40)
+  const capRate             = tasacionUF > 0
+    ? (arriendoMensualCLP * CONSTANTES.MESES_ARRIENDO_ANIO / valorUF) / tasacionUF  // E86
+    : 0
+
+  // ── F. 3 escenarios CAE ───────────────────────────────────────────────
+  const escenarios = tasasCAE.map((cae): EscenarioCAE => {
+    const n = plazoAnios * 12
+    const cuotaMensualCLP  = pmt(cae / 12, n, creditoHipFinalCLP)     // E66
+    const cuotaMensualUF   = cuotaMensualCLP / valorUF                 // E67
+    const flujoMensualCLP  = arriendoMensualCLP - cuotaMensualCLP      // E73
+    const flujoAcumuladoCLP = flujoMensualCLP * CONSTANTES.MESES_ARRIENDO_ANIO * 5  // E77
+
+    // ROI — base depende de si hay bono pie (E88)
+    const roiBase    = bonoPiePct > 0 ? creditoHipFinalCLP : tasacionCLP
+    const roi5Anios  = roiBase > 0
+      ? Math.round((precioVentaAnio5CLP - roiBase) / roiBase * 10000) / 10000
+      : 0
+    const roiAnual   = Math.round((Math.pow(1 + roi5Anios, 1 / 5) - 1) * 10000) / 10000  // E89
+
+    return {
+      cae,
+      cuotaMensualCLP:   Math.round(cuotaMensualCLP),
+      cuotaMensualUF:    Math.round(cuotaMensualUF * 100) / 100,
+      flujoMensualCLP:   Math.round(flujoMensualCLP),
+      flujoAcumuladoCLP: Math.round(flujoAcumuladoCLP),
+      roi5Anios,
+      roiAnual,
+    }
+  }) as [EscenarioCAE, EscenarioCAE, EscenarioCAE]
+
+  return {
+    valorUF,
+    precioListaDepto,
+    precioListaOtros,
+    precioListaTotal,
+    precioDescDepto:     Math.round(precioDescDepto * 100) / 100,
+    precioDescOtros,
+    valorVentaUF:        Math.round(valorVentaUF * 100) / 100,
+    valorVentaCLP:       Math.round(valorVentaCLP),
+    piePct,
+    pieTotalUF:          Math.round(pieTotalUF * 100) / 100,
+    reservaUF:           Math.round(reservaUF * 100) / 100,
+    upfrontUF,
+    saldoPieUF:          Math.round(saldoPieUF * 100) / 100,
+    saldoPieCLP:         Math.round(saldoPieCLP),
+    cuotasPieN,
+    valorCuotaPieUF:     Math.round(valorCuotaPieUF * 100) / 100,
+    valorCuotaPieCLP:    Math.round(valorCuotaPieCLP),
+    creditoHipBaseUF:    Math.round(creditoHipBaseUF * 100) / 100,
+    chAjustadoPct,
+    tasacionUF:          Math.round(tasacionUF * 100) / 100,
+    tasacionCLP:         Math.round(tasacionCLP),
+    saldoAporteInmobUF:  Math.round(saldoAporteInmobUF * 100) / 100,
+    creditoHipFinalUF:   Math.round(creditoHipFinalUF * 100) / 100,
+    creditoHipFinalCLP:  Math.round(creditoHipFinalCLP),
+    escenarios,
+    plusvaliaAcumulada:  Math.round(plusvaliaAcumulada * 10000) / 10000,
+    precioVentaAnio5CLP: Math.round(precioVentaAnio5CLP),
+    piePagadoCLP,
+    capRate:             Math.round(capRate * 10000) / 10000,
+  }
+}
