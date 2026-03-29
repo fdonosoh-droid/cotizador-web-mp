@@ -112,7 +112,8 @@ CREATE TABLE IF NOT EXISTS unidad (
   programa              TEXT      NOT NULL,
   piso_producto         INTEGER   NOT NULL,
   orientacion           TEXT      NULL,
-  dormitorios           TEXT      NULL,      -- puede ser '1', '2', '1-1/2', 'BO', '#N/A'
+  dormitorios_num       INTEGER   NULL,      -- para filtros numéricos: 0, 1, 2, 3...
+  dormitorios_display   TEXT      NULL,      -- etiqueta UI: '1', '2', '1-1/2', 'BO', '#N/A'
   banios                INTEGER   NULL,
   superficie_terreno_m2 REAL      NOT NULL DEFAULT 0,  -- Casas; 0 para departamentos
   superficie_util_m2    REAL      NULL,      -- parseado desde texto '43,35' → 43.35
@@ -388,7 +389,8 @@ SELECT
   u.programa,
   u.piso_producto,
   u.orientacion,
-  u.dormitorios,
+  u.dormitorios_num,
+  u.dormitorios_display,
   u.banios,
   u.superficie_terreno_m2,
   u.superficie_util_m2,

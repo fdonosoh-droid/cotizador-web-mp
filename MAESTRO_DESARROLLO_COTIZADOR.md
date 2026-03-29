@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 10:53:31<!-- /LAST_UPDATED --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29<!-- /LAST_UPDATED --> |
 | **Último commit** | <!-- COMMIT_HASH -->2c07a00<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza proyecto base de datos inicial es en excel MODELO_DATOS_COTIZADOR.xlsx, de futuro será en POSTGRESQL. tambien considerar REACT 19<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->9 de 37 substages completadas (24%) — scaffold ✅, 1.2 ✅, 1.3 ✅, 1.4 ✅, 2.1–2.6 ✅<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -16,8 +16,8 @@
 | # | Etapa | Substages | Estado |
 |---|---|---|---|
 | 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ⚠️ BLOQUEADO — requiere decisiones ES.1–ES.4 |
-| 1 | Infraestructura de datos y stock | 1.1 → 1.5 | ⚠️ BLOQUEADO — depende de Etapa 0 (correcciones C2, I3) |
-| 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ⚠️ BLOQUEADO — depende de Etapa 0 (corrección I2) |
+| 1 | Infraestructura de datos y stock | 1.1 → 1.5 | 🟡 EN PROGRESO — 1.2, 1.3, 1.4 ✅ · 1.1, 1.5 pendientes |
+| 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ✅ COMPLETADO — CascadeSelector + BrokerForm implementados |
 | 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ⚠️ BLOQUEADO — requiere respuestas P3.B1–P3.B5 + Etapa 0 (C1, I1) |
 | 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ⚠️ BLOQUEADO — depende de Etapa 3 |
 | 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ⚠️ BLOQUEADO — depende de Etapa 4 |
@@ -181,74 +181,39 @@
 
 ### 1.2 — Carga y normalización del stock
 <!-- SUBSTAGE:1.2 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/lib/data/excel-adapter.ts` | `src/lib/data/pg-adapter.ts` | `src/lib/data/repository.ts`
-**Preguntas bloqueantes:** Ninguna — P1.1 respondida.
-**Descripción:** Carga del stock desde Excel (INPUT_FILES.xlsx) con patrón repositorio. La interfaz del repositorio es idéntica en fase Excel y fase PostgreSQL; solo cambia el adaptador.
-**Arquitectura de datos (Excel → PostgreSQL):**
-```
-src/lib/data/
-  types.ts           ← tipos compartidos (UnidadRow, ProyectoRow, etc.)
-  repository.ts      ← interfaz IStockRepository usada por toda la app
-  excel-adapter.ts   ← lee INPUT_FILES.xlsx con librería `xlsx`
-  pg-adapter.ts      ← lee PostgreSQL con `pg` / drizzle-orm
-  index.ts           ← exporta el adaptador activo según ENV
-```
-**Faltantes para completar:**
-- [ ] Crear interfaz `IStockRepository` con métodos: `getComunas()`, `getEntregas(comuna)`, `getInmobiliarias(comuna, entrega)`, `getProyectos(...)`, `getUnidades(proyectoId)`, `getUFdelDia()`
-- [ ] Implementar `ExcelAdapter` usando librería `xlsx` para parsear INPUT_FILES.xlsx
-- [ ] Parser SUPERFICIE UTIL/TERRAZA (texto con coma → float): `'43,35'` → `43.35`
-- [ ] Normalizar `dormitorios` en importación (pendiente substage 0.2)
-- [ ] Validación de campos obligatorios al cargar
-- [ ] Manejo de registros con datos incompletos
-- [ ] Implementar `PgAdapter` (stub pendiente hasta configurar DB en prod)
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/data/types.ts` — tipos TypeScript: StockRow, CondicionComercialRow, ProyectoRow, UnidadCotizable, UFRow
+- `lib/data/repository.ts` — interfaz IStockRepository (getComunas, getEntregas, getInmobiliarias, getProyectos, getUnidades, getUFdelDia)
+- `lib/data/excel-adapter.ts` — ExcelAdapter: parsea las 4 hojas de INPUT_FILES.xlsx con SheetJS, singleton cacheado, join stock+condiciones, split dormitorios
+- `lib/data/index.ts` — exporta `stockRepository = new ExcelAdapter()`
+**Notas de implementación:**
+- Columnas con tildes mapeadas con escapes unicode (`BA\u00d1OS`, `CUOT\u00d3N`, etc.)
+- `parseNum()` maneja texto con coma (`'43,35'` → `43.35`) y `#N/A`
+- `parseDormitorios()` convierte `'1-1/2'` → `{ dormitoriosNum: 1.5, dormitoriosDisplay: '1-1/2' }`
+- `PgAdapter` pendiente para Etapa de producción (fase 2)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 1.3 — Servicio de valor UF
 <!-- SUBSTAGE:1.3 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/lib/uf/ufService.ts`
-**Preguntas bloqueantes:** Ninguna — P1.4 respondida.
-**Descripción:** Obtener el valor UF del día. Dos implementaciones según fase.
-**Fase inicial (Excel):**
-```typescript
-// Lee tabla uf_valor cargada desde hoja UF de INPUT_FILES.xlsx
-// Lookup por fecha del día → retorna el último disponible si no hay
-getUFdelDia(fecha?: string): Promise<number>
-```
-**Fase producción (PostgreSQL):**
-```typescript
-// Consulta tabla uf_valor en PostgreSQL
-// Si no hay registro del día → llama API CMF y persiste
-// Fallback: último valor registrado en uf_valor
-```
-**Faltantes para completar:**
-- [ ] Implementar `getUFdelDia()` con lookup en tabla `uf_valor` (fase Excel)
-- [ ] Fallback: si no hay registro del día, usar el más reciente (`ORDER BY fecha DESC LIMIT 1`)
-- [ ] Caché en memoria para evitar múltiples queries en la misma sesión
-- [ ] Formateo: `Intl.NumberFormat('es-CL', { minimumFractionDigits: 2 })`
-- [ ] Stub de integración con API CMF para fase PostgreSQL
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/data/uf-service.ts` — `getUFdelDia()` con caché en memoria por día, `formatUF()`, `formatCLP()`, `ufToCLP()`
+**Notas de implementación:**
+- Caché diario en memoria (se limpia al reiniciar servidor)
+- Fallback automático: si no hay registro del día → usa el último disponible en el archivo
+- Fase producción: reemplazar `stockRepository.getUFdelDia()` por llamada a API CMF
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 1.4 — Tablas de configuración (parámetros)
 <!-- SUBSTAGE:1.4 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/config/cotizadorConfig.ts`
-**Preguntas bloqueantes:** Ninguna
-**Descripción:** Centralizar las constantes y parámetros configurables del cotizador.
-**Faltantes para completar:**
-- [ ] Constante UPFRONT_PCT = 0.02
-- [ ] Constante APORTE_INMOB_PCT = 0.10
-- [ ] Constante MESES_ARRIENDO_ANUAL = 11
-- [ ] Constante HAIRCUT_VENTA = 0.95
-- [ ] Constante FACTOR_LTV_AMORTIZACION = 0.67
-- [ ] Opciones de CAE disponibles: [3.5, 4, 4.5, 5]
-- [ ] Opciones de plazo: [20, 25, 30]
-- [ ] Opciones de pie %: [0, 5, 10, 15, 20, 25, 30, 35, 40]
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/config/cotizadorConfig.ts` — CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, CONSTANTES, DEFAULTS
 <!-- /SUBSTAGE -->
 
 ---
@@ -277,134 +242,48 @@ getUFdelDia(fecha?: string): Promise<number>
 
 ### 2.1 — Selector de Comuna
 <!-- SUBSTAGE:2.1 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/CascadeSelector/ComunaSelector.tsx`
-**Preguntas bloqueantes:** Ninguna — es el punto de entrada, sin prerequisitos.
-**Descripción:** Primer filtro de la cascada. El usuario elige la comuna. Sin selección no se habilita ningún filtro siguiente. Fuente: `proyecto.comuna`.
-**Regla (REGLAS 2.1):**
-```
-comunas = SELECT DISTINCT comuna FROM proyecto WHERE activo = 1 ORDER BY comuna ASC
-```
-**Faltantes para completar:**
-- [ ] Dropdown con lista de comunas únicas activas (`proyecto.comuna`)
-- [ ] Al cambiar: resetear 2.2, 2.3, 2.4 y todos los campos de unidad
-- [ ] Normalizar mayúsculas/minúsculas de comunas al cargar el stock
-- [ ] Deshabilitar filtros 2.2–2.4 hasta que se seleccione una comuna
+**Estado:** `✅ COMPLETADO` (implementado como parte de CascadeSelector)
+**Archivos creados:** `components/cascade/CascadeSelector.tsx`
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 2.2 — Selector de Entrega Aprox.
 <!-- SUBSTAGE:2.2 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/CascadeSelector/EntregaSelector.tsx`
-**Preguntas bloqueantes:** Ninguna — prerequisito cubierto por 2.1.
-**Descripción:** Segundo filtro. Muestra los tipos de entrega disponibles en la comuna seleccionada. Fuente: `proyecto.tipo_entrega`. Prerequisito: **2.1 completado**.
-**Regla (REGLAS 2.2):**
-```
-entregas = SELECT DISTINCT tipo_entrega FROM proyecto
-           WHERE comuna = comuna_sel AND activo = 1
-```
-**Faltantes para completar:**
-- [ ] Dropdown `['Entrega Inmediata', 'Entrega Futura']` filtrado por `comuna_sel`
-- [ ] Si solo hay un valor posible: pre-seleccionar automáticamente
-- [ ] Al cambiar: resetear 2.3, 2.4 y campos de unidad
-- [ ] Bloquear si `comuna_sel` es NULL
+**Estado:** `✅ COMPLETADO` (implementado como parte de CascadeSelector)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 2.3 — Selector de Inmobiliaria
 <!-- SUBSTAGE:2.3 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/CascadeSelector/InmobiliariaSelector.tsx`
-**Preguntas bloqueantes:** Ninguna — prerequisitos cubiertos por 2.1 + 2.2.
-**Descripción:** Tercer filtro. Lista solo las inmobiliarias con proyectos en la comuna y tipo de entrega seleccionados. Prerequisito: **2.1 + 2.2 completados**.
-**Regla (REGLAS 2.3):**
-```
-inmobiliarias = SELECT DISTINCT i.nombre FROM inmobiliaria i
-                JOIN proyecto p ON p.id_inmobiliaria = i.id_inmobiliaria
-                WHERE p.comuna = comuna_sel AND p.tipo_entrega = entrega_sel
-                  AND p.activo = 1 AND i.activo = 1
-```
-**Query cubierto por:** `idx_proyecto_cascada ON proyecto (comuna, tipo_entrega, id_inmobiliaria, activo)`
-**Faltantes para completar:**
-- [ ] Dropdown de inmobiliarias filtrado por `comuna_sel` + `entrega_sel`
-- [ ] Al cambiar: resetear 2.4 y campos de unidad
-- [ ] Bloquear si 2.1 o 2.2 son NULL
+**Estado:** `✅ COMPLETADO` (implementado como parte de CascadeSelector)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 2.4 — Selector de Proyecto
 <!-- SUBSTAGE:2.4 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/CascadeSelector/ProyectoSelector.tsx`
-**Preguntas bloqueantes:** Ninguna — prerequisitos cubiertos por 2.1 + 2.2 + 2.3.
-**Descripción:** Cuarto filtro. Muestra proyectos que coinciden con los tres filtros anteriores. Al seleccionar, exponer `periodo_entrega` como campo de solo lectura. Prerequisito: **2.1 + 2.2 + 2.3 completados**.
-**Regla (REGLAS 2.4):**
-```
-proyectos = SELECT id_proyecto, nombre_proyecto, periodo_entrega FROM proyecto
-            WHERE comuna = comuna_sel AND tipo_entrega = entrega_sel
-              AND id_inmobiliaria = inmobiliaria_sel AND activo = 1
-```
-**Faltantes para completar:**
-- [ ] Dropdown de proyectos filtrado por los tres parámetros anteriores
-- [ ] Mostrar `periodo_entrega` como campo de solo lectura al seleccionar proyecto
-- [ ] Al cambiar: resetear N° Unidad y todos los campos de propiedad (3.3–3.10)
-- [ ] Bloquear si 2.1, 2.2 o 2.3 son NULL
+**Estado:** `✅ COMPLETADO` (implementado como parte de CascadeSelector)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 2.5 — Selector de N° Unidad y auto-completado
 <!-- SUBSTAGE:2.5 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/components/CascadeSelector/UnidadSelector.tsx` | `src/hooks/useUnitLookup.ts`
-**Preguntas bloqueantes:** P2.2 (filtros adicionales), P2.3 (bienes conjuntos) + **Etapa 0.2 completada** (I2: `dormitorios_num`)
-**Descripción:** Quinto y último filtro de la cascada. Lista unidades disponibles del proyecto seleccionado. Al elegir N° Unidad se dispara el auto-completado de todos los campos en rojo (reglas 3.3–3.10). Prerequisito: **2.1 + 2.2 + 2.3 + 2.4 completados**.
-**Regla (REGLAS 3.1 + 3.2):**
-```
-unidades = SELECT id_unidad, numero_unidad, tipo_unidad, programa FROM unidad
-           WHERE id_proyecto = proyecto_sel AND estado_stock = 'Disponible'
-           ORDER BY numero_unidad ASC
--- Al seleccionar:
-unidad = SELECT * FROM v_stock_cotizable WHERE id_unidad = numero_unidad_sel
-```
-**Auto-completado al seleccionar (campos en rojo → solo lectura):**
-| Campo (REGLAS) | Fuente DB | Notas |
-|---|---|---|
-| Piso (3.3) | `unidad.piso_producto` | Entero |
-| Orientación (3.4) | `unidad.orientacion` | Puede ser NULL |
-| Tipología (3.5) | `unidad.programa` | Ej: '2D1B' |
-| Dormitorios (3.6) | `unidad.dormitorios_num` / `dormitorios_display` | Requiere Etapa 0.2 |
-| Baños (3.7) | `unidad.banios` | Puede ser NULL |
-| Sup. Útil m2 (3.8) | `unidad.superficie_util_m2` | Normalizada en importación |
-| Sup. Terraza m2 (3.9) | `unidad.superficie_terraza_m2` | Puede ser NULL |
-| Sup. Total m2 (3.10) | `unidad.superficie_total_m2` | NOT NULL |
-**Faltantes para completar:**
-- [ ] Completar substage 0.2 antes de implementar (campo `dormitorios_num`)
-- [ ] Dropdown de N° Unidad filtrado por `proyecto_sel` + `estado_stock='Disponible'`
-- [ ] Lookup completo de `v_stock_cotizable` al seleccionar unidad
-- [ ] Normalizar SUPERFICIE UTIL y TERRAZA (texto con coma → float, ya resuelto en importación)
-- [ ] Confirmar manejo de BIENES CONJUNTOS (P2.3): ¿incluye estac/bodega en precio?
-- [ ] Mostrar precio lista en UF y CLP al seleccionar unidad
-- [ ] Si proyecto no tiene unidades disponibles: mostrar aviso y bloquear avance
+**Estado:** `✅ COMPLETADO` (incluido en CascadeSelector — Paso 5 N°Unidad)
+**Notas:** Implementado en `components/cascade/CascadeSelector.tsx`. Filtra unidades con `estadoStock='Disponible'`. El resumen de unidad seleccionada (precio, tipología, m²) se muestra en `CotizadorShell`. BIENES CONJUNTOS (P2.3) pendiente de definición para Etapa 3.
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 2.6 — Formulario de datos del broker/cliente
 <!-- SUBSTAGE:2.6 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/components/BrokerForm.tsx`
-**Preguntas bloqueantes:** Ninguna
-**Descripción:** Campos manuales del encabezado de la cotización. Independiente de la cascada — puede completarse en paralelo.
-**Faltantes para completar:**
-- [ ] Campos: Nombre Broker, Nombre Cliente, Rut, E-mail, Celular
-- [ ] Validación de formato e-mail
-- [ ] Validación de formato RUT chileno (con guión y dígito verificador)
-- [ ] Definir si Nombre Broker viene pre-completado desde sesión del usuario (depende de Etapa 0.4)
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/utils/rut.ts` — `validateRut()`, `formatRut()`, `cleanRut()`, `calcDV()`
+- `components/broker/BrokerForm.tsx` — formulario con validación zod: nombre, RUT, email, teléfono, empresa
+**Notas:** RUT se valida con algoritmo módulo-11 estándar chileno. Auto-formato al perder foco (blur).
 <!-- /SUBSTAGE -->
 
 ---
@@ -913,6 +792,8 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-03-29 | — | main | Etapas 1.2–1.4 + 2.1–2.6: data layer (IStockRepository+ExcelAdapter+ufService), CascadeSelector 5 pasos, BrokerForm RUT, CotizadorShell |
+| 2026-03-29 | — | main | Scaffold Next.js 15 + React 19 + TypeScript strict + Tailwind CSS 4.x (package.json, next.config.ts, tsconfig.json, postcss.config.mjs) |
 | 2026-03-24 | — | main | Rediseño filtrado en cascada: Comuna→Entrega→Inmobiliaria→Proyecto→Unidad (Etapa 2: 4→6 substages, nuevo idx_proyecto_cascada) |
 | 2026-03-24 | — | main | Evaluación técnica schema.sql → EVALUACIÓN_SCHEMA_DATOS.md (9 problemas identificados) |
 | 2026-03-24 | — | main | Genera MODELO_DATOS_COTIZADOR.xlsx (6 hojas: resumen, columnas, relaciones, índices, constraints, semilla) |

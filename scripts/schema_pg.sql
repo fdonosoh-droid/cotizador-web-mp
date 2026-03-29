@@ -101,7 +101,8 @@ CREATE TABLE IF NOT EXISTS unidad (
   programa              TEXT            NOT NULL,     -- clave de JOIN con condicion_comercial
   piso_producto         INTEGER         NOT NULL,
   orientacion           TEXT            NULL,
-  dormitorios           TEXT            NULL,         -- raw: '1', '2', '1-1/2', 'BO', '#N/A'
+  dormitorios_num       INTEGER         NULL,         -- para filtros: 0, 1, 2, 3...
+  dormitorios_display   TEXT            NULL,         -- etiqueta UI: '1-1/2', 'BO', '#N/A'
   banios                INTEGER         NULL,
   superficie_terreno_m2 NUMERIC(10,2)   NOT NULL DEFAULT 0,
   superficie_util_m2    NUMERIC(10,2)   NULL,
@@ -329,7 +330,8 @@ SELECT
   u.programa,
   u.piso_producto,
   u.orientacion,
-  u.dormitorios,
+  u.dormitorios_num,
+  u.dormitorios_display,
   u.banios,
   u.superficie_terreno_m2,
   u.superficie_util_m2,
