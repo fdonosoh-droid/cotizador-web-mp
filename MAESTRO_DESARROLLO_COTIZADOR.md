@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-24 18:11:22<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->a1f3d92<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza MAESTRO DESARROLLO<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 10:53:31<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->2c07a00<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza proyecto base de datos inicial es en excel MODELO_DATOS_COTIZADOR.xlsx, de futuro será en POSTGRESQL. tambien considerar REACT 19<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
