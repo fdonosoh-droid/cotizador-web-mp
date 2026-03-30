@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-29 15:30:39<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->ae3c337<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Camino A — Salida rápida: PDF imprimible (alta prioridad de negocio)<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->d80d79c<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Sprint 3 Camino A completado: correlativo COT-2026-XXXX, PDF descargable, template HTML imprimible<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->27 de 37 substages completadas (73%) — Etapa 0 completa (ES.1-ES.4) + Camino B<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -15,14 +15,14 @@
 
 | # | Etapa | Substages | Estado |
 |---|---|---|---|
-| 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ⚠️ BLOQUEADO — requiere decisiones ES.1–ES.4 |
+| 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ✅ COMPLETADO — ES.1-ES.4 implementados en schema.sql y schema_pg.sql |
 | 1 | Infraestructura de datos y stock | 1.1 → 1.5 | 🟡 EN PROGRESO — 1.2, 1.3, 1.4 ✅ · 1.1, 1.5 pendientes |
 | 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ✅ COMPLETADO — CascadeSelector + BrokerForm implementados |
 | 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ✅ COMPLETADO — motor de cálculo implementado (3.1–3.5 ✅, 3.6 ✅ parcial) |
-| 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ⚠️ BLOQUEADO — depende de Etapa 3 |
-| 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ⚠️ BLOQUEADO — depende de Etapa 4 |
-| 6 | Evaluación de inversión a 5 años | 6.1 → 6.4 | ⚠️ BLOQUEADO — depende de Etapa 5 |
-| 7 | Output, PDF y cotización final | 7.1 → 7.4 | ⚠️ BLOQUEADO — depende de Etapa 0 (I4) + P6.1–P6.4 |
+| 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ✅ COMPLETADO — implementado en cotizador.ts (casos estándar) · P3.C1–C3 pendientes (modalidades especiales) |
+| 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ✅ COMPLETADO — PMT 3 escenarios CAE, flujo mensual en cotizador.ts · amortización detallada pendiente |
+| 6 | Evaluación de inversión a 5 años | 6.1 → 6.4 | ✅ COMPLETADO — plusvalía, ROI, cap rate en cotizador.ts · factor LTV 0.67 pendiente confirmación |
+| 7 | Output, PDF y cotización final | 7.1 → 7.4 | 🟡 EN PROGRESO — 7.1 ✅ (HTML imprimible) · 7.2 ✅ (PDF descargable) · 7.3 🔴 email pendiente · 7.4 ⚠️ historial bloqueado |
 
 ---
 
@@ -341,95 +341,58 @@
 
 ### 4.1 — Pie total y porcentaje de pie
 <!-- SUBSTAGE:4.1 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/pie.ts`
-**Preguntas bloqueantes:** P3.C1 (afecta el % de pie en proyectos En Construcción)
-**Regla actual:**
-```
-pie_total_uf = valor_venta_uf * pie_pct
-pie_pct default = 10%  (configurable: 0%–40% de a 5%)
-```
-**Faltantes para completar:**
-- [ ] ¿Cuándo aplica PIE PERIODO CONSTRUCCION vs pie estándar? (P3.C1)
-- [ ] Implementar selector de porcentaje de pie
-- [ ] Validar que pie_total < valor_venta
+**Estado:** `✅ COMPLETADO` (caso estándar implementado en `lib/calculators/cotizador.ts`)
+**Implementado:**
+- `pieTotalUF = valorVentaUF * piePct` [E40]
+- Selector de pie% en UI (5%–40% de a 5%) en `PanelCotizacion.tsx`
+- P3.C1 (PIE PERÍODO CONSTRUCCIÓN) pendiente para modalidad especial
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 4.2 — Reserva
 <!-- SUBSTAGE:4.2 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** (dentro de `src/calculators/pie.ts`)
-**Preguntas bloqueantes:** P4.1
-**Regla actual:**
-```
-reserva_clp = stock[unidad].reserva  // ej: $100.000 CLP
-reserva_uf  = reserva_clp / valor_uf
-reserva_pct = reserva_uf / valor_venta_uf
-```
-**Faltantes para completar:**
-- [ ] Confirmar si la reserva puede estar en UF (P4.1)
-- [ ] Confirmar si $100.000 CLP es fijo o varía por proyecto/inmobiliaria (P4.1)
+**Estado:** `✅ COMPLETADO` (implementado; P4.1 respuesta pendiente pero el motor funciona con el valor del stock)
+**Implementado:**
+- `reservaUF = reservaCLP / valorUF` [E41]
+- `reservaCLP` se lee de `unidad.reserva` del stock
+- P4.1: si la reserva puede estar en UF, se requiere ajuste menor
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 4.3 — Upfront a la Promesa
 <!-- SUBSTAGE:4.3 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** (dentro de `src/calculators/pie.ts`)
-**Preguntas bloqueantes:** P4.2, P4.4
-**Regla actual:**
-```
-UPFRONT_PCT = 0.02  // 2% fijo
-upfront_uf  = round(valor_venta_uf * UPFRONT_PCT, 2)
-upfront_clp = round(upfront_uf * valor_uf, 0)
-```
-**Faltantes para completar:**
-- [ ] Confirmar si el 2% es fijo para todas las inmobiliarias (P4.2)
-- [ ] Confirmar relación entre Upfront y cuotas del pie (P4.4)
+**Estado:** `✅ COMPLETADO` (implementado; confirmación P4.2 pendiente)
+**Implementado:**
+- `upfrontUF = round(valorVentaUF * 0.02, 2)` [E42] — 2% fijo (constante en `cotizadorConfig.ts`)
+- P4.2: si varía por inmobiliaria, se parametriza desde `CondicionComercialRow`
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 4.4 — Saldo pie, cuotas y plan de pago
 <!-- SUBSTAGE:4.4 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/planPago.ts`
-**Preguntas bloqueantes:** P3.D1, P3.D2, P4.3, P4.4
-**Regla actual (MAESTRA — 60 cuotas):**
-```
-saldo_pie_uf = pie_total_uf - reserva_uf - upfront_uf
-n_cuotas     = stock[unidad].cuotas_pie  // default 60
-cuota_pie_uf = saldo_pie_uf / n_cuotas
-```
-**Regla pendiente (INGEVEC — 1 cuota):**
-```
-// CUOTAS PIE = 1 → pago único
-// ¿Cuándo? ¿A la promesa, a la entrega? → PENDIENTE P3.D1
-```
-**Faltantes para completar:**
-- [ ] Lógica para cuota única (P3.D1)
-- [ ] Lógica para CUOTÓN (P3.C2)
-- [ ] Hitos adicionales de pago (P4.3)
-- [ ] Confirmar si cuotas son iguales o pueden variar (P3.D2)
+**Estado:** `✅ COMPLETADO` (caso estándar implementado; modalidades especiales pendientes)
+**Implementado:**
+- `saldoPieUF = pieTotalUF - reservaUF - upfrontUF` [E43]
+- `cuotasPieN = 60` · `valorCuotaPieUF = saldoPieUF / 60` [E58]
+- Para INGEVEC (cuotas=1): el motor calcula 1 cuota → correcto aritméticamente
+**Pendiente:**
+- P3.D1: ¿cuándo se paga la cuota única de INGEVEC?
+- P3.C2: CUOTÓN (pago especial 2% INGEVEC)
+- P4.3: hitos adicionales de pago
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 4.5 — Crédito hipotecario sobre precio de venta
 <!-- SUBSTAGE:4.5 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** (dentro de `src/calculators/planPago.ts`)
-**Preguntas bloqueantes:** P5.3
-**Regla actual:**
-```
-ch_plan_uf  = valor_venta_uf - pie_total_uf
-ch_plan_clp = ch_plan_uf * valor_uf   // ← input del PMT
-```
-**Faltantes para completar:**
-- [ ] Confirmar si la base del PMT es ch_plan_clp o ch_ajustado_clp (P5.3)
+**Estado:** `✅ COMPLETADO` (implementado; P5.3 pendiente pero motor funciona)
+**Implementado:**
+- `creditoHipFinalUF = valorVentaUF - piePagadoUF` [E60]
+- Base del PMT = `creditoHipFinalUF * valorUF` (CLP)
+- P5.3: si la base es ch_ajustado en lugar de ch_final, se ajusta el input del PMT
 <!-- /SUBSTAGE -->
 
 ---
@@ -443,50 +406,35 @@ ch_plan_clp = ch_plan_uf * valor_uf   // ← input del PMT
 
 ### 5.1 — Cálculo de cuota hipotecaria (PMT) — 3 escenarios
 <!-- SUBSTAGE:5.1 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/calculators/creditoHipotecario.ts`
-**Preguntas bloqueantes:** P5.1, P5.2, P5.3
-**Regla actual:**
-```
-cuota_clp = ch_plan_clp * (r / (1 - (1+r)^-n))
-donde r = CAE/12,  n = plazo_anios * 12
-Escenarios: CAE [4%, 4.5%, 5%], Plazo [30 años]
-```
-**Faltantes para completar:**
-- [ ] Confirmar si CAE y plazo son fijos o editables (P5.1, P5.2)
-- [ ] Confirmar base: ch_plan_clp vs ch_ajustado_clp (P5.3)
-- [ ] Convertir cuota a UF para mostrar
-- [ ] Manejar edge case CAE = 0%
+**Estado:** `✅ COMPLETADO` (implementado en `lib/calculators/cotizador.ts`)
+**Implementado:**
+- `pmt(tasa, n, pv)` JavaScript equivalente a Excel PMT
+- 3 escenarios CAE: editables en UI (selector), default [4%, 4.5%, 5%]
+- Plazo: editable en UI (selector), default 30 años
+- Cuota en CLP y UF para cada escenario
+- Edge case CAE=0: `cuota = pv / n` (división lineal)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 5.2 — Flujo mensual neto (arriendo vs cuota)
 <!-- SUBSTAGE:5.2 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/calculators/flujo.ts`
-**Preguntas bloqueantes:** Ninguna (depende solo de 5.1)
-**Regla actual:**
-```
-flujo_clp = arriendo_clp - cuota_ch_clp   // por cada escenario
-// arriendo_clp: input manual del broker (defaults: $380k, $390k, $400k)
-```
-**Faltantes para completar:**
-- [ ] UI para ingresar 3 valores de arriendo estimado
-- [ ] Mostrar flujo positivo/negativo con indicador visual
+**Estado:** `✅ COMPLETADO` (implementado en `lib/calculators/cotizador.ts` + `PanelCotizacion.tsx`)
+**Implementado:**
+- `flujoMensual = arriendoCLP - cuotaCHP_clp` por cada escenario CAE
+- `flujoAcumulado = flujoMensual * 11 * 5` (11 meses/año × 5 años)
+- UI: campo de arriendo editable con formato CLP, 3 valores por escenario
+- Indicador visual: verde (positivo) / rojo (negativo) en tabla de escenarios
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 5.3 — Tabla de amortización hipotecaria
 <!-- SUBSTAGE:5.3 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/calculators/amortizacion.ts`
-**Preguntas bloqueantes:** Ninguna (depende de 5.1)
-**Descripción:** Tabla mes a mes de capital/interés pagado. Base para el cálculo de 60 meses amortizados en Etapa 6.
+**Estado:** `🔴 PENDIENTE` (cálculo de saldo a 60 meses implementado en 6.2 via fórmula cerrada; tabla completa no implementada)
 **Faltantes para completar:**
-- [ ] Calcular amortización mes a mes para los 3 escenarios
-- [ ] Función que retorna saldo después de N cuotas (usada en 6.2)
+- [ ] Calcular y mostrar tabla mes a mes de capital/interés pagado (no urgente)
+- [ ] Fórmula cerrada del saldo a N meses ya existe en 6.2
 <!-- /SUBSTAGE -->
 
 ---
@@ -500,82 +448,48 @@ flujo_clp = arriendo_clp - cuota_ch_clp   // por cada escenario
 
 ### 6.1 — Flujo acumulado y plusvalía
 <!-- SUBSTAGE:6.1 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/calculators/evaluacion5anios.ts`
-**Preguntas bloqueantes:** Ninguna
-**Regla actual:**
-```
-MESES_ARRIENDO_ANUAL = 11   // 1 mes vacío por año
-flujo_acum = flujo_clp * 11 * 5
-
-HAIRCUT_VENTA = 0.95
-plusvalia_acum = (1 + plusvalia_anual_pct)^5 - 1
-precio_venta_5 = (1 + plusvalia_acum) * valor_venta_clp * HAIRCUT_VENTA
-```
-**Faltantes para completar:**
-- [ ] UI para ingresar plusvalía anual estimada (default 2%)
-- [ ] Cálculo idéntico para los 3 escenarios (plusvalía no depende de CAE)
+**Estado:** `✅ COMPLETADO` (implementado en `lib/calculators/cotizador.ts` + UI)
+**Implementado:**
+- `flujoAcumulado = flujoMensual * 11 * 5` por escenario [E75]
+- `plusvaliaAcumulada = (1 + plusvaliaAnualPct)^5 - 1`
+- `precioVentaAnio5CLP = valorVentaCLP * (1 + plusvaliaAcumulada) * 0.95` [E82]
+- UI: campo plusvalía% editable (default 2%), se aplica igual en los 3 escenarios
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 6.2 — CH amortizado en 60 meses (factor LTV 0.67)
 <!-- SUBSTAGE:6.2 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** (dentro de `src/calculators/evaluacion5anios.ts`)
-**Preguntas bloqueantes:** Ninguna
-**Regla actual:**
-```
-FACTOR_LTV = 0.67
-n = min(60, plazo_anios * 12)
-Si CAE > 0:
-  saldo = ch_plan_clp*(1+r)^n - cuota*((1+r)^n - 1)/r
-  amortizado = (ch_plan_clp - saldo) * FACTOR_LTV
-Si CAE = 0:
-  amortizado = ch_plan_clp * n / (plazo_anios*12) * FACTOR_LTV
-```
-**Faltantes para completar:**
-- [ ] Implementar para los 3 escenarios
-- [ ] Documentar el origen del factor 0.67 con el equipo
+**Estado:** `✅ COMPLETADO` (implementado en `lib/calculators/cotizador.ts`)
+**Implementado:**
+- Fórmula cerrada de saldo a 60 meses para los 3 escenarios
+- `amortizado = (ch_plan_clp - saldo) * 0.67` (FACTOR_LTV constante)
+- Edge case CAE=0: amortización lineal
+**Pendiente:**
+- [ ] Confirmar origen del factor 0.67 con el equipo (posiblemente restricción legal LTV máximo banco)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 6.3 — Cap Rate
 <!-- SUBSTAGE:6.3 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** (dentro de `src/calculators/evaluacion5anios.ts`)
-**Preguntas bloqueantes:** Ninguna
-**Regla actual:**
-```
-cap_rate = (arriendo_clp * 11 / valor_uf) / tasacion_uf
-// = arriendo anual en UF / tasación en UF
-```
-**Faltantes para completar:**
-- [ ] Implementar para los 3 escenarios (distinto arriendo por escenario)
-- [ ] Mostrar como % con 2 decimales
+**Estado:** `✅ COMPLETADO` (implementado en `lib/calculators/cotizador.ts`)
+**Implementado:**
+- `capRate = (arriendoCLP * 11 / valorUF) / tasacionUF` [E86]
+- Calculado para los 3 escenarios (cada uno con su arriendo)
+- Mostrado como % con 2 decimales en CotizacionTemplate y CotizacionPDF
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 6.4 — ROI a 5 años y ROI anual compuesto
 <!-- SUBSTAGE:6.4 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** (dentro de `src/calculators/evaluacion5anios.ts`)
-**Preguntas bloqueantes:** P3.B1 (afecta base del ROI: tasacion vs ch_ajustado)
-**Regla actual:**
-```
-// Solo escenario 1 (CAE 4%)
-Si bono_pie_pct == 0:
-    roi_5a = (precio_venta_5 - tasacion_clp) / tasacion_clp
-Sino:
-    roi_5a = (precio_venta_5 - ch_ajustado_clp) / ch_ajustado_clp
-
-roi_anual = (1 + roi_5a)^(1/5) - 1
-```
-**Faltantes para completar:**
-- [ ] Confirmar base del ROI con respuesta P3.B1
-- [ ] Mostrar como % con 2 decimales
+**Estado:** `✅ COMPLETADO` (implementado en `lib/calculators/cotizador.ts`)
+**Implementado (P3.B1 ✅):**
+- `Si bonoPie > 0: base = creditoHipFinalCLP; Si no: base = tasacionCLP`
+- `roi5a = (precioVentaAnio5CLP - base + flujoAcumulado + amortizado) / base` [E88]
+- `roiAnual = (1 + roi5a)^(1/5) - 1`
+- Mostrado como % con 2 decimales
 <!-- /SUBSTAGE -->
 
 ---
@@ -589,28 +503,25 @@ roi_anual = (1 + roi_5a)^(1/5) - 1
 
 ### 7.1 — Diseño del documento de cotización
 <!-- SUBSTAGE:7.1 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/templates/cotizacion.tsx` | `src/styles/cotizacion.css`
-**Preguntas bloqueantes:** P6.1, P6.2
-**Faltantes para completar:**
-- [ ] Confirmar formato (PDF / pantalla / email) — P6.1
-- [ ] Definir si muestra 1 o 3 escenarios CAE — P6.2
-- [ ] Incluir disclaimer legal (texto fijo, obligatorio)
-- [ ] Definir logo y branding (VIVEPROP)
-- [ ] Diseño de secciones: encabezado, características, valores, plan, crédito, flujo, ROI
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `components/cotizacion/CotizacionTemplate.tsx` — documento HTML imprimible con @media print
+  - 7 secciones: corredor, proyecto, características, precios, plan de pie, crédito hipotecario, 3 escenarios CAE, evaluación 5 años, disclaimer
+  - `#print-cotizacion` wrapper + `app/globals.css` @media print (A4 portrait, 15mm/12mm márgenes)
+**Notas:** Muestra 3 escenarios CAE (P6.2 ✅ implícito). Disclaimer legal incluido. Branding VIVEPROP pendiente (logo).
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 7.2 — Generación de PDF
 <!-- SUBSTAGE:7.2 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/services/pdfService.ts`
-**Preguntas bloqueantes:** P6.1
-**Faltantes para completar:**
-- [ ] Confirmar si es PDF (P6.1)
-- [ ] Elegir librería: react-pdf, puppeteer, jsPDF
-- [ ] Incluir fecha y número de cotización en el PDF
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `components/cotizacion/CotizacionPDF.tsx` — documento @react-pdf/renderer (StyleSheet, Document/Page/View/Text)
+- `app/api/cotizacion/pdf/route.ts` — POST /api/cotizacion/pdf → renderToBuffer → descarga .pdf
+- `lib/utils/correlativo.ts` — `siguienteNumeroCotizacion()`, formato COT-2026-0001, resets anual
+- `app/actions/stock.ts` — `getNumeroCotizacion()` server action
+**Notas:** Número de cotización se genera al hacer "Ver Documento". Correlativo basado en archivo `.cotizaciones-seq.json` (ignorado en git). En prod migrar a tabla `cotizacion` en PostgreSQL.
 <!-- /SUBSTAGE -->
 
 ---
@@ -704,6 +615,10 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-03-30 | — | main | Etapa 0 completa: schema.sql y schema_pg.sql v2 — tabla programa (ES.1), cotizacion_escenario (ES.2), modalidad_pago (ES.3), entidad broker (ES.4), snapshots C1, I3, I4 |
+| 2026-03-30 | — | main | Camino B completo: CUOTÓN (P3.C2), PIE PERÍODO CONSTRUCCIÓN (P3.C1), PIE CRÉDITO DIRECTO (P3.C3) — motor + UI + template HTML + PDF |
+| 2026-03-30 | d80d79c | main | MAESTRO actualizado: progreso real 22/37 (59%). Etapas 4-6 marcadas ✅ (implementadas en cotizador.ts). 7.1 y 7.2 ✅ Camino A completo |
+| 2026-03-29 | ae3c337 | main | Camino A completado: CotizacionTemplate HTML + @media print, CotizacionPDF @react-pdf/renderer, correlativo COT-2026-XXXX, POST /api/cotizacion/pdf |
 | 2026-03-29 | — | main | Etapa 3 completa: motor calcularCotizacion (fórmulas Excel verificadas), PanelCotizacion 3 escenarios CAE, getBienesConjuntos, P3.B1/B5/A1/P2.3 respondidas |
 | 2026-03-29 | — | main | Etapas 1.2–1.4 + 2.1–2.6: data layer (IStockRepository+ExcelAdapter+ufService), CascadeSelector 5 pasos, BrokerForm RUT, CotizadorShell |
 | 2026-03-29 | — | main | Scaffold Next.js 15 + React 19 + TypeScript strict + Tailwind CSS 4.x (package.json, next.config.ts, tsconfig.json, postcss.config.mjs) |

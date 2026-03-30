@@ -58,6 +58,10 @@ const s = StyleSheet.create({
   footerTxt:   { fontSize: 6, color: GRIS, lineHeight: 1.4 },
   // bienes conjuntos warning
   bcWarn:      { fontSize: 6.5, color: '#c2410c', marginTop: 3, fontFamily: 'Helvetica-Bold' },
+  // modalidades especiales
+  tRowAmber:   { flexDirection: 'row', padding: '2.5 4', backgroundColor: '#fffbeb' },
+  amber:       { color: '#92400e' },
+  warnTxt:     { fontSize: 6.5, color: '#92400e', marginTop: 3 },
 })
 
 // ── Componente principal ──────────────────────────────────
@@ -179,7 +183,45 @@ export function CotizacionPDF({
           <TR       cols={['Upfront a la Promesa (2%)', `${formatUF(r.upfrontUF)} UF`, pct(r.upfrontUF/r.valorVentaUF), formatCLP(r.upfrontUF * uf)]} widths={['50%','17%','13%','20%']} />
           <TR shade cols={[`Saldo Pie — ${r.cuotasPieN} cuotas`, `${formatUF(r.saldoPieUF)} UF`, pct(r.saldoPieUF/r.valorVentaUF), formatCLP(r.saldoPieCLP)]} widths={['50%','17%','13%','20%']} />
           <TR highlight bold cols={['Valor cuota pie / mes', `${formatUF(r.valorCuotaPieUF)} UF`, '', formatCLP(r.valorCuotaPieCLP)]} widths={['50%','17%','13%','20%']} />
+          {r.cuotonUF > 0 && (
+            <TRAmber bold cols={[
+              `Cuotón — pago único (${(unidad.cuoton*100).toFixed(0)}%)`,
+              `${formatUF(r.cuotonUF)} UF`, pct(unidad.cuoton), formatCLP(r.cuotonCLP),
+            ]} widths={['50%','17%','13%','20%']} />
+          )}
+          {r.piePeriodoConstruccionUF > 0 && (
+            <TRAmber bold cols={[
+              `Pie Período Construcción — cuotas decrecientes (${(unidad.piePeriodoConstruccion*100).toFixed(0)}%)`,
+              `${formatUF(r.piePeriodoConstruccionUF)} UF`, pct(unidad.piePeriodoConstruccion), formatCLP(r.piePeriodoConstruccionCLP),
+            ]} widths={['50%','17%','13%','20%']} />
+          )}
+          {r.totalPieInmobUF !== r.pieTotalUF && (
+            <TR bold shade cols={[
+              'Total Pie a Inmobiliaria',
+              `${formatUF(r.totalPieInmobUF)} UF`, pct(r.totalPieInmobUF/r.valorVentaUF), formatCLP(r.totalPieInmobUF * uf),
+            ]} widths={['50%','17%','13%','20%']} />
+          )}
+          {r.piePeriodoConstruccionUF > 0 && (
+            <Text style={s.warnTxt}>
+              ⚠ Pie Período Construcción: las cuotas disminuyen mes a mes conforme avanza la obra.
+            </Text>
+          )}
         </View>
+
+        {/* CRÉDITO DIRECTO INMOBILIARIA (P3.C3) */}
+        {r.pieCreditoDirectoUF > 0 && (
+          <View style={s.section}>
+            <Text style={s.sTitle}>Crédito Directo Inmobiliaria ({(unidad.pieCreditoDirecto*100).toFixed(0)}%)</Text>
+            <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
+            <TRAmber bold cols={[
+              'Monto financiado por inmobiliaria',
+              `${formatUF(r.pieCreditoDirectoUF)} UF`, pct(unidad.pieCreditoDirecto), formatCLP(r.pieCreditoDirectoCLP),
+            ]} widths={['50%','17%','13%','20%']} />
+            <Text style={s.warnTxt}>
+              ⚠ Crédito Directo: plazo y tasa de interés se acuerdan directamente con la inmobiliaria.
+            </Text>
+          </View>
+        )}
 
         {/* CRÉDITO HIPOTECARIO */}
         <View style={s.section}>
@@ -270,6 +312,24 @@ function TR({ cols, widths, bold, shade, highlight, redLast }: {
           bold ? s.tCellBold : s.tCell,
           { width: widths[i], textAlign: isRight ? 'right' : 'left' },
           isRed ? s.red : {},
+        ] as any
+        return <Text key={i} style={style}>{c}</Text>
+      })}
+    </View>
+  )
+}
+
+/** Fila con fondo ámbar — para modalidades especiales (cuotón, pie construcción, crédito directo) */
+function TRAmber({ cols, widths, bold }: {
+  cols: string[]; widths: string[]; bold?: boolean
+}) {
+  return (
+    <View style={s.tRowAmber}>
+      {cols.map((c, i) => {
+        const style = [
+          bold ? s.tCellBold : s.tCell,
+          s.amber,
+          { width: widths[i], textAlign: i > 0 ? 'right' : 'left' },
         ] as any
         return <Text key={i} style={style}>{c}</Text>
       })}

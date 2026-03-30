@@ -92,17 +92,20 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
       ])
 
       const input: InputCotizacion = {
-        precioListaDepto:   unidad.precioLista,
-        descuentoPct:       unidad.descuento,
-        bonoPiePct:         unidad.bonoPie,
-        reservaCLP:         unidad.reserva,
-        preciosConjuntos:   conjuntos.map((c) => c.precioLista),
+        precioListaDepto:          unidad.precioLista,
+        descuentoPct:              unidad.descuento,
+        bonoPiePct:                unidad.bonoPie,
+        reservaCLP:                unidad.reserva,
+        preciosConjuntos:          conjuntos.map((c) => c.precioLista),
         piePct,
-        plazoAnios:         plazo,
+        plazoAnios:                plazo,
         tasasCAE,
         valorUF,
-        arriendoMensualCLP: arriendoCLP,
-        plusvaliaAnual:     plusvalia / 100,
+        cuotonPct:                 unidad.cuoton,
+        piePeriodoConstruccionPct: unidad.piePeriodoConstruccion,
+        pieCreditoDirectoPct:      unidad.pieCreditoDirecto,
+        arriendoMensualCLP:        arriendoCLP,
+        plusvaliaAnual:            plusvalia / 100,
       }
       setResultado(calcularCotizacion(input))
       setArriendoCLPCalc(arriendoCLP)
@@ -296,7 +299,24 @@ function ResultadoPanel({ r }: { r: ResultadoCotizacion }) {
         <Row label="Upfront a la Promesa" uf={r.upfrontUF} />
         <Row label={`Saldo Pie (${r.cuotasPieN} cuotas)`} uf={r.saldoPieUF} clp={r.saldoPieCLP} />
         <Row label="Valor cuota pie/mes"  uf={r.valorCuotaPieUF} clp={r.valorCuotaPieCLP} />
+        {r.cuotonUF > 0 && (
+          <Row label="Cuotón (pago único a inmobiliaria)" uf={r.cuotonUF} clp={r.cuotonCLP} highlight />
+        )}
+        {r.piePeriodoConstruccionUF > 0 && (
+          <Row label="Pie Período Construcción (cuotas decrecientes)" uf={r.piePeriodoConstruccionUF} clp={r.piePeriodoConstruccionCLP} highlight />
+        )}
+        {r.totalPieInmobUF !== r.pieTotalUF && (
+          <Row label="Total pie a inmobiliaria" uf={r.totalPieInmobUF} bold />
+        )}
       </Section>
+
+      {/* Crédito Directo Inmobiliaria (P3.C3) */}
+      {r.pieCreditoDirectoUF > 0 && (
+        <Section title="Crédito Directo Inmobiliaria">
+          <Row label="Monto financiado por inmobiliaria" uf={r.pieCreditoDirectoUF} clp={r.pieCreditoDirectoCLP} bold />
+          <p className="text-xs text-amber-700 mt-1">Condiciones (plazo/interés) según acuerdo con la inmobiliaria</p>
+        </Section>
+      )}
 
       {/* Tasación / Bono Pie */}
       <Section title="Crédito Hipotecario">
@@ -360,16 +380,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Row({
-  label, uf, clp, pct, negative = false, bold = false,
+  label, uf, clp, pct, negative = false, bold = false, highlight = false,
 }: {
   label: string
   uf?:  number
   clp?: number
   pct?: number
-  negative?: boolean
-  bold?: boolean
+  negative?:  boolean
+  bold?:      boolean
+  highlight?: boolean  // fila especial (cuotón, pie construcción)
 }) {
-  const cls = `flex justify-between text-sm ${bold ? 'font-semibold text-gray-900' : 'text-gray-700'}`
+  const cls = `flex justify-between text-sm ${
+    bold      ? 'font-semibold text-gray-900' :
+    highlight ? 'font-medium text-amber-800'  :
+    'text-gray-700'
+  }`
   let value = ''
   if (pct !== undefined) value = `${pct.toFixed(2)}%`
   else if (clp !== undefined) value = formatCLP(negative ? -clp : clp)

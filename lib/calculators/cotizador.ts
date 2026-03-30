@@ -24,6 +24,11 @@ export interface InputCotizacion {
   tasasCAE:           [number, number, number]  // ej. [0.04, 0.045, 0.05]
   valorUF:            number   // CLP por 1 UF
 
+  /** Modalidades especiales (P3.C1–P3.C3) */
+  cuotonPct:                 number   // decimal — pago único adicional a la inmobiliaria (P3.C2)
+  piePeriodoConstruccionPct: number   // decimal — pie adicional en cuotas decrecientes (P3.C1)
+  pieCreditoDirectoPct:      number   // decimal — % financiado directamente por inmobiliaria (P3.C3)
+
   /** Evaluación de inversión */
   arriendoMensualCLP: number   // estimado del broker
   plusvaliaAnual:     number   // decimal, default 0.02
@@ -66,13 +71,26 @@ export interface ResultadoCotizacion {
   valorCuotaPieUF:     number  // saldoPie / cuotasPieN     [E58]
   valorCuotaPieCLP:    number
 
+  // ── C2. Modalidades especiales (P3.C1–P3.C3) ─────────────
+  /** CUOTÓN: pago único adicional a la inmobiliaria en promesa/escritura (P3.C2) */
+  cuotonUF:                   number
+  cuotonCLP:                  number
+  /** PIE PERÍODO CONSTRUCCIÓN: pie adicional en cuotas decrecientes durante construcción (P3.C1) */
+  piePeriodoConstruccionUF:   number
+  piePeriodoConstruccionCLP:  number
+  /** PIE CRÉDITO DIRECTO: % del valor financiado directamente por la inmobiliaria (P3.C3) */
+  pieCreditoDirectoUF:        number
+  pieCreditoDirectoCLP:       number
+  /** Pie total pagado a la inmobiliaria (incluye extras) — base para creditoHipFinal */
+  totalPieInmobUF:            number
+
   // ── D. Crédito hipotecario & tasación ────────────────────
   creditoHipBaseUF:    number  // valorVenta*(1-pie)        [E44]
   chAjustadoPct:       number  // 1-pie-bono                [F49]
   tasacionUF:          number  // creditoHipBase/chAjustado [E51]
   tasacionCLP:         number
   saldoAporteInmobUF:  number  // tasacion-pie-creditoBase  [E48]
-  creditoHipFinalUF:   number  // valorVenta - pieTotalUF   [E60]
+  creditoHipFinalUF:   number  // valorVenta - totalPieInmob [E60]
   creditoHipFinalCLP:  number
 
   // ── E. Escenarios CAE (3 columnas) ───────────────────────
@@ -105,6 +123,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const {
     precioListaDepto, descuentoPct, bonoPiePct, reservaCLP,
     preciosConjuntos, piePct, plazoAnios, tasasCAE, valorUF,
+    cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct,
     arriendoMensualCLP, plusvaliaAnual,
   } = input
 
@@ -125,10 +144,25 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const saldoPieUF       = pieTotalUF - reservaUF - upfrontUF          // E43
   const saldoPieCLP      = saldoPieUF * valorUF
 
-  // Cuotas del pie: 60 meses (plan de pago fijo)
+  // Cuotas del pie: según condición comercial (default 60)
   const cuotasPieN       = 60                                          // D58
-  const valorCuotaPieUF  = saldoPieUF / cuotasPieN                    // E58
+  const valorCuotaPieUF  = cuotasPieN > 0 ? saldoPieUF / cuotasPieN : saldoPieUF  // E58
   const valorCuotaPieCLP = valorCuotaPieUF * valorUF
+
+  // ── C2. Modalidades especiales de pie (P3.C1–P3.C3) ──────────────────
+  // CUOTÓN (P3.C2): pago único adicional a la inmobiliaria en promesa/escritura
+  const cuotonUF                  = Math.round(valorVentaUF * cuotonPct * 100) / 100
+  const cuotonCLP                 = Math.round(cuotonUF * valorUF)
+  // PIE PERÍODO CONSTRUCCIÓN (P3.C1): pie adicional en cuotas decrecientes; se suma al estándar
+  const piePeriodoConstruccionUF  = Math.round(valorVentaUF * piePeriodoConstruccionPct * 100) / 100
+  const piePeriodoConstruccionCLP = Math.round(piePeriodoConstruccionUF * valorUF)
+  // PIE CRÉDITO DIRECTO (P3.C3): % que financia la inmobiliaria directamente al comprador
+  const pieCreditoDirectoUF       = Math.round(valorVentaUF * pieCreditoDirectoPct * 100) / 100
+  const pieCreditoDirectoCLP      = Math.round(pieCreditoDirectoUF * valorUF)
+
+  // Total pie pagado a la inmobiliaria: estándar + cuotón + construcción
+  // (crédito directo es financiamiento separado, no reduce el crédito hipotecario bancario)
+  const totalPieInmobUF = pieTotalUF + cuotonUF + piePeriodoConstruccionUF
 
   // ── D. Crédito & tasación (bono pie — P3.B1) ─────────────────────────
   const creditoHipBaseUF = valorVentaUF * (1 - piePct)                // E44
@@ -139,8 +173,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     : valorVentaUF  // fallback: sin bono
   const tasacionCLP      = tasacionUF * valorUF
   const saldoAporteInmobUF = tasacionUF - pieTotalUF - creditoHipBaseUF // E48
-  const piePagadoUF      = reservaUF + upfrontUF + saldoPieUF         // E50 = pieTotalUF
-  const creditoHipFinalUF  = valorVentaUF - piePagadoUF               // E60
+  const creditoHipFinalUF  = valorVentaUF - totalPieInmobUF            // E60 ajustado
   const creditoHipFinalCLP = creditoHipFinalUF * valorUF
 
   // ── E. Evaluación común ───────────────────────────────────────────────
@@ -182,30 +215,37 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     precioListaDepto,
     precioListaOtros,
     precioListaTotal,
-    precioDescDepto:     Math.round(precioDescDepto * 100) / 100,
+    precioDescDepto:              Math.round(precioDescDepto * 100) / 100,
     precioDescOtros,
-    valorVentaUF:        Math.round(valorVentaUF * 100) / 100,
-    valorVentaCLP:       Math.round(valorVentaCLP),
+    valorVentaUF:                 Math.round(valorVentaUF * 100) / 100,
+    valorVentaCLP:                Math.round(valorVentaCLP),
     piePct,
-    pieTotalUF:          Math.round(pieTotalUF * 100) / 100,
-    reservaUF:           Math.round(reservaUF * 100) / 100,
+    pieTotalUF:                   Math.round(pieTotalUF * 100) / 100,
+    reservaUF:                    Math.round(reservaUF * 100) / 100,
     upfrontUF,
-    saldoPieUF:          Math.round(saldoPieUF * 100) / 100,
-    saldoPieCLP:         Math.round(saldoPieCLP),
+    saldoPieUF:                   Math.round(saldoPieUF * 100) / 100,
+    saldoPieCLP:                  Math.round(saldoPieCLP),
     cuotasPieN,
-    valorCuotaPieUF:     Math.round(valorCuotaPieUF * 100) / 100,
-    valorCuotaPieCLP:    Math.round(valorCuotaPieCLP),
-    creditoHipBaseUF:    Math.round(creditoHipBaseUF * 100) / 100,
+    valorCuotaPieUF:              Math.round(valorCuotaPieUF * 100) / 100,
+    valorCuotaPieCLP:             Math.round(valorCuotaPieCLP),
+    cuotonUF,
+    cuotonCLP,
+    piePeriodoConstruccionUF,
+    piePeriodoConstruccionCLP,
+    pieCreditoDirectoUF,
+    pieCreditoDirectoCLP,
+    totalPieInmobUF:              Math.round(totalPieInmobUF * 100) / 100,
+    creditoHipBaseUF:             Math.round(creditoHipBaseUF * 100) / 100,
     chAjustadoPct,
-    tasacionUF:          Math.round(tasacionUF * 100) / 100,
-    tasacionCLP:         Math.round(tasacionCLP),
-    saldoAporteInmobUF:  Math.round(saldoAporteInmobUF * 100) / 100,
-    creditoHipFinalUF:   Math.round(creditoHipFinalUF * 100) / 100,
-    creditoHipFinalCLP:  Math.round(creditoHipFinalCLP),
+    tasacionUF:                   Math.round(tasacionUF * 100) / 100,
+    tasacionCLP:                  Math.round(tasacionCLP),
+    saldoAporteInmobUF:           Math.round(saldoAporteInmobUF * 100) / 100,
+    creditoHipFinalUF:            Math.round(creditoHipFinalUF * 100) / 100,
+    creditoHipFinalCLP:           Math.round(creditoHipFinalCLP),
     escenarios,
-    plusvaliaAcumulada:  Math.round(plusvaliaAcumulada * 10000) / 10000,
-    precioVentaAnio5CLP: Math.round(precioVentaAnio5CLP),
-    piePagadoCLP,
-    capRate:             Math.round(capRate * 10000) / 10000,
+    plusvaliaAcumulada:           Math.round(plusvaliaAcumulada * 10000) / 10000,
+    precioVentaAnio5CLP:          Math.round(precioVentaAnio5CLP),
+    piePagadoCLP:                 Math.round(totalPieInmobUF * valorUF),
+    capRate:                      Math.round(capRate * 10000) / 10000,
   }
 }

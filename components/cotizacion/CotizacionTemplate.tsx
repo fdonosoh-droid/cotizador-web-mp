@@ -150,9 +150,52 @@ export default function CotizacionTemplate({
               uf={r.saldoPieUF} pct={r.saldoPieUF/r.valorVentaUF} clp={r.saldoPieCLP} />
             <TRow label="Valor cuota pie / mes"
               uf={r.valorCuotaPieUF} clp={r.valorCuotaPieCLP} shade bold />
+            {r.cuotonUF > 0 && (
+              <TRow label={`Cuotón — pago único a inmobiliaria (${(unidad.cuoton*100).toFixed(0)}%)`}
+                uf={r.cuotonUF} pct={unidad.cuoton} clp={r.cuotonCLP} highlight />
+            )}
+            {r.piePeriodoConstruccionUF > 0 && (
+              <TRow label={`Pie Período Construcción — cuotas decrecientes (${(unidad.piePeriodoConstruccion*100).toFixed(0)}%)`}
+                uf={r.piePeriodoConstruccionUF} pct={unidad.piePeriodoConstruccion} clp={r.piePeriodoConstruccionCLP} highlight />
+            )}
+            {r.totalPieInmobUF !== r.pieTotalUF && (
+              <TRow label="Total Pie a Inmobiliaria"
+                uf={r.totalPieInmobUF} pct={r.totalPieInmobUF/r.valorVentaUF} clp={r.totalPieInmobUF*uf} bold shade />
+            )}
           </tbody>
         </table>
+        {r.piePeriodoConstruccionUF > 0 && (
+          <p className="mt-1.5 text-xs text-amber-700">
+            ⚠ Pie Período Construcción: las cuotas disminuyen mes a mes conforme avanza la obra.
+            El monto indicado es el total a pagar durante el período de construcción.
+          </p>
+        )}
       </section>
+
+      {/* ── CRÉDITO DIRECTO INMOBILIARIA (P3.C3) ─────────────── */}
+      {r.pieCreditoDirectoUF > 0 && (
+        <section className="cotizacion-section mb-5">
+          <SectionTitle>Crédito Directo Inmobiliaria ({(unidad.pieCreditoDirecto*100).toFixed(0)}%)</SectionTitle>
+          <table className="cotizacion-table w-full text-sm">
+            <thead>
+              <tr className="bg-blue-700 text-white">
+                <th className="text-left px-3 py-1.5">Concepto</th>
+                <th className="text-right px-3 py-1.5">UF</th>
+                <th className="text-right px-3 py-1.5">%</th>
+                <th className="text-right px-3 py-1.5">$</th>
+              </tr>
+            </thead>
+            <tbody>
+              <TRow label="Monto financiado por inmobiliaria"
+                uf={r.pieCreditoDirectoUF} pct={unidad.pieCreditoDirecto} clp={r.pieCreditoDirectoCLP} bold shade />
+            </tbody>
+          </table>
+          <p className="mt-1.5 text-xs text-amber-700">
+            ⚠ Crédito Directo: la inmobiliaria financia este porcentaje directamente al comprador.
+            El plazo y tasa de interés se acuerdan directamente con la inmobiliaria.
+          </p>
+        </section>
+      )}
 
       {/* ── CRÉDITO HIPOTECARIO ─────────────────────────────── */}
       <section className="cotizacion-section mb-5">
@@ -267,11 +310,11 @@ function TRow({
   clp?: number
   bold?: boolean
   shade?: boolean
-  highlight?: boolean
+  highlight?: boolean  // fila especial: cuotón, pie construcción, crédito directo
   negative?: boolean
 }) {
-  const base = shade ? 'bg-gray-50' : 'bg-white'
-  const cls  = `${base} ${bold ? 'font-semibold' : ''} ${highlight ? 'bg-blue-50' : ''}`
+  const base = highlight ? 'bg-amber-50' : shade ? 'bg-gray-50' : 'bg-white'
+  const cls  = `${base} ${bold ? 'font-semibold' : ''} ${highlight ? 'text-amber-900' : ''}`
   const sign = negative ? -1 : 1
   return (
     <tr className={cls}>

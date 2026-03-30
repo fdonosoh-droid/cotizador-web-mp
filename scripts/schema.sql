@@ -10,6 +10,16 @@
 --   • El schema de PRODUCCIÓN (PostgreSQL) está en scripts/schema_pg.sql.
 --   • Migración: Excel (INPUT_FILES.xlsx) → SQLite (dev) → PostgreSQL (prod)
 -- ============================================================
+-- REVISIÓN v2 — 2026-03-30
+--   ES.1  Tabla maestra `programa` con FK en unidad y condicion_comercial
+--   ES.2  Tabla hija `cotizacion_escenario` normaliza los 3 escenarios CAE
+--   ES.3  Campo `modalidad_pago` en condicion_comercial (P3.C1–P3.C3)
+--   ES.4  Entidad `broker` con FK en cotizacion (reemplaza nombre_broker TEXT)
+--   C1    Snapshot de condiciones comerciales en cotizacion
+--   I2    dormitorios separado: dormitorios_num + dormitorios_display
+--   I3    tipo_unidad: valores canónicos sin duplicados de case
+--   I4    numero_cotizacion (correlativo COT-YYYY-XXXX) en tabla cotizacion
+-- ============================================================
 -- Convenciones SQLite:
 --   • Surrogate PK INTEGER en todas las entidades
 --   • TEXT en lugar de VARCHAR (SQLite ignora longitud, documenta intención)
@@ -27,8 +37,8 @@ PRAGMA synchronous   = NORMAL;
 -- ============================================================
 -- TABLA 1: inmobiliaria
 -- ============================================================
--- Fuente    : columna ALIANZA de PROYECTOS / STOCK NUEVOS
--- Cardinalidad : 5 registros (INGEVEC, MAESTRA, RVC, TOCTOC, URMENETA)
+-- Fuente       : columna ALIANZA de PROYECTOS / STOCK NUEVOS
+-- Cardinalidad : ~5 registros (INGEVEC, MAESTRA, RVC, TOCTOC, URMENETA)
 -- Mantenedor   : Admin — CRUD completo
 -- ============================================================
 CREATE TABLE IF NOT EXISTS inmobiliaria (
@@ -50,10 +60,38 @@ CREATE TRIGGER IF NOT EXISTS trg_inmobiliaria_upd
   END;
 
 -- ============================================================
--- TABLA 2: proyecto
+-- TABLA 2: programa  [ES.1 — NUEVO]
 -- ============================================================
--- Fuente    : hoja PROYECTOS (99 filas, nemotecnico único)
--- ESTADO PROYECTO de CONDICIONES_COMERCIALES se mapea a campo activo
+-- Catálogo de tipologías/programas de unidades.
+-- Fuente       : columna PROGRAMA de STOCK NUEVOS y CONDICIONES_COMERCIALES
+-- Cardinalidad : ~15 valores únicos (2D1B, 1D1B, Bodega, Estacionamiento…)
+-- Rol           : clave de JOIN entre unidad y condicion_comercial
+--                (reemplaza el TEXT directo — C2 corregido)
+-- Mantenedor   : Admin — CRUD completo + script de importación
+-- ============================================================
+CREATE TABLE IF NOT EXISTS programa (
+  id_programa   INTEGER   PRIMARY KEY,
+  codigo        TEXT      NOT NULL,     -- '2D1B', 'Bodega', 'Estacionamiento', etc.
+  descripcion   TEXT      NULL,         -- descripción legible (opcional)
+  activo        INTEGER   NOT NULL DEFAULT 1,
+  created_at    TEXT      NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT      NOT NULL DEFAULT (datetime('now')),
+
+  CONSTRAINT uq_programa_codigo  UNIQUE (codigo),
+  CONSTRAINT chk_programa_activo CHECK (activo IN (0, 1))
+);
+
+CREATE TRIGGER IF NOT EXISTS trg_programa_upd
+  AFTER UPDATE ON programa FOR EACH ROW
+  BEGIN
+    UPDATE programa SET updated_at = datetime('now')
+    WHERE id_programa = NEW.id_programa;
+  END;
+
+-- ============================================================
+-- TABLA 3: proyecto
+-- ============================================================
+-- Fuente       : hoja PROYECTOS (99 filas, nemotecnico único)
 -- Mantenedor   : Admin — CRUD completo
 -- ============================================================
 CREATE TABLE IF NOT EXISTS proyecto (
@@ -81,11 +119,9 @@ CREATE TABLE IF NOT EXISTS proyecto (
 CREATE INDEX IF NOT EXISTS idx_proyecto_inmobiliaria ON proyecto (id_inmobiliaria);
 CREATE INDEX IF NOT EXISTS idx_proyecto_activo       ON proyecto (activo, id_inmobiliaria);
 -- Índice para la cascada de selección: Comuna → Entrega Aprox → Inmobiliaria → Proyecto
--- Cubre los 4 pasos del dropdown en cascada del cotizador (REGLAS 2.1 → 2.4)
 CREATE INDEX IF NOT EXISTS idx_proyecto_cascada
   ON proyecto (comuna, tipo_entrega, id_inmobiliaria, activo)
   WHERE activo = 1;
--- idx sobre nemotecnico ya cubierto por el UNIQUE
 
 CREATE TRIGGER IF NOT EXISTS trg_proyecto_upd
   AFTER UPDATE ON proyecto FOR EACH ROW
@@ -95,56 +131,60 @@ CREATE TRIGGER IF NOT EXISTS trg_proyecto_upd
   END;
 
 -- ============================================================
--- TABLA 3: unidad
+-- TABLA 4: unidad
 -- ============================================================
--- Fuente    : hoja STOCK NUEVOS (8.646 filas, 21 columnas)
--- Normalizado: ESTADO STOCK → solo valores canónicos (ver constraint)
---              SUPERFICIE UTIL / TERRAZA → texto con coma → REAL
--- Surrogate PK: necesaria porque (nemo + tipo_unidad + num_unidad)
---               tiene 73 duplicados y 916 valores NULL en num_unidad
+-- Fuente       : hoja STOCK NUEVOS (8.646 filas, 21 columnas)
+-- Normalizado  : dormitorios → dormitorios_num + dormitorios_display (I2)
+--                tipo_unidad → valores canónicos sin duplicados de case (I3)
+--                programa → FK a tabla programa (ES.1)
+-- Surrogate PK : necesaria — (nemo + tipo_unidad + num_unidad)
+--                tiene 73 duplicados y 916 valores NULL en num_unidad
 -- Mantenedor   : Admin — CRUD + importación masiva desde Excel
 -- ============================================================
 CREATE TABLE IF NOT EXISTS unidad (
   id_unidad             INTEGER   PRIMARY KEY,
   id_proyecto           INTEGER   NOT NULL,
-  numero_unidad         INTEGER   NULL,      -- NULL para bodegas/estac sin número asignado
+  id_programa           INTEGER   NOT NULL,   -- [ES.1] FK → programa
+  numero_unidad         INTEGER   NULL,       -- NULL para bodegas/estac sin número asignado
   tipo_unidad           TEXT      NOT NULL,
-  programa              TEXT      NOT NULL,
-  piso_producto         INTEGER   NOT NULL,
+  piso_producto         INTEGER   NOT NULL DEFAULT 0,
   orientacion           TEXT      NULL,
-  dormitorios_num       INTEGER   NULL,      -- para filtros numéricos: 0, 1, 2, 3...
-  dormitorios_display   TEXT      NULL,      -- etiqueta UI: '1', '2', '1-1/2', 'BO', '#N/A'
+  dormitorios_num       INTEGER   NULL,       -- [I2] para filtros numéricos: 0,1,2,3 (1.5 = studio)
+  dormitorios_display   TEXT      NULL,       -- [I2] etiqueta UI: '1', '2', '1-1/2', 'BO', '#N/A'
   banios                INTEGER   NULL,
-  superficie_terreno_m2 REAL      NOT NULL DEFAULT 0,  -- Casas; 0 para departamentos
-  superficie_util_m2    REAL      NULL,      -- parseado desde texto '43,35' → 43.35
-  superficie_terraza_m2 REAL      NULL,      -- parseado desde texto '5,03'  →  5.03
+  superficie_terreno_m2 REAL      NOT NULL DEFAULT 0,
+  superficie_util_m2    REAL      NULL,
+  superficie_terraza_m2 REAL      NULL,
   superficie_total_m2   REAL      NOT NULL,
   precio_lista_uf       REAL      NOT NULL,
   estado_stock          TEXT      NOT NULL DEFAULT 'Disponible',
-  bienes_conjuntos      TEXT      NULL,      -- texto crudo 'B - 1', 'B - 1 B', etc.
+  bienes_conjuntos      TEXT      NULL,       -- texto crudo — solo trazabilidad importación (M3)
   created_at            TEXT      NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT      NOT NULL DEFAULT (datetime('now')),
 
   CONSTRAINT fk_unidad_proyecto
     FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto)
     ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_unidad_programa
+    FOREIGN KEY (id_programa) REFERENCES programa(id_programa)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
 
-  -- Tipos de unidad válidos (normalizar case en importación)
+  -- [I3] Tipos canónicos (normalizar en importación, 1 valor por concepto)
   CONSTRAINT chk_unidad_tipo CHECK (tipo_unidad IN (
-    'Departamento', 'Estacionamiento', 'Bodega',
-    'Local Comercial', 'Local comercial', 'Local',
-    'Estacionamiento Moto', 'Estacionamiento Comercial', 'Estacionamiento local'
+    'Departamento',
+    'Estacionamiento',
+    'Estacionamiento Moto',
+    'Bodega',
+    'Local Comercial'
   )),
-  -- Estados válidos — normalizar 'DISPONIBLE' → 'Disponible' en la carga
   CONSTRAINT chk_unidad_estado CHECK (estado_stock IN (
-    'Disponible', 'Arrendado', 'En Recolocación', 'Reservado'
+    'Disponible', 'Reservado', 'Vendido', 'Arrendado', 'En Recolocación'
   )),
-  CONSTRAINT chk_unidad_precio   CHECK (precio_lista_uf > 0),
-  CONSTRAINT chk_unidad_sup      CHECK (superficie_total_m2 >= 0)
+  CONSTRAINT chk_unidad_precio CHECK (precio_lista_uf > 0),
+  CONSTRAINT chk_unidad_sup   CHECK (superficie_total_m2 >= 0)
 );
 
 -- Unicidad parcial: solo cuando numero_unidad NO es NULL
--- Evita duplicados reales manteniendo NULLs libres
 CREATE UNIQUE INDEX IF NOT EXISTS uq_unidad_por_proyecto
   ON unidad (id_proyecto, tipo_unidad, numero_unidad)
   WHERE numero_unidad IS NOT NULL;
@@ -153,8 +193,8 @@ CREATE INDEX IF NOT EXISTS idx_unidad_proyecto    ON unidad (id_proyecto);
 CREATE INDEX IF NOT EXISTS idx_unidad_disponibles ON unidad (id_proyecto, estado_stock, tipo_unidad);
 CREATE INDEX IF NOT EXISTS idx_unidad_numero      ON unidad (numero_unidad);
 CREATE INDEX IF NOT EXISTS idx_unidad_precio      ON unidad (id_proyecto, precio_lista_uf);
--- Índice para el JOIN con condicion_comercial
-CREATE INDEX IF NOT EXISTS idx_unidad_condicion   ON unidad (id_proyecto, tipo_unidad, programa);
+-- JOIN con condicion_comercial: proyecto + tipo + programa
+CREATE INDEX IF NOT EXISTS idx_unidad_condicion   ON unidad (id_proyecto, tipo_unidad, id_programa);
 
 CREATE TRIGGER IF NOT EXISTS trg_unidad_upd
   AFTER UPDATE ON unidad FOR EACH ROW
@@ -164,20 +204,21 @@ CREATE TRIGGER IF NOT EXISTS trg_unidad_upd
   END;
 
 -- ============================================================
--- TABLA 4: condicion_comercial
+-- TABLA 5: condicion_comercial
 -- ============================================================
--- Fuente    : hoja CONDICIONES_COMERCIALES (309 filas)
--- Clave natural: (id_proyecto, tipo_unidad, programa) — 0 duplicados
--- Relación con unidad: JOIN por (id_proyecto + tipo_unidad + programa)
---   → relación lógica, no FK física (el campo programa en unidad
---     referencia el campo programa aquí)
--- Mantenedor   : Admin — CRUD + importación masiva desde Excel
+-- Fuente       : hoja CONDICIONES_COMERCIALES (309 filas)
+-- Clave natural: (id_proyecto, tipo_unidad, id_programa) — única por combinación
+-- ES.1         : programa TEXT → id_programa FK
+-- ES.3         : campo modalidad_pago para discriminar plan de pago
+-- Mantenedor   : Admin — CRUD + importación masiva
 -- ============================================================
 CREATE TABLE IF NOT EXISTS condicion_comercial (
   id_condicion             INTEGER   PRIMARY KEY,
   id_proyecto              INTEGER   NOT NULL,
+  id_programa              INTEGER   NOT NULL,   -- [ES.1] FK → programa
   tipo_unidad              TEXT      NOT NULL,
-  programa                 TEXT      NOT NULL,
+  -- [ES.3] discriminador de modalidad de pago (P3.C1–P3.C3)
+  modalidad_pago           TEXT      NOT NULL DEFAULT 'ESTANDAR',
   reserva_clp              INTEGER   NOT NULL DEFAULT 100000,
   descuento                REAL      NOT NULL DEFAULT 0.0,
   bono_pie                 REAL      NOT NULL DEFAULT 0.0,
@@ -192,10 +233,15 @@ CREATE TABLE IF NOT EXISTS condicion_comercial (
   CONSTRAINT fk_condicion_proyecto
     FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto)
     ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_condicion_programa
+    FOREIGN KEY (id_programa) REFERENCES programa(id_programa)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
 
   -- Clave natural: una condición por proyecto + tipo + programa
-  CONSTRAINT uq_condicion UNIQUE (id_proyecto, tipo_unidad, programa),
+  CONSTRAINT uq_condicion UNIQUE (id_proyecto, tipo_unidad, id_programa),
 
+  -- [ES.3] Modalidades válidas
+  CONSTRAINT chk_condicion_modalidad  CHECK (modalidad_pago IN ('ESTANDAR', 'CONSTRUCCION', 'CREDITO_DIRECTO')),
   CONSTRAINT chk_condicion_reserva    CHECK (reserva_clp >= 0),
   CONSTRAINT chk_condicion_descuento  CHECK (descuento >= 0 AND descuento <= 1),
   CONSTRAINT chk_condicion_bono_pie   CHECK (bono_pie >= 0 AND bono_pie <= 1),
@@ -207,8 +253,9 @@ CREATE TABLE IF NOT EXISTS condicion_comercial (
 );
 
 CREATE INDEX IF NOT EXISTS idx_condicion_proyecto ON condicion_comercial (id_proyecto, activo);
--- Índice para el JOIN cotizador: proyecto + tipo_unidad + programa
-CREATE INDEX IF NOT EXISTS idx_condicion_join     ON condicion_comercial (id_proyecto, tipo_unidad, programa)
+-- JOIN cotizador: proyecto + tipo_unidad + programa
+CREATE INDEX IF NOT EXISTS idx_condicion_join
+  ON condicion_comercial (id_proyecto, tipo_unidad, id_programa)
   WHERE activo = 1;
 
 CREATE TRIGGER IF NOT EXISTS trg_condicion_upd
@@ -219,14 +266,11 @@ CREATE TRIGGER IF NOT EXISTS trg_condicion_upd
   END;
 
 -- ============================================================
--- TABLA 5: bien_conjunto
+-- TABLA 6: bien_conjunto
 -- ============================================================
 -- Fuente    : columna BIENES_CONJUNTOS de STOCK NUEVOS
---             409 filas no nulas, 332 valores únicos
---             Formato: 'B - 1', 'B - 1 B', 'B - 10 A', etc.
 -- Función   : resuelve la relación N:M entre Departamento y
---             sus bienes adicionales (estac. y/o bodega)
--- Mantenedor : Admin — CRUD + auto-población en importación
+--             sus bienes adicionales obligatorios (estac./bodega)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS bien_conjunto (
   id_bien_conjunto    INTEGER   PRIMARY KEY,
@@ -241,24 +285,21 @@ CREATE TABLE IF NOT EXISTS bien_conjunto (
   CONSTRAINT fk_bc_asociada
     FOREIGN KEY (id_unidad_asociada) REFERENCES unidad(id_unidad)
     ON DELETE CASCADE,
-
-  CONSTRAINT uq_bien_conjunto    UNIQUE (id_unidad_principal, id_unidad_asociada),
-  CONSTRAINT chk_bc_distintos    CHECK (id_unidad_principal != id_unidad_asociada)
+  CONSTRAINT uq_bien_conjunto UNIQUE (id_unidad_principal, id_unidad_asociada),
+  CONSTRAINT chk_bc_distintos CHECK (id_unidad_principal != id_unidad_asociada)
 );
 
 CREATE INDEX IF NOT EXISTS idx_bc_principal ON bien_conjunto (id_unidad_principal);
 CREATE INDEX IF NOT EXISTS idx_bc_asociada  ON bien_conjunto (id_unidad_asociada);
 
 -- ============================================================
--- TABLA 6: uf_valor
+-- TABLA 7: uf_valor
 -- ============================================================
--- Fuente    : hoja UF (17.784 registros diarios, 1977-08-01 al 2026-04-09)
--- Columnas descartadas: MONEDA (siempre 'UF'), PERIODO (derivado de fecha)
--- Clave     : fecha DATE como texto 'YYYY-MM-DD' — valores únicos garantizados
--- Mantenedor : Admin — INSERT periódico de nuevos valores + importación masiva
+-- Fuente    : hoja UF (17.784 registros diarios 1977-08-01 → 2026-04-09)
+-- Clave     : fecha 'YYYY-MM-DD' — único por día
 -- ============================================================
 CREATE TABLE IF NOT EXISTS uf_valor (
-  fecha             TEXT    PRIMARY KEY,        -- 'YYYY-MM-DD', único por día
+  fecha             TEXT    PRIMARY KEY,
   valor_uf          REAL    NOT NULL,
   variacion_diaria  REAL    NULL,
   created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -266,20 +307,45 @@ CREATE TABLE IF NOT EXISTS uf_valor (
   CONSTRAINT chk_uf_valor CHECK (valor_uf > 0)
 );
 
--- Índice DESC para lookup eficiente del valor más reciente
 CREATE INDEX IF NOT EXISTS idx_uf_fecha_desc ON uf_valor (fecha DESC);
 
 -- ============================================================
--- TABLA 7: parametro_cotizador
+-- TABLA 8: broker  [ES.4 — NUEVO]
+-- ============================================================
+-- Entidad de primera clase para el corredor de propiedades.
+-- Reemplaza el campo nombre_broker TEXT en cotizacion.
+-- Mantenedor : Admin — CRUD completo
+-- ============================================================
+CREATE TABLE IF NOT EXISTS broker (
+  id_broker     INTEGER   PRIMARY KEY,
+  nombre        TEXT      NOT NULL,
+  rut           TEXT      NOT NULL,
+  email         TEXT      NOT NULL,
+  telefono      TEXT      NULL,
+  empresa       TEXT      NULL,
+  activo        INTEGER   NOT NULL DEFAULT 1,
+  created_at    TEXT      NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT      NOT NULL DEFAULT (datetime('now')),
+
+  CONSTRAINT uq_broker_rut   UNIQUE (rut),
+  CONSTRAINT uq_broker_email UNIQUE (email),
+  CONSTRAINT chk_broker_activo CHECK (activo IN (0, 1))
+);
+
+CREATE INDEX IF NOT EXISTS idx_broker_activo ON broker (activo);
+
+CREATE TRIGGER IF NOT EXISTS trg_broker_upd
+  AFTER UPDATE ON broker FOR EACH ROW
+  BEGIN
+    UPDATE broker SET updated_at = datetime('now')
+    WHERE id_broker = NEW.id_broker;
+  END;
+
+-- ============================================================
+-- TABLA 9: parametro_cotizador
 -- ============================================================
 -- Fuente    : hoja aux (CAE, Pie%, Plazo) + constantes del sistema
--- Reemplaza : hoja aux como fuente de configuración de UI
--- Categorías:
---   CAE       → tasas anuales de crédito hipotecario disponibles
---   PIE_PCT   → porcentajes de pie disponibles para seleccionar
---   PLAZO     → plazos hipotecarios disponibles (años)
---   CONSTANTE → valores fijos del modelo de cálculo
--- Mantenedor : Admin — CRUD completo (afecta directamente los cálculos)
+-- Categorías: CAE | PIE_PCT | PLAZO | CONSTANTE
 -- ============================================================
 CREATE TABLE IF NOT EXISTS parametro_cotizador (
   id_parametro    INTEGER   PRIMARY KEY,
@@ -288,7 +354,7 @@ CREATE TABLE IF NOT EXISTS parametro_cotizador (
   valor_numerico  REAL      NULL,
   etiqueta        TEXT      NOT NULL,
   orden           INTEGER   NOT NULL DEFAULT 0,
-  es_default      INTEGER   NOT NULL DEFAULT 0,   -- valor preseleccionado en UI
+  es_default      INTEGER   NOT NULL DEFAULT 0,
   activo          INTEGER   NOT NULL DEFAULT 1,
   created_at      TEXT      NOT NULL DEFAULT (datetime('now')),
   updated_at      TEXT      NOT NULL DEFAULT (datetime('now')),
@@ -309,65 +375,115 @@ CREATE TRIGGER IF NOT EXISTS trg_parametro_upd
   END;
 
 -- ============================================================
--- TABLA 8: cotizacion   [FASE 2 — histórico de cotizaciones]
+-- TABLA 10: cotizacion
 -- ============================================================
 -- Snapshot inmutable de cada cotización generada.
--- Guarda los valores usados en el momento del cálculo para
--- trazabilidad y auditoría (los precios del stock pueden cambiar).
+-- Cambios v2:
+--   [ES.2] cae_1/2/3, arriendo_1/2/3, roi_5anios, roi_anual, cap_rate
+--          → normalizados en cotizacion_escenario
+--   [ES.4] nombre_broker TEXT → id_broker INTEGER FK
+--   [C1]   campos snapshot de condiciones comerciales al momento del cálculo
+--   [I4]   numero_cotizacion (correlativo COT-YYYY-XXXX)
 -- Mantenedor : Solo lectura para Admin; INSERT desde la app
 -- ============================================================
 CREATE TABLE IF NOT EXISTS cotizacion (
-  id_cotizacion        INTEGER   PRIMARY KEY,
-  fecha_generacion     TEXT      NOT NULL DEFAULT (datetime('now')),
-  -- Unidad y condición cotizadas
-  id_unidad            INTEGER   NOT NULL,
-  id_condicion         INTEGER   NOT NULL,
-  -- Datos del broker y cliente
-  nombre_broker        TEXT      NOT NULL,
-  nombre_cliente       TEXT      NOT NULL,
-  rut_cliente          TEXT      NULL,
-  email_cliente        TEXT      NULL,
-  celular_cliente      TEXT      NULL,
-  -- Parámetros usados en el cálculo (snapshot al momento de generar)
-  valor_uf_snapshot    REAL      NOT NULL,
-  pie_pct              REAL      NOT NULL,
-  n_cuotas_pie         INTEGER   NOT NULL,
-  cae_1                REAL      NOT NULL,
-  cae_2                REAL      NOT NULL,
-  cae_3                REAL      NOT NULL,
-  plazo_anios          INTEGER   NOT NULL,
-  arriendo_1_clp       INTEGER   NULL,
-  arriendo_2_clp       INTEGER   NULL,
-  arriendo_3_clp       INTEGER   NULL,
-  plusvalia_anual_pct  REAL      NOT NULL DEFAULT 0.02,
-  -- Resultados calculados (snapshot para auditoría y reimpresión)
-  precio_lista_uf      REAL      NOT NULL,
-  precio_venta_uf      REAL      NOT NULL,
-  tasacion_uf          REAL      NULL,
-  pie_total_uf         REAL      NOT NULL,
-  ch_plan_uf           REAL      NOT NULL,
-  roi_5anios           REAL      NULL,
-  roi_anual            REAL      NULL,
-  cap_rate             REAL      NULL,
+  id_cotizacion            INTEGER   PRIMARY KEY,
+  numero_cotizacion        TEXT      NOT NULL,   -- [I4] ej: 'COT-2026-0001'
+  fecha_generacion         TEXT      NOT NULL DEFAULT (datetime('now')),
 
+  -- Broker y unidad
+  id_broker                INTEGER   NOT NULL,   -- [ES.4] FK → broker
+  id_unidad                INTEGER   NOT NULL,
+  id_condicion             INTEGER   NOT NULL,
+
+  -- Cliente (texto libre en v1 — sin entidad cliente)
+  nombre_cliente           TEXT      NULL,
+  rut_cliente              TEXT      NULL,
+  email_cliente            TEXT      NULL,
+  celular_cliente          TEXT      NULL,
+
+  -- Parámetros del cálculo
+  valor_uf_snapshot        REAL      NOT NULL,
+  pie_pct                  REAL      NOT NULL,
+  n_cuotas_pie             INTEGER   NOT NULL,
+  plazo_anios              INTEGER   NOT NULL,
+  plusvalia_anual_pct      REAL      NOT NULL DEFAULT 0.02,
+
+  -- [C1] Snapshot de condiciones comerciales al momento de cotizar
+  descuento_pct_snapshot         REAL   NOT NULL DEFAULT 0.0,
+  bono_pie_pct_snapshot          REAL   NOT NULL DEFAULT 0.0,
+  cuoton_pct_snapshot            REAL   NOT NULL DEFAULT 0.0,
+  pie_periodo_constr_pct_snapshot REAL  NOT NULL DEFAULT 0.0,
+  pie_credito_directo_pct_snapshot REAL NOT NULL DEFAULT 0.0,
+  reserva_clp_snapshot           INTEGER NOT NULL DEFAULT 100000,
+  modalidad_pago_snapshot        TEXT   NOT NULL DEFAULT 'ESTANDAR',
+
+  -- Resultados calculados (snapshot agregado)
+  precio_lista_uf          REAL      NOT NULL,
+  precio_venta_uf          REAL      NOT NULL,
+  tasacion_uf              REAL      NULL,
+  pie_total_uf             REAL      NOT NULL,
+  total_pie_inmob_uf       REAL      NOT NULL,   -- incluye cuotón + pie construcción
+  ch_final_uf              REAL      NOT NULL,
+
+  CONSTRAINT uq_numero_cotizacion UNIQUE (numero_cotizacion),
+
+  CONSTRAINT fk_cotizacion_broker
+    FOREIGN KEY (id_broker) REFERENCES broker(id_broker)
+    ON DELETE RESTRICT,
   CONSTRAINT fk_cotizacion_unidad
     FOREIGN KEY (id_unidad) REFERENCES unidad(id_unidad)
     ON DELETE RESTRICT,
   CONSTRAINT fk_cotizacion_condicion
     FOREIGN KEY (id_condicion) REFERENCES condicion_comercial(id_condicion)
-    ON DELETE RESTRICT
+    ON DELETE RESTRICT,
+
+  CONSTRAINT chk_cotizacion_modalidad_snap CHECK (
+    modalidad_pago_snapshot IN ('ESTANDAR', 'CONSTRUCCION', 'CREDITO_DIRECTO')
+  )
 );
 
+CREATE INDEX IF NOT EXISTS idx_cotizacion_broker  ON cotizacion (id_broker, fecha_generacion DESC);
 CREATE INDEX IF NOT EXISTS idx_cotizacion_unidad  ON cotizacion (id_unidad);
-CREATE INDEX IF NOT EXISTS idx_cotizacion_broker  ON cotizacion (nombre_broker, fecha_generacion DESC);
 CREATE INDEX IF NOT EXISTS idx_cotizacion_fecha   ON cotizacion (fecha_generacion DESC);
+CREATE INDEX IF NOT EXISTS idx_cotizacion_numero  ON cotizacion (numero_cotizacion);
+
+-- ============================================================
+-- TABLA 11: cotizacion_escenario  [ES.2 — NUEVO]
+-- ============================================================
+-- Normaliza los 3 escenarios CAE de cada cotización.
+-- Reemplaza las columnas cae_1/2/3, arriendo_1/2/3, roi_5anios,
+-- roi_anual y cap_rate que estaban denormalizadas en cotizacion.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS cotizacion_escenario (
+  id_escenario       INTEGER   PRIMARY KEY,
+  id_cotizacion      INTEGER   NOT NULL,
+  numero_escenario   INTEGER   NOT NULL,    -- 1, 2 o 3
+  cae                REAL      NOT NULL,    -- tasa CAE decimal (ej: 0.04)
+  arriendo_clp       INTEGER   NULL,        -- arriendo estimado mensual
+  cuota_mensual_clp  INTEGER   NOT NULL,
+  cuota_mensual_uf   REAL      NOT NULL,
+  flujo_mensual_clp  INTEGER   NOT NULL,    -- arriendo - cuota (puede ser negativo)
+  flujo_acum_clp     INTEGER   NOT NULL,    -- flujo * 11 meses * 5 años
+  roi_5anios         REAL      NULL,        -- decimal: 0.32 = 32%
+  roi_anual          REAL      NULL,        -- decimal: tasa anual compuesta
+  cap_rate           REAL      NULL,        -- decimal: arriendo_anual / tasacion
+
+  CONSTRAINT fk_escenario_cotizacion
+    FOREIGN KEY (id_cotizacion) REFERENCES cotizacion(id_cotizacion)
+    ON DELETE CASCADE,
+  CONSTRAINT uq_escenario UNIQUE (id_cotizacion, numero_escenario),
+  CONSTRAINT chk_escenario_numero CHECK (numero_escenario IN (1, 2, 3))
+);
+
+CREATE INDEX IF NOT EXISTS idx_escenario_cotizacion ON cotizacion_escenario (id_cotizacion);
 
 -- ============================================================
 -- VISTA: v_stock_cotizable
 -- ============================================================
--- JOIN operativo que el cotizador usa en tiempo real.
--- Combina unidad + condicion_comercial + proyecto + inmobiliaria.
+-- JOIN operativo del cotizador: unidad + condicion + proyecto + inmobiliaria + programa.
 -- Solo unidades disponibles con condición activa.
+-- Expone `programa_codigo` para compatibilidad con la lógica de negocio.
 -- ============================================================
 CREATE VIEW IF NOT EXISTS v_stock_cotizable AS
 SELECT
@@ -386,7 +502,8 @@ SELECT
   -- Unidad
   u.numero_unidad,
   u.tipo_unidad,
-  u.programa,
+  pr.codigo                   AS programa,   -- texto del programa para la UI
+  u.id_programa,
   u.piso_producto,
   u.orientacion,
   u.dormitorios_num,
@@ -400,6 +517,7 @@ SELECT
   u.estado_stock,
   u.bienes_conjuntos,
   -- Condiciones comerciales
+  cc.modalidad_pago,
   cc.reserva_clp,
   cc.descuento,
   cc.bono_pie,
@@ -408,20 +526,46 @@ SELECT
   cc.cuoton,
   cc.pie_credito_directo
 FROM unidad u
-JOIN proyecto            p   ON p.id_proyecto   = u.id_proyecto
-JOIN inmobiliaria        i   ON i.id_inmobiliaria = p.id_inmobiliaria
+JOIN programa              pr  ON pr.id_programa    = u.id_programa
+JOIN proyecto              p   ON p.id_proyecto     = u.id_proyecto
+JOIN inmobiliaria          i   ON i.id_inmobiliaria = p.id_inmobiliaria
 LEFT JOIN condicion_comercial cc
-  ON  cc.id_proyecto  = u.id_proyecto
-  AND cc.tipo_unidad  = u.tipo_unidad
-  AND cc.programa     = u.programa
-  AND cc.activo       = 1
+  ON  cc.id_proyecto = u.id_proyecto
+  AND cc.tipo_unidad = u.tipo_unidad
+  AND cc.id_programa = u.id_programa
+  AND cc.activo      = 1
 WHERE
-  u.estado_stock  = 'Disponible'
-  AND p.activo    = 1
-  AND i.activo    = 1;
+  u.estado_stock = 'Disponible'
+  AND p.activo   = 1
+  AND i.activo   = 1
+  AND pr.activo  = 1;
 
 -- ============================================================
--- DATOS INICIALES: parametro_cotizador
+-- DATOS SEMILLA: programa
+-- Fuente: valores únicos reales del campo PROGRAMA de STOCK NUEVOS
+-- Nota: el script de importación debe usar INSERT OR IGNORE para
+--       agregar nuevos códigos encontrados en el Excel.
+-- ============================================================
+INSERT OR IGNORE INTO programa (codigo, descripcion) VALUES
+  -- Tipologías de departamentos
+  ('1D1B',       '1 dormitorio, 1 baño'),
+  ('1D2B',       '1 dormitorio, 2 baños'),
+  ('1-1/2 D1B',  '1½ dormitorios, 1 baño'),
+  ('1-1/2 D2B',  '1½ dormitorios, 2 baños'),
+  ('2D1B',       '2 dormitorios, 1 baño'),
+  ('2D2B',       '2 dormitorios, 2 baños'),
+  ('3D2B',       '3 dormitorios, 2 baños'),
+  ('3D3B',       '3 dormitorios, 3 baños'),
+  ('4D3B',       '4 dormitorios, 3 baños'),
+  ('Loft',       'Loft / Studio'),
+  -- Bienes complementarios
+  ('Bodega',           'Bodega'),
+  ('Estacionamiento',  'Estacionamiento'),
+  ('Estac. Moto',      'Estacionamiento de moto'),
+  ('Local Comercial',  'Local comercial');
+
+-- ============================================================
+-- DATOS SEMILLA: parametro_cotizador
 -- Fuente: hoja aux + constantes del modelo COTIZADOR
 -- ============================================================
 INSERT OR IGNORE INTO parametro_cotizador
@@ -447,7 +591,6 @@ VALUES
   ('PLAZO', 'plazo_25', 25, '25 años', 2, 0, 1),
   ('PLAZO', 'plazo_30', 30, '30 años', 3, 1, 1),  -- default
   -- ── Constantes del modelo de cálculo ────────────────────
-  -- (extraídas de las fórmulas fijas del COTIZADOR Excel)
   ('CONSTANTE', 'UPFRONT_PCT',         0.02,  'Upfront a la Promesa (%)',          1, 0, 1),
   ('CONSTANTE', 'APORTE_INMOB_PCT',    0.10,  'Aporte Inmobiliaria (%)',           2, 0, 1),
   ('CONSTANTE', 'MESES_ARRIENDO_ANIO', 11,    'Meses de arriendo por año',         3, 0, 1),
