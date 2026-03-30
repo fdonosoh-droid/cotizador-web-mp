@@ -12,7 +12,7 @@ import {
 import type { ResultadoCotizacion } from '@/lib/calculators/cotizador'
 import type { BrokerData } from '@/components/broker/BrokerForm'
 import type { UnidadCotizable } from '@/lib/data'
-import { formatCLP, formatUF } from '@/lib/data/uf-service'
+import { formatCLP, formatUF } from '@/lib/data/uf-format'
 
 // ── Estilos ───────────────────────────────────────────────
 

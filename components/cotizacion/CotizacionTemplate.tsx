@@ -7,7 +7,7 @@
 import type { ResultadoCotizacion, EscenarioCAE } from '@/lib/calculators/cotizador'
 import type { BrokerData } from '@/components/broker/BrokerForm'
 import type { UnidadCotizable } from '@/lib/data'
-import { formatCLP, formatUF } from '@/lib/data/uf-service'
+import { formatCLP, formatUF } from '@/lib/data/uf-format'
 
 export interface CotizacionTemplateProps {
   numero:    string              // ej: "COT-2026-0001"

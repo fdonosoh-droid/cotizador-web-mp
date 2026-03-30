@@ -11,7 +11,7 @@ import {
   type ResultadoCotizacion,
   type EscenarioCAE,
 } from '@/lib/calculators/cotizador'
-import { formatCLP, formatUF } from '@/lib/data/uf-service'
+import { formatCLP, formatUF } from '@/lib/data/uf-format'
 import { CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'

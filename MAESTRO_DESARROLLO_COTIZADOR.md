@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30 10:04:33<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->b58f0b1<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->decisiones sobre parametrización y modelo datos sql<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->b58f0b1<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->PgAdapter + uf-format.ts (client-safe) + schema v2 completo<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->28 de 37 substages completadas (76%) — PgAdapter ✅ · Camino B ✅ · Etapa 0 ✅</PROGRESS --> |
 <!-- META_END -->
 
 ---
