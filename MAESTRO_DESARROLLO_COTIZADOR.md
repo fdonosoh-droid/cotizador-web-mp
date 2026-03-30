@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30 14:59:17<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->fac9452<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->auto: actualiza maestro de desarrollo antes del push<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30 15:09:04<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->6fadcf3<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->implementa historial de cotizaciones e integración con datos desde excel<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->28 de 37 substages completadas (76%) — PgAdapter ✅ · Camino B ✅ · Etapa 0 ✅</PROGRESS --> |
 <!-- META_END -->
