@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->d80d79c<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Sprint 3 Camino A completado: correlativo COT-2026-XXXX, PDF descargable, template HTML imprimible<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30 10:04:33<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->b58f0b1<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->decisiones sobre parametrización y modelo datos sql<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->27 de 37 substages completadas (73%) — Etapa 0 completa (ES.1-ES.4) + Camino B<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
