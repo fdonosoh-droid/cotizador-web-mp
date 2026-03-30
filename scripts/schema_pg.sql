@@ -326,7 +326,7 @@ CREATE TABLE IF NOT EXISTS cotizacion (
   -- Broker y unidad
   id_broker                INTEGER       NOT NULL,   -- [ES.4]
   id_unidad                INTEGER       NOT NULL,
-  id_condicion             INTEGER       NOT NULL,
+  id_condicion             INTEGER       NULL,       -- NULL si la unidad no tiene condición activa
 
   -- Cliente (texto libre en v1)
   nombre_cliente           TEXT          NULL,
