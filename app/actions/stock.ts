@@ -1,12 +1,18 @@
 'use server'
 // ============================================================
-// SERVER ACTIONS — stock & cascada
+// SERVER ACTIONS — stock, cascada e historial
 // Llamadas desde Client Components para obtener datos del servidor
 // ============================================================
 
 import { stockRepository } from '@/lib/data'
 import type { ProyectoRow, UnidadCotizable } from '@/lib/data'
 import { siguienteNumeroCotizacion } from '@/lib/utils/correlativo'
+import {
+  guardarCotizacion,
+  listarCotizaciones,
+  type GuardarCotizacionInput,
+  type CotizacionResumen,
+} from '@/lib/services/historial'
 
 export async function getComunas(): Promise<string[]> {
   return stockRepository.getComunas()
@@ -51,4 +57,16 @@ export async function getUFdelDia(): Promise<number> {
 /** Genera y persiste el siguiente número correlativo de cotización */
 export async function getNumeroCotizacion(): Promise<string> {
   return siguienteNumeroCotizacion()
+}
+
+/** Persiste una cotización generada (dev: JSON, prod: PostgreSQL) */
+export async function guardarCotizacionAction(
+  input: GuardarCotizacionInput,
+): Promise<void> {
+  await guardarCotizacion(input)
+}
+
+/** Devuelve el historial de cotizaciones (dev: JSON, prod: PostgreSQL) */
+export async function listarCotizacionesAction(): Promise<CotizacionResumen[]> {
+  return listarCotizaciones()
 }

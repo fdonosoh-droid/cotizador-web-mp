@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useRef, useState, useTransition } from 'react'
-import { getBienesConjuntos, getUFdelDia, getNumeroCotizacion } from '@/app/actions/stock'
+import { getBienesConjuntos, getUFdelDia, getNumeroCotizacion, guardarCotizacionAction } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -216,9 +216,23 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
             onClick={async () => {
               const numero = await getNumeroCotizacion()
               const now    = new Date()
+              const fecha  = now.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })
               setNumeroCot(numero)
-              setFechaCot(now.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }))
+              setFechaCot(fecha)
               setShowDoc(true)
+              // Persistir en historial (no bloquea la UI)
+              guardarCotizacionAction({
+                numero,
+                fecha,
+                broker,
+                unidad,
+                resultado,
+                piePct,
+                plazoAnios:     plazo,
+                tasasCAE,
+                arriendoCLP:    arriendoCLPCalc,
+                plusvaliaAnual: plusvalia / 100,
+              }).catch((e) => console.error('[historial]', e))
             }}
             className="rounded-md border border-blue-600 px-6 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
           >

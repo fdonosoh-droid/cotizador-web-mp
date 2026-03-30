@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState } from 'react'
+import Link from 'next/link'
 import CascadeSelector, { type CascadeSelection } from './cascade/CascadeSelector'
 import BrokerForm, { type BrokerData } from './broker/BrokerForm'
 import PanelCotizacion from './cotizacion/PanelCotizacion'
@@ -35,11 +36,19 @@ export default function CotizadorShell() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Cotizador Mercado Primario</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Selecciona la unidad para generar la cotización
-        </p>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Cotizador Mercado Primario</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Selecciona la unidad para generar la cotización
+          </p>
+        </div>
+        <Link
+          href="/historial"
+          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 whitespace-nowrap"
+        >
+          Historial
+        </Link>
       </header>
 
       <StepIndicator current={step} />
