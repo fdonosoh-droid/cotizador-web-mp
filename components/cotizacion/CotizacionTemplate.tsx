@@ -117,7 +117,12 @@ export default function CotizacionTemplate({
               pct={1}
               clp={r.precioListaTotal * uf} bold />
             {r.precioListaDepto !== r.precioDescDepto && (
-              <TRow label={`Descuento Venta (${(unidad.descuento*100).toFixed(0)}%)`}
+              <TRow
+                label={
+                  r.descuentoAdicionalPct > 0
+                    ? `Descuento Venta (${(unidad.descuento*100).toFixed(0)}% base + ${(r.descuentoAdicionalPct*100).toFixed(1)}% adicional)`
+                    : `Descuento Venta (${(unidad.descuento*100).toFixed(0)}%)`
+                }
                 uf={-(r.precioListaDepto - r.precioDescDepto)}
                 clp={-(r.precioListaDepto - r.precioDescDepto) * uf}
                 shade negative />
@@ -145,7 +150,7 @@ export default function CotizacionTemplate({
           <tbody>
             <TRow label="Pie Total"            uf={r.pieTotalUF}      pct={r.piePct}          clp={r.pieTotalUF*uf} bold shade />
             <TRow label="Reserva"              uf={r.reservaUF}       pct={r.reservaUF/r.valorVentaUF}   clp={r.reservaUF*uf} />
-            <TRow label="Upfront a la Promesa (2%)" uf={r.upfrontUF}  pct={r.upfrontUF/r.valorVentaUF}  clp={r.upfrontUF*uf} shade />
+            <TRow label={`Upfront a la Promesa (${(r.upfrontPct*100).toFixed(0)}%)`} uf={r.upfrontUF} pct={r.upfrontPct} clp={r.upfrontUF*uf} shade />
             <TRow label={`Saldo Pie — ${r.cuotasPieN} cuotas`}
               uf={r.saldoPieUF} pct={r.saldoPieUF/r.valorVentaUF} clp={r.saldoPieCLP} />
             <TRow label="Valor cuota pie / mes"
@@ -210,12 +215,14 @@ export default function CotizacionTemplate({
             </tr>
           </thead>
           <tbody>
-            <TRow label="Valor de Venta (Tasación)"
-              uf={r.tasacionUF} pct={1} clp={r.tasacionCLP} bold shade />
+            <TRow label="Valor de Venta"
+              uf={r.valorVentaUF} pct={r.valorVentaUF/r.tasacionUF} clp={r.valorVentaCLP} shade />
             {r.saldoAporteInmobUF > 0 && (
-              <TRow label={`Aporte Inmobiliaria / Bono Pie (${(unidad.bonoPie*100).toFixed(0)}%)`}
+              <TRow label={`Bono Pie Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`}
                 uf={r.saldoAporteInmobUF} pct={r.saldoAporteInmobUF/r.tasacionUF} clp={r.saldoAporteInmobUF*uf} />
             )}
+            <TRow label="Tasación Banco"
+              uf={r.tasacionUF} pct={1} clp={r.tasacionCLP} bold shade />
             <TRow label="Crédito Hipotecario"
               uf={r.creditoHipFinalUF} pct={r.creditoHipFinalUF/r.tasacionUF} clp={r.creditoHipFinalCLP} bold highlight />
             <TRow label="Cap Rate anual" pct={r.capRate} shade />
@@ -272,10 +279,12 @@ export default function CotizacionTemplate({
       <footer className="cotizacion-footer border-t border-gray-300 pt-3 mt-4">
         <p className="text-xs text-gray-500 leading-relaxed">
           Esta cotización y su información son estimativas y está basada en las condiciones comerciales
-          establecidas por la inmobiliaria al momento de su generación. VIVEPROP no garantiza la exactitud
-          de los valores presentados. Los montos en UF están sujetos a variación según el índice oficial.
-          Las condiciones del crédito hipotecario dependen de la evaluación de cada institución financiera.
-          Cotización generada el {fecha}.
+          establecidas por la inmobiliaria al momento de su generación. VIVEPROP o el broker que genera
+          esta cotización no se hacen responsables por eventuales diferencias entre lo aquí expresado y
+          los valores que en definitiva determine la inmobiliaria para cada caso.
+          Los montos en UF están sujetos a variación según el índice oficial publicado por el Banco Central
+          de Chile. Las condiciones del crédito hipotecario dependen de la evaluación de cada institución
+          financiera. Cotización generada el {fecha}.
         </p>
       </footer>
     </div>

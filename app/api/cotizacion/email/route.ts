@@ -5,8 +5,6 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server'
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { renderToBuffer } = require('@react-pdf/renderer')
 import { createElement } from 'react'
 import { CotizacionPDF } from '@/components/cotizacion/CotizacionPDF'
 import type { CotizacionPDFProps } from '@/components/cotizacion/CotizacionPDF'
@@ -20,10 +18,13 @@ export async function POST(req: NextRequest) {
   try {
     const body: RequestBody = await req.json()
     const { emailCliente, ...pdfProps } = body
+    const { renderToBuffer } = await import('@react-pdf/renderer')
 
     // Generar PDF
-    const element   = createElement(CotizacionPDF as React.ComponentType<CotizacionPDFProps>, pdfProps)
-    const pdfBuffer = await renderToBuffer(element) as Buffer
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const element   = createElement(CotizacionPDF as React.ComponentType<any>, pdfProps)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfBuffer = await renderToBuffer(element as any) as Buffer
 
     // Enviar email
     await enviarCotizacion({ props: pdfProps, pdfBuffer, emailCliente })

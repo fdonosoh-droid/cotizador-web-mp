@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30 15:09:04<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->6fadcf3<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->implementa historial de cotizaciones e integración con datos desde excel<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->d80d79c<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->historial, email, import script y schema v2 completo<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->28 de 37 substages completadas (76%) — PgAdapter ✅ · Camino B ✅ · Etapa 0 ✅</PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->33 de 37 substages completadas (89%) — Etapa 0 ✅ · Camino B ✅ · PgAdapter ✅ · Historial ✅ · Email ✅ · Import Excel→PG ✅<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -15,14 +15,14 @@
 
 | # | Etapa | Substages | Estado |
 |---|---|---|---|
-| 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ✅ COMPLETADO — ES.1-ES.4 implementados en schema.sql y schema_pg.sql |
+| 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ✅ COMPLETADO — ES.1-ES.4 + fix id_condicion nullable |
 | 1 | Infraestructura de datos y stock | 1.1 → 1.5 | 🟡 EN PROGRESO — 1.2, 1.3, 1.4 ✅ · 1.1, 1.5 pendientes |
 | 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ✅ COMPLETADO — CascadeSelector + BrokerForm implementados |
 | 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ✅ COMPLETADO — motor de cálculo implementado (3.1–3.5 ✅, 3.6 ✅ parcial) |
 | 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ✅ COMPLETADO — implementado en cotizador.ts (casos estándar) · P3.C1–C3 pendientes (modalidades especiales) |
 | 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ✅ COMPLETADO — PMT 3 escenarios CAE, flujo mensual en cotizador.ts · amortización detallada pendiente |
 | 6 | Evaluación de inversión a 5 años | 6.1 → 6.4 | ✅ COMPLETADO — plusvalía, ROI, cap rate en cotizador.ts · factor LTV 0.67 pendiente confirmación |
-| 7 | Output, PDF y cotización final | 7.1 → 7.4 | 🟡 EN PROGRESO — 7.1 ✅ (HTML imprimible) · 7.2 ✅ (PDF descargable) · 7.3 🔴 email pendiente · 7.4 ⚠️ historial bloqueado |
+| 7 | Output, PDF y cotización final | 7.1 → 7.4 | ✅ COMPLETADO — 7.1 HTML ✅ · 7.2 PDF ✅ · 7.3 Email ✅ · 7.4 Historial ✅ |
 
 ---
 
@@ -60,9 +60,12 @@
   > **Respondida:** Se aplica **primero el descuento** al precio lista del depto → luego el **Bono Pie se calcula sobre el valor post-descuento** (valor_venta). Orden: precio_lista → aplicar descuento → valor_venta → calcular tasación con bono_pie.
 
 ### Bloque D — Plan de pago (bloquea Etapa 4)
-- [ ] **P3.C1** ¿"Pie Período Construcción" reemplaza al pie estándar para proyectos "En Construcción", o se suma?
-- [ ] **P3.C2** ¿Qué es el CUOTÓN (INGEVEC=2%)? ¿En qué hito del flujo se paga?
-- [ ] **P3.C3** ¿Qué es PIE CRÉDITO DIRECTO? ¿Genera un plan de pago completamente diferente?
+- [x] **P3.C1** ¿"Pie Período Construcción" reemplaza al pie estándar para proyectos "En Construcción", o se suma?
+  > **Respondida:** **Se suma** al pie estándar (no lo reemplaza). Porcentaje predefinido por inmobiliaria; cuotas decrecen mensualmente según avance de obra. Implementado en Camino B del cotizador.
+- [x] **P3.C2** ¿Qué es el CUOTÓN (INGEVEC=2%)? ¿En qué hito del flujo se paga?
+  > **Respondida:** Pago único adicional **a la inmobiliaria** (no al banco), pagado en promesa o escritura. Reduce el crédito hipotecario final. INGEVEC usa 2%. Implementado en Camino B.
+- [x] **P3.C3** ¿Qué es PIE CRÉDITO DIRECTO? ¿Genera un plan de pago completamente diferente?
+  > **Respondida:** La inmobiliaria financia directamente un porcentaje del valor. Tiene plan propio (% + plazo) y puede coexistir con el crédito hipotecario bancario. Implementado en Camino B.
 - [ ] **P3.D1** INGEVEC tiene CUOTAS PIE=1 (pago único). ¿Cuándo se paga esa cuota?
 - [ ] **P3.D2** ¿Las cuotas del pie son siempre mensuales e iguales, o pueden ser irregulares?
 - [ ] **P4.1** ¿La Reserva es siempre $100.000 CLP o varía por proyecto/inmobiliaria? ¿Puede ser en UF?
@@ -76,9 +79,11 @@
 - [ ] **P5.3** ¿La base del PMT es siempre Total_Descuento - Pie, o puede ser el CH_ajustado sobre tasación?
 
 ### Bloque F — Output (bloquea Etapa 7)
-- [ ] **P6.1** ¿Qué formato tiene la cotización final: PDF, pantalla imprimible, email, todo?
+- [x] **P6.1** ¿Qué formato tiene la cotización final: PDF, pantalla imprimible, email, todo?
+  > **Respondida:** Todos los formatos. Pantalla imprimible ✅ · PDF descargable ✅ · Envío por email ✅ (SMTP/nodemailer).
 - [ ] **P6.2** ¿Se muestran los 3 escenarios CAE juntos o el broker elige uno?
-- [ ] **P6.3** ¿Debe registrarse quién generó cada cotización y cuándo (historial)?
+- [x] **P6.3** ¿Debe registrarse quién generó cada cotización y cuándo (historial)?
+  > **Respondida:** Sí. Implementado en `lib/services/historial.ts` + `TablaHistorial` + página `/historial`.
 - [ ] **P6.4** ¿La cotización requiere aprobación antes de enviarse al cliente?
 
 ### Bloque G — Correcciones al schema (bloquea Etapa 0 completa)
@@ -86,10 +91,14 @@
 > Decisiones técnicas requeridas antes de aplicar correcciones al `schema.sql`.
 > Identificadas en [EVALUACIÓN_SCHEMA_DATOS.md](EVALUACIÓN_SCHEMA_DATOS.md) (2026-03-24).
 
-- [ ] **ES.1** ¿Se crea tabla maestra `programa` o se define un CHECK constraint con los valores válidos de programa en `unidad`? *(bloquea 0.1 → problema C2)*
-- [ ] **ES.2** ¿Los escenarios CAE/resultados de la cotización se normalizan en tabla hija `cotizacion_escenario` ahora, o se deja como deuda técnica para v2? *(bloquea 0.2 → problema I1)*
-- [ ] **ES.3** ¿Se agrega el discriminador `modalidad_pago` a `condicion_comercial` ahora o tras responder P3.C1–P3.C3? *(bloquea 0.3 → mejora M1)*
-- [ ] **ES.4** ¿Se implementa la entidad `broker` en esta versión o se deja `nombre_broker TEXT` para v1? *(bloquea 0.4 → problema I4)*
+- [x] **ES.1** ¿Se crea tabla maestra `programa` o se define un CHECK constraint? *(bloquea 0.1 → problema C2)*
+  > **Respondida:** Opción A — tabla maestra `programa` con FK en `unidad` y `condicion_comercial`. Implementado en schema.sql v2 + schema_pg.sql v2.
+- [x] **ES.2** ¿Los escenarios CAE se normalizan en tabla hija? *(bloquea 0.2 → problema I1)*
+  > **Respondida:** Opción A — tabla `cotizacion_escenario` normaliza los 3 escenarios. Implementado.
+- [x] **ES.3** ¿Se agrega `modalidad_pago` a `condicion_comercial`? *(bloquea 0.3 → mejora M1)*
+  > **Respondida:** Opción A — campo `modalidad_pago TEXT CHECK(ESTANDAR|CONSTRUCCION|CREDITO_DIRECTO)`. Implementado.
+- [x] **ES.4** ¿Se implementa la entidad `broker`? *(bloquea 0.4 → problema I4)*
+  > **Respondida:** Opción A — entidad `broker` con FK en `cotizacion`. Upsert por RUT en servicio historial. Implementado.
 
 ---
 
@@ -103,58 +112,45 @@
 
 ### 0.1 — Correcciones críticas: snapshot y join de programa
 <!-- SUBSTAGE:0.1 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `scripts/schema.sql` | `scripts/schema_v2.sql`
-**Preguntas bloqueantes:** ES.1
-**Descripción:** Resolver los dos problemas que afectan la integridad del negocio: (C1) la tabla `cotizacion` no guarda snapshot de las condiciones comerciales usadas, y (C2) `programa` es clave de JOIN sin validación.
-**Faltantes para completar:**
-- [ ] **C1** — Agregar campos snapshot en `cotizacion`: `descuento_pct_snapshot`, `bono_pie_pct_snapshot`, `aporte_inmob_pct_snapshot`, `reserva_clp_snapshot`, `tipo_financiamiento`
-- [ ] **C2** — Crear tabla `programa` (opción A) o agregar CHECK constraint sobre `unidad.programa` (opción B) — requiere respuesta ES.1
-- [ ] Actualizar `v_stock_cotizable` para incluir `id_condicion` en el resultado y validar join de programa
-- [ ] Migración: script de conversión si ya hay datos en tabla `cotizacion`
+**Estado:** `✅ COMPLETADO`
+**Archivos modificados:** `scripts/schema.sql` · `scripts/schema_pg.sql`
+**Implementado:**
+- **C1** — Snapshot completo en `cotizacion`: descuento, bono_pie, cuoton, pie_periodo_constr, pie_credito_directo, reserva, modalidad_pago
+- **C2** — Tabla maestra `programa` con FK en `unidad` y `condicion_comercial` (ES.1 ✅)
+- Vista `v_stock_cotizable` actualizada con JOIN a `programa` y exposición de `id_condicion`
+- Fix: `cotizacion.id_condicion` → NULL permitido (unidad puede no tener condición activa)
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 0.2 — Normalización de datos: dormitorios y tipo_unidad
 <!-- SUBSTAGE:0.2 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `scripts/schema.sql` | `scripts/import/normalize.py`
-**Preguntas bloqueantes:** Ninguna (corrección técnica sin ambigüedad)
-**Descripción:** Resolver problemas de tipado y valores canónicos que impiden filtros numéricos y generan lógica defensiva en queries.
-**Faltantes para completar:**
-- [ ] **I2** — Separar `unidad.dormitorios TEXT` en `dormitorios_num INTEGER NULL` + `dormitorios_display TEXT NULL`
-- [ ] **I3** — Reducir CHECK constraint de `tipo_unidad` a valores canónicos sin duplicados de case (`'Local Comercial'`, `'Local comercial'` y `'Local'` → un único valor)
-- [ ] **M3** — Definir ciclo de vida de `unidad.bienes_conjuntos`: marcar como campo de trazabilidad de importación (nunca usar en lógica de negocio)
-- [ ] Actualizar script de importación para normalizar estos campos en la carga
+**Estado:** `✅ COMPLETADO`
+**Implementado:**
+- **I2** — `dormitorios_num INTEGER` + `dormitorios_display TEXT` en schema y ExcelAdapter
+- **I3** — CHECK constraint con 5 valores canónicos en `unidad.tipo_unidad`; import script normaliza con `TIPO_MAP`
+- **M3** — `bienes_conjuntos` marcado como campo de trazabilidad (solo importación); lógica de negocio usa tabla `bien_conjunto`
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 0.3 — Corrección estructural: escenarios CAE y modalidad de pago
 <!-- SUBSTAGE:0.3 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `scripts/schema.sql`
-**Preguntas bloqueantes:** ES.2, ES.3
-**Descripción:** Resolver la denormalización de los 3 escenarios CAE en columnas de `cotizacion` y agregar discriminador de modalidad a `condicion_comercial`.
-**Faltantes para completar:**
-- [ ] **I1** — Decidir si crear tabla `cotizacion_escenario` ahora o diferir a v2 (requiere ES.2)
-- [ ] **M1** — Agregar campo `modalidad_pago TEXT` a `condicion_comercial` con CHECK `('ESTANDAR', 'CONSTRUCCION', 'CREDITO_DIRECTO')` — requiere respuestas P3.C1–P3.C3 y ES.3
-- [ ] Si se crea `cotizacion_escenario`: mover columnas `cae_1/2/3`, `arriendo_1/2/3_clp`, `roi_anual`, `cap_rate` a la tabla hija
+**Estado:** `✅ COMPLETADO`
+**Implementado:**
+- **I1** — Tabla `cotizacion_escenario` normaliza los 3 escenarios CAE (ES.2 ✅)
+- **M1** — Campo `modalidad_pago TEXT CHECK` en `condicion_comercial` (ES.3 ✅); inferido al importar desde Excel
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 0.4 — Entidad Broker
 <!-- SUBSTAGE:0.4 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `scripts/schema.sql`
-**Preguntas bloqueantes:** ES.4, P6.3
-**Descripción:** Definir si el broker es una entidad de primera clase en el modelo (con autenticación y permisos) o solo un texto libre en la cotización para v1.
-**Faltantes para completar:**
-- [ ] **I4** — Crear tabla `broker (id_broker, nombre, email, activo)` y reemplazar `cotizacion.nombre_broker TEXT` por FK — requiere ES.4
-- [ ] Definir si broker tiene login propio o si el campo es solo descriptivo
-- [ ] Evaluar si se necesitan permisos por broker (qué proyectos puede cotizar)
+**Estado:** `✅ COMPLETADO`
+**Implementado:**
+- **I4** — Tabla `broker (id_broker, nombre, rut, email, telefono, empresa, activo)` (ES.4 ✅)
+- FK `cotizacion.id_broker` reemplaza `nombre_broker TEXT`
+- Upsert por RUT en `lib/services/historial.ts` (`_guardarPG`)
 <!-- /SUBSTAGE -->
 
 ---
@@ -528,30 +524,55 @@
 
 ### 7.3 — Envío por email
 <!-- SUBSTAGE:7.3 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/services/emailService.ts`
-**Preguntas bloqueantes:** P6.1
-**Faltantes para completar:**
-- [ ] Confirmar si hay envío automático por email (P6.1)
-- [ ] Definir proveedor de email (Resend, SendGrid, SMTP)
-- [ ] Template del email con PDF adjunto
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/services/email.ts` — servicio nodemailer SMTP lazy; HTML con resumen + tabla escenarios CAE; PDF como adjunto
+- `app/api/cotizacion/email/route.ts` — POST /api/cotizacion/email: genera PDF + llama enviarCotizacion()
+**Integración UI:** botón "✉ Enviar por Email" en PanelCotizacion → formulario inline teal con campo email cliente (opcional); siempre envía al broker; toast ok/error
+**Variables necesarias en .env.local:** `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`
 <!-- /SUBSTAGE -->
 
 ---
 
 ### 7.4 — Historial de cotizaciones
 <!-- SUBSTAGE:7.4 -->
-**Estado:** `⚠️ BLOQUEADO`
-**Archivos esperados:** `src/services/historialService.ts` | `src/components/Historial.tsx`
-**Preguntas bloqueantes:** P6.3, P6.4 + **Etapa 0.4 completada** (I4: entidad `broker` definida)
-**Faltantes para completar:**
-- [ ] Completar substage 0.4 (definir si broker es entidad o texto libre)
-- [ ] Confirmar si se registra historial (P6.3)
-- [ ] Definir campos a registrar: broker, cliente, unidad, fecha, valores snapshot
-- [ ] Confirmar si hay flujo de aprobación antes de enviar (P6.4)
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/services/historial.ts` — dual-mode: JSON dev (`.cotizaciones-historial.json`) / PostgreSQL prod; upsert broker por RUT; inserta cotizacion + 3 escenarios
+- `app/actions/stock.ts` — `guardarCotizacionAction()` + `listarCotizacionesAction()`
+- `components/historial/TablaHistorial.tsx` — Server Component; tabla 10 columnas
+- `app/historial/page.tsx` — página /historial con Suspense fallback
+**Integración UI:** "Ver Documento" dispara guardar (fire-and-forget); enlace "Historial" en header de CotizadorShell
 <!-- /SUBSTAGE -->
 
 ---
+
+
+---
+
+## INFRAESTRUCTURA ADICIONAL (fuera del plan original)
+
+> Componentes implementados que no estaban en el plan de etapas original pero son necesarios para producción.
+
+### PgAdapter — Adaptador PostgreSQL
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `lib/db/client.ts` — cliente PostgreSQL lazy via `getDb()`; singleton con hot-reload seguro en dev
+- `lib/data/pg-adapter.ts` — `PgAdapter` implementa los 7 métodos de `IStockRepository` sobre `v_stock_cotizable`
+- `lib/data/uf-format.ts` — funciones puras client-safe (`formatUF`, `formatCLP`, `ufToCLP`); rompe cadena de import hacia `postgres` en bundle cliente
+- `lib/data/index.ts` — require dinámico según `DATA_SOURCE`; evita bundling de `postgres` en cliente
+- `next.config.ts` — `serverExternalPackages: ['postgres']`
+**Activación:** `DATA_SOURCE=postgres` en `.env.local` (requiere `DATABASE_URL` y datos importados)
+
+### Script de importación Excel → PostgreSQL
+**Estado:** `✅ COMPLETADO`
+**Archivos creados:**
+- `scripts/import_excel_pg.ts` — 7 pasos: programa → inmobiliaria → proyecto → unidad → condicion_comercial → uf_valor → bien_conjunto; idempotente (ON CONFLICT upsert); batches de 500 filas; carga .env.local automáticamente
+**Uso:** `npm run import:excel` (requiere `DATABASE_URL` en entorno o `.env.local`)
+
+### Correlativo dual-mode
+**Estado:** `✅ COMPLETADO`
+**Implementado:** `lib/utils/correlativo.ts` — dual-mode: JSON dev / tabla `correlativo` PG prod. Clave `cotizacion_<YYYY>` con `INSERT ... ON CONFLICT DO UPDATE` (atómico, reinicio anual automático). Tabla agregada a `schema.sql` y `schema_pg.sql`.
 
 ## TECH STACK DECIDIDO
 

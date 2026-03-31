@@ -26,11 +26,13 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
   const [isPending, startTransition] = useTransition()
 
   // Parámetros editables
-  const [piePct,    setPiePct]    = useState(DEFAULTS.pie)
-  const [plazo,     setPlazo]     = useState(DEFAULTS.plazo)
-  const [tasasCAE,  setTasasCAE]  = useState<[number, number, number]>([...DEFAULTS.cae])
-  const [arriendo,  setArriendo]  = useState<string>('')
-  const [plusvalia, setPlusvalia] = useState(2)
+  const [piePct,              setPiePct]              = useState(DEFAULTS.pie)
+  const [upfrontPct,          setUpfrontPct]          = useState(DEFAULTS.upfront * 100)  // en %
+  const [descuentoAdicional,  setDescuentoAdicional]  = useState(0)  // en %
+  const [plazo,               setPlazo]               = useState(DEFAULTS.plazo)
+  const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
+  const [arriendo,            setArriendo]            = useState<string>('')
+  const [plusvalia,           setPlusvalia]           = useState(2)
 
   // Resultado + modo cotización
   const [resultado,       setResultado]       = useState<ResultadoCotizacion | null>(null)
@@ -131,10 +133,12 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
       const input: InputCotizacion = {
         precioListaDepto:          unidad.precioLista,
         descuentoPct:              unidad.descuento,
+        descuentoAdicionalPct:     descuentoAdicional / 100,
         bonoPiePct:                unidad.bonoPie,
         reservaCLP:                unidad.reserva,
         preciosConjuntos:          conjuntos.map((c) => c.precioLista),
         piePct,
+        upfrontPct:                upfrontPct / 100,
         plazoAnios:                plazo,
         tasasCAE,
         valorUF,
@@ -154,6 +158,25 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
     <div className="space-y-6">
       {/* ── Parámetros ────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Descuento adicional (P3.A3) */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">
+            Dcto. adicional (%)
+            {unidad.descuento > 0 && (
+              <span className="ml-1 text-xs text-gray-400">
+                + {(unidad.descuento * 100).toFixed(0)}% base
+              </span>
+            )}
+          </span>
+          <input
+            type="number"
+            min={0} max={30} step={0.5}
+            value={descuentoAdicional}
+            onChange={(e) => { setResultado(null); setDescuentoAdicional(parseFloat(e.target.value) || 0) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </label>
+
         {/* Pie */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">% de Pie</span>
@@ -210,6 +233,18 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
             min={0} max={20} step={0.5}
             value={plusvalia}
             onChange={(e) => { setResultado(null); setPlusvalia(parseFloat(e.target.value) || 0) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </label>
+
+        {/* Upfront a la Promesa — P4.2 */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Upfront Promesa (%)</span>
+          <input
+            type="number"
+            min={0} max={20} step={0.5}
+            value={upfrontPct}
+            onChange={(e) => { setResultado(null); setUpfrontPct(parseFloat(e.target.value) || 0) }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </label>

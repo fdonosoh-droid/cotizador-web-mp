@@ -163,7 +163,9 @@ export function CotizacionPDF({
           )}
           {r.precioListaDepto !== r.precioDescDepto && (
             <TR cols={[
-              `Descuento Venta (${(unidad.descuento * 100).toFixed(0)}%)`,
+              r.descuentoAdicionalPct > 0
+                ? `Descuento Venta (${(unidad.descuento*100).toFixed(0)}% base + ${(r.descuentoAdicionalPct*100).toFixed(1)}% adicional)`
+                : `Descuento Venta (${(unidad.descuento * 100).toFixed(0)}%)`,
               `-${formatUF(r.precioListaDepto - r.precioDescDepto)} UF`,
               '', formatCLP(-(r.precioListaDepto - r.precioDescDepto) * uf),
             ]} widths={['50%', '17%', '13%', '20%']} redLast />
@@ -180,7 +182,7 @@ export function CotizacionPDF({
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
           <TR bold  cols={['Pie Total', `${formatUF(r.pieTotalUF)} UF`, pct(r.piePct), formatCLP(r.pieTotalUF * uf)]}  widths={['50%','17%','13%','20%']} />
           <TR shade cols={['Reserva',   `${formatUF(r.reservaUF)} UF`,  pct(r.reservaUF/r.valorVentaUF), formatCLP(r.reservaUF * uf)]}  widths={['50%','17%','13%','20%']} />
-          <TR       cols={['Upfront a la Promesa (2%)', `${formatUF(r.upfrontUF)} UF`, pct(r.upfrontUF/r.valorVentaUF), formatCLP(r.upfrontUF * uf)]} widths={['50%','17%','13%','20%']} />
+          <TR       cols={[`Upfront a la Promesa (${(r.upfrontPct*100).toFixed(0)}%)`, `${formatUF(r.upfrontUF)} UF`, pct(r.upfrontPct), formatCLP(r.upfrontUF * uf)]} widths={['50%','17%','13%','20%']} />
           <TR shade cols={[`Saldo Pie — ${r.cuotasPieN} cuotas`, `${formatUF(r.saldoPieUF)} UF`, pct(r.saldoPieUF/r.valorVentaUF), formatCLP(r.saldoPieCLP)]} widths={['50%','17%','13%','20%']} />
           <TR highlight bold cols={['Valor cuota pie / mes', `${formatUF(r.valorCuotaPieUF)} UF`, '', formatCLP(r.valorCuotaPieCLP)]} widths={['50%','17%','13%','20%']} />
           {r.cuotonUF > 0 && (
@@ -227,10 +229,11 @@ export function CotizacionPDF({
         <View style={s.section}>
           <Text style={s.sTitle}>Crédito Hipotecario</Text>
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
-          <TR bold shade cols={['Valor de Venta (Tasación)', `${formatUF(r.tasacionUF)} UF`, '100%', formatCLP(r.tasacionCLP)]} widths={['50%','17%','13%','20%']} />
+          <TR shade cols={['Valor de Venta', `${formatUF(r.valorVentaUF)} UF`, pct(r.valorVentaUF/r.tasacionUF), formatCLP(r.valorVentaCLP)]} widths={['50%','17%','13%','20%']} />
           {r.saldoAporteInmobUF > 0 && (
-            <TR cols={[`Aporte Inmobiliaria — Bono Pie (${(unidad.bonoPie*100).toFixed(0)}%)`, `${formatUF(r.saldoAporteInmobUF)} UF`, pct(r.saldoAporteInmobUF/r.tasacionUF), formatCLP(r.saldoAporteInmobUF * uf)]} widths={['50%','17%','13%','20%']} />
+            <TR cols={[`Bono Pie Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`, `${formatUF(r.saldoAporteInmobUF)} UF`, pct(r.saldoAporteInmobUF/r.tasacionUF), formatCLP(r.saldoAporteInmobUF * uf)]} widths={['50%','17%','13%','20%']} />
           )}
+          <TR bold shade cols={['Tasación Banco', `${formatUF(r.tasacionUF)} UF`, '100%', formatCLP(r.tasacionCLP)]} widths={['50%','17%','13%','20%']} />
           <TR highlight bold cols={['Crédito Hipotecario', `${formatUF(r.creditoHipFinalUF)} UF`, pct(r.creditoHipFinalUF/r.tasacionUF), formatCLP(r.creditoHipFinalCLP)]} widths={['50%','17%','13%','20%']} />
           <TR shade cols={['Cap Rate anual', '', pct(r.capRate), '']} widths={['50%','17%','13%','20%']} />
         </View>
@@ -260,11 +263,7 @@ export function CotizacionPDF({
         {/* DISCLAIMER */}
         <View style={s.footer} fixed>
           <Text style={s.footerTxt}>
-            Esta cotización y su información son estimativas y está basada en las condiciones comerciales
-            establecidas por la inmobiliaria al momento de su generación. VIVEPROP no garantiza la
-            exactitud de los valores presentados. Los montos en UF están sujetos a variación según el
-            índice oficial. Las condiciones del crédito hipotecario dependen de la evaluación de cada
-            institución financiera. Cotización generada el {fecha}.
+            Esta cotización y su información son estimativas y está basada en las condiciones comerciales establecidas por la inmobiliaria al momento de su generación. VIVEPROP o el broker que genera esta cotización no se hacen responsables por eventuales diferencias entre lo aquí expresado y los valores que en definitiva determine la inmobiliaria para cada caso. Los montos en UF están sujetos a variación según el índice oficial publicado por el Banco Central de Chile. Las condiciones del crédito hipotecario dependen de la evaluación de cada institución financiera. Cotización generada el {fecha}.
           </Text>
         </View>
 

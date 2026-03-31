@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS unidad (
     'Local Comercial'
   )),
   CONSTRAINT chk_unidad_estado CHECK (estado_stock IN (
-    'Disponible', 'Reservado', 'Vendido', 'Arrendado', 'En Recolocación'
+    'Disponible', 'No Disponible', 'En Recolocación', 'Reservado', 'Bloqueado', 'Promesado', 'Escriturado'
   )),
   CONSTRAINT chk_unidad_precio CHECK (precio_lista_uf > 0),
   CONSTRAINT chk_unidad_sup   CHECK (superficie_total_m2 >= 0)
@@ -400,6 +400,32 @@ CREATE TABLE IF NOT EXISTS cotizacion_escenario (
 );
 
 CREATE INDEX IF NOT EXISTS idx_escenario_cotizacion ON cotizacion_escenario (id_cotizacion);
+
+
+-- ============================================================
+-- TABLA 12: correlativo  (contadores atómicos)
+-- ============================================================
+-- Reemplaza .cotizaciones-seq.json en producción.
+-- Clave 'cotizacion_<YYYY>' → incremento atómico por año.
+-- Uso: INSERT ... ON CONFLICT DO UPDATE SET valor = valor + 1 RETURNING valor
+-- ============================================================
+CREATE TABLE IF NOT EXISTS correlativo (
+  clave      TEXT        PRIMARY KEY,
+  valor      INTEGER     NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE OR REPLACE FUNCTION set_correlativo_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_correlativo_upd
+  BEFORE UPDATE ON correlativo
+  FOR EACH ROW EXECUTE FUNCTION set_correlativo_updated_at();
 
 -- ============================================================
 -- VISTA: v_stock_cotizable

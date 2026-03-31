@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS unidad (
     'Local Comercial'
   )),
   CONSTRAINT chk_unidad_estado CHECK (estado_stock IN (
-    'Disponible', 'Reservado', 'Vendido', 'Arrendado', 'En Recolocación'
+    'Disponible', 'No Disponible', 'En Recolocación', 'Reservado', 'Bloqueado', 'Promesado', 'Escriturado'
   )),
   CONSTRAINT chk_unidad_precio CHECK (precio_lista_uf > 0),
   CONSTRAINT chk_unidad_sup   CHECK (superficie_total_m2 >= 0)
@@ -478,6 +478,18 @@ CREATE TABLE IF NOT EXISTS cotizacion_escenario (
 
 CREATE INDEX IF NOT EXISTS idx_escenario_cotizacion ON cotizacion_escenario (id_cotizacion);
 
+
+-- ============================================================
+-- TABLA 12: correlativo  (contadores atómicos)
+-- ============================================================
+-- Reemplaza .cotizaciones-seq.json en producción.
+-- Clave 'cotizacion_<YYYY>' → incremento atómico por año.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS correlativo (
+  clave      TEXT     PRIMARY KEY,
+  valor      INTEGER  NOT NULL DEFAULT 0,
+  updated_at TEXT     NOT NULL DEFAULT (datetime('now'))
+);
 -- ============================================================
 -- VISTA: v_stock_cotizable
 -- ============================================================

@@ -4,12 +4,13 @@
 //         + hoja aux de INPUT_FILES.xlsx
 // ============================================================
 
-/** Tasas CAE disponibles (decimal). Ej: 0.04 = 4% */
+/** Tasas CAE disponibles (decimal). Ej: 0.04 = 4%
+ *  P5.1: 4.00%, 4.50%, 5.00%, 5.50% — editables por el broker */
 export const CAE_OPTIONS: { valor: number; etiqueta: string; default: boolean }[] = [
-  { valor: 0.035, etiqueta: '3.5%', default: false },
   { valor: 0.040, etiqueta: '4.0%', default: true  },
   { valor: 0.045, etiqueta: '4.5%', default: true  },
   { valor: 0.050, etiqueta: '5.0%', default: true  },
+  { valor: 0.055, etiqueta: '5.5%', default: false },
 ]
 
 /** Porcentajes de pie disponibles (decimal). Ej: 0.10 = 10% */
@@ -25,7 +26,7 @@ export const PIE_OPTIONS: { valor: number; etiqueta: string; default: boolean }[
   { valor: 0.40, etiqueta: '40%', default: false },
 ]
 
-/** Plazos hipotecarios disponibles (años) */
+/** Plazos hipotecarios disponibles (años) — P5.2: fijados por bancos, no por inmobiliaria */
 export const PLAZO_OPTIONS: { valor: number; etiqueta: string; default: boolean }[] = [
   { valor: 20, etiqueta: '20 años', default: false },
   { valor: 25, etiqueta: '25 años', default: false },
@@ -34,10 +35,8 @@ export const PLAZO_OPTIONS: { valor: number; etiqueta: string; default: boolean 
 
 /** Constantes del modelo de cálculo (extraídas de fórmulas del COTIZADOR Excel) */
 export const CONSTANTES = {
-  /** Upfront a la Promesa: 2% del precio de venta */
+  /** Upfront a la Promesa default: 2% del precio de venta (variable por inmob — P4.2) */
   UPFRONT_PCT:          0.02,
-  /** Aporte Inmobiliaria (Bono Pie base): 10% */
-  APORTE_INMOB_PCT:     0.10,
   /** Meses de arriendo por año (1 mes vacío asumido) */
   MESES_ARRIENDO_ANIO:  11,
   /** Haircut sobre precio de venta al año 5 */
@@ -50,7 +49,8 @@ export const CONSTANTES = {
 
 /** Valores default preseleccionados en la UI */
 export const DEFAULTS = {
-  cae:   CAE_OPTIONS.filter(o => o.default).map(o => o.valor) as [number, number, number],
-  pie:   PIE_OPTIONS.find(o => o.default)!.valor,
-  plazo: PLAZO_OPTIONS.find(o => o.default)!.valor,
+  cae:     CAE_OPTIONS.filter(o => o.default).map(o => o.valor) as [number, number, number],
+  pie:     PIE_OPTIONS.find(o => o.default)!.valor,
+  plazo:   PLAZO_OPTIONS.find(o => o.default)!.valor,
+  upfront: CONSTANTES.UPFRONT_PCT,  // 2% — editable en UI (P4.2)
 } as const
