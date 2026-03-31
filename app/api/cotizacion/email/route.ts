@@ -6,9 +6,17 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createElement } from 'react'
+import fs from 'fs'
+import path from 'path'
 import { CotizacionPDF } from '@/components/cotizacion/CotizacionPDF'
 import type { CotizacionPDFProps } from '@/components/cotizacion/CotizacionPDF'
 import { enviarCotizacion } from '@/lib/services/email'
+
+function getLogoBase64(): string | null {
+  const logoPath = path.join(process.cwd(), 'public', 'logo.png')
+  if (!fs.existsSync(logoPath)) return null
+  return `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+}
 
 interface RequestBody extends CotizacionPDFProps {
   emailCliente?: string
@@ -22,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Generar PDF
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const element   = createElement(CotizacionPDF as React.ComponentType<any>, pdfProps)
+    const element   = createElement(CotizacionPDF as React.ComponentType<any>, { ...pdfProps, logoBase64: getLogoBase64() })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfBuffer = await renderToBuffer(element as any) as Buffer
 

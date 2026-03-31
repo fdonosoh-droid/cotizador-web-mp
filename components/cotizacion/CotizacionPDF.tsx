@@ -7,7 +7,7 @@
 // ============================================================
 
 import {
-  Document, Page, Text, View, StyleSheet, Font,
+  Document, Page, Text, View, StyleSheet, Font, Image,
 } from '@react-pdf/renderer'
 import type { ResultadoCotizacion } from '@/lib/calculators/cotizador'
 import type { BrokerData } from '@/components/broker/BrokerForm'
@@ -74,10 +74,11 @@ export interface CotizacionPDFProps {
   resultado:          ResultadoCotizacion
   arriendoMensualCLP: number
   plusvaliaAnual:     number
+  logoBase64?:        string | null
 }
 
 export function CotizacionPDF({
-  numero, fecha, broker, unidad, resultado: r, arriendoMensualCLP, plusvaliaAnual,
+  numero, fecha, broker, unidad, resultado: r, arriendoMensualCLP, plusvaliaAnual, logoBase64,
 }: CotizacionPDFProps) {
   const uf = r.valorUF
 
@@ -88,8 +89,10 @@ export function CotizacionPDF({
         {/* ENCABEZADO */}
         <View style={s.header} fixed>
           <View>
-            <Text style={s.logoTxt}>VIVEPROP</Text>
-            <Text style={s.logoSub}>Mercado Primario</Text>
+            {logoBase64
+              ? <Image src={logoBase64} style={{ width: 140, height: 26, objectFit: 'contain' }} />
+              : <Text style={s.logoTxt}>VIVEPROP</Text>
+            }
           </View>
           <View style={s.headerRight}>
             <Text style={s.cotTxt}>COTIZACIÓN</Text>

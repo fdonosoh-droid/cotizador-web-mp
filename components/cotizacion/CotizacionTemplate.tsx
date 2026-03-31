@@ -4,6 +4,7 @@
 // Todas las secciones del Excel COTIZADOR replicadas en HTML
 // ============================================================
 
+import Image from 'next/image'
 import type { ResultadoCotizacion, EscenarioCAE } from '@/lib/calculators/cotizador'
 import type { BrokerData } from '@/components/broker/BrokerForm'
 import type { UnidadCotizable } from '@/lib/data'
@@ -31,9 +32,7 @@ export default function CotizacionTemplate({
       {/* ── ENCABEZADO ─────────────────────────────────────── */}
       <header className="cotizacion-header flex items-start justify-between border-b-2 border-blue-700 pb-4 mb-6">
         <div>
-          {/* Logo placeholder — reemplazar con <Image> en Sprint 3 */}
-          <div className="text-2xl font-bold text-blue-700 tracking-tight">VIVEPROP</div>
-          <div className="text-xs text-gray-500 mt-0.5">Mercado Primario</div>
+          <Image src="/logo.png" alt="VIVEPROP" width={200} height={37} className="object-contain" priority />
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-gray-800">COTIZACIÓN</div>
