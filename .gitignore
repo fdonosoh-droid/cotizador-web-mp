@@ -13,3 +13,7 @@ Thumbs.db
 # Estado local dev (no versionar)
 .cotizaciones-seq.json
 .cotizaciones-historial.json
+
+# Datos de stock — contienen información comercial sensible
+INPUT_FILES.xlsx
+MEJORAS\ Y\ CORRECCIONES*.docx
