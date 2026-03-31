@@ -6,7 +6,7 @@
 | **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 12:15:52<!-- /LAST_UPDATED --> |
 | **Último commit** | <!-- COMMIT_HASH -->06799f9<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->ROI sobre equity del inversor + CMF API para valor UF<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->33 de 37 substages completadas (89%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -16,7 +16,7 @@
 | # | Etapa | Substages | Estado |
 |---|---|---|---|
 | 0 | Correcciones al modelo de datos (schema.sql) | 0.1 → 0.4 | ✅ COMPLETADO — ES.1-ES.4 + fix id_condicion nullable |
-| 1 | Infraestructura de datos y stock | 1.1 → 1.5 | 🟡 EN PROGRESO — 1.2, 1.3, 1.4 ✅ · 1.1, 1.5 pendientes |
+| 1 | Infraestructura de datos y stock | 1.1 → 1.5 | ✅ COMPLETADO — ExcelAdapter + PgAdapter + import script · P1.3 y P1.5 respondidas |
 | 2 | Selección en cascada (Comuna→Entrega→Inmobiliaria→Proyecto→Unidad) | 2.1 → 2.6 | ✅ COMPLETADO — CascadeSelector + BrokerForm implementados |
 | 3 | Precios, descuentos y bono pie | 3.1 → 3.6 | ✅ COMPLETADO — motor de cálculo implementado (3.1–3.5 ✅, 3.6 ✅ parcial) |
 | 4 | Plan de pago y estructura del pie | 4.1 → 4.5 | ✅ COMPLETADO — implementado en cotizador.ts (casos estándar) · P3.C1–C3 pendientes (modalidades especiales) |
@@ -35,7 +35,8 @@
 - [x] **P1.1** ¿El stock se carga desde Excel manual, base de datos o API? ¿Frecuencia de actualización?
   > **Respondida:** Fuente inicial = **Excel (INPUT_FILES.xlsx)**, hojas: STOCK NUEVOS, CONDICIONES_COMERCIALES, PROYECTOS, UF, aux. Fase producción = **PostgreSQL** (migración). Schema SQLite en `schema.sql` (dev), PostgreSQL en `schema_pg.sql` (prod). Actualización: carga manual.
 - [ ] **P1.2** ¿Qué estados de stock existen además de "Disponible" y "Arrendado"? ¿Cuáles permiten cotizar?
-- [ ] **P1.3** ¿Estacionamiento y Bodega se cotizan solo como añadido a un depto, o también como unidades independientes?
+- [x] **P1.3** ¿Estacionamiento y Bodega se cotizan solo como añadido a un depto, o también como unidades independientes?
+  > **Respondida:** Solo como **bien conjunto obligatorio o complementario** a un departamento. No se cotizan como unidades independientes. La lógica actual de `getBienesConjuntos()` ya refleja esto correctamente.
 - [x] **P1.4** ¿Se usa API externa para el valor UF (CMF/Mindicador) o el archivo Excel? ¿Qué pasa si falla?
   > **Respondida:** Fase inicial = **hoja UF de INPUT_FILES.xlsx** (17.784 registros diarios 1977→2026, carga masiva única). Fase producción = API CMF (`api.cmfchile.cl`) con actualización diaria. Fallback: último valor registrado en tabla `uf_valor`.
 
@@ -220,14 +221,14 @@
 
 ### 1.5 — Estructura de datos de inmobiliarias y proyectos
 <!-- SUBSTAGE:1.5 -->
-**Estado:** `🔴 PENDIENTE`
-**Archivos esperados:** `src/models/inmobiliaria.ts`
-**Preguntas bloqueantes:** P3.B1, P3.B2, P3.B5
-**Descripción:** Modelo que define las reglas comerciales propias de cada inmobiliaria (descuento, bono pie, tipo de pie, cuotas).
-**Faltantes para completar:**
-- [ ] Confirmar si las reglas vienen todas del stock o hay config adicional por inmobiliaria
-- [ ] Modelo de reglas: descuento, bono_pie, cuotas_pie, pie_construccion, cuoton, pie_credito_directo
-- [ ] Validar que INGEVEC (descuento=0, bono=15%) y MAESTRA (descuento=10%, bono=10%) tienen modelos coherentes
+**Estado:** `✅ COMPLETADO`
+**Archivos:** `lib/data/excel-adapter.ts` · `lib/data/pg-adapter.ts` · `lib/data/types.ts`
+**Implementado:**
+- Reglas comerciales por inmobiliaria vienen 100% del Excel (hoja CONDICIONES_COMERCIALES): descuento, bono_pie, cuotas_pie, pie_periodo_construccion, cuoton, pie_credito_directo
+- No hay config adicional por inmobiliaria fuera del Excel — confirmado (P1.5: actualización = carga manual Excel)
+- INGEVEC (descuento=0, bono=15%) y MAESTRA (descuento=10%, bono=10%) ambos cubiertos por el modelo paramétrico de `calcularCotizacion()`
+- Estacionamiento/Bodega solo como bien conjunto obligatorio al depto — nunca unidades independientes (P1.3 ✅)
+- Actualización del stock: carga manual Excel (`INPUT_FILES.xlsx`) → en producción `scripts/import_excel_pg.ts`
 <!-- /SUBSTAGE -->
 
 ---
