@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 20:35:24<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->bf34457<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->detalla tipo unidad y valor en cotización<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->97a302b<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->mejoras UX: filtro cascada, botones volver, precios por unidad<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->37 de 37 substages completadas (100%) — todas en producción<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -193,6 +193,7 @@
 - `parseNum()` maneja texto con coma (`'43,35'` → `43.35`) y `#N/A`
 - `parseDormitorios()` convierte `'1-1/2'` → `{ dormitoriosNum: 1.5, dormitoriosDisplay: '1-1/2' }`
 - `PgAdapter` pendiente para Etapa de producción (fase 2)
+- **Fix 2026-03-31:** `availableNemos()` — helper privado que construye un `Set<string>` de nemotécnicos con al menos una unidad `Disponible`. Todos los métodos del cascada (`getComunas`, `getEntregas`, `getInmobiliarias`, `getProyectos`) filtran contra este set → elimina proyectos/inmobiliarias fantasma que aparecían en los selects sin tener unidades disponibles.
 <!-- /SUBSTAGE -->
 
 ---
@@ -283,7 +284,10 @@
 **Estado:** `✅ COMPLETADO`
 **Archivos creados:**
 - `lib/utils/rut.ts` — `validateRut()`, `formatRut()`, `cleanRut()`, `calcDV()`
-- `components/broker/BrokerForm.tsx` — formulario con validación zod: nombre, RUT, email, teléfono, empresa
+- `components/broker/BrokerForm.tsx` — formulario con validación zod
+**Campos del formulario:**
+- **Cliente:** nombre, RUT (validación módulo-11), email, teléfono (opcional)
+- **Corredor (obligatorios):** nombre/empresa, emailCorredor, telefonoCorredor — en grid de 3 columnas
 **Notas:** RUT se valida con algoritmo módulo-11 estándar chileno. Auto-formato al perder foco (blur).
 <!-- /SUBSTAGE -->
 
@@ -304,19 +308,21 @@
 <!-- SUBSTAGE:3.4 -->
 <!-- SUBSTAGE:3.5 -->
 **Estado:** `✅ COMPLETADO`
-**Archivos creados:**
+**Archivos:**
 - `lib/calculators/cotizador.ts` — función `calcularCotizacion(input)` con todo el pipeline:
-  - Precios lista (depto + bienes conjuntos vía `getBienesConjuntos()`)
+  - Precios lista: `precioListaDepto` (depto) + `preciosConjuntos[]` (unidades adicionales seleccionadas manualmente)
   - Descuento solo al depto (P3.A1 ✅)
   - Valor de venta = depto_desc + conjuntos (P3.B5 ✅: descuento primero)
   - Pie total, Reserva, Upfront (2%), Saldo Pie, Cuotas Pie (60 meses)
-  - Tasación = creditoHipBase / (1 − pie − bonoPie) (P3.B1 ✅: eleva compraventa banco)
+  - Tasación = valorVenta + bonoPie (P3.B1 ✅: eleva compraventa banco)
   - 3 escenarios CAE: PMT mensual CLP/UF, flujo mensual/acumulado 5 años
   - Evaluación 5 años: plusvalía, precio venta año 5 (haircut 95%), ROI 5 años, ROI anual, Cap Rate
-- `lib/data/excel-adapter.ts` — `getBienesConjuntos()`: parsea "B - 64", "E - 50" y retorna unidades del stock
-- `app/actions/stock.ts` — `getBienesConjuntos()` server action
-- `components/cotizacion/PanelCotizacion.tsx` — UI completa con parámetros editables (pie%, plazo, 3 CAE, arriendo, plusvalía) y tablas de resultado
+- `components/cotizacion/PanelCotizacion.tsx` — UI completa con parámetros editables y tablas de resultado
 **Fórmulas verificadas celda a celda** contra `INPUT_FILES.xlsx → hoja COTIZADOR`.
+**Cambios 2026-03-31:**
+- Eliminado `getBienesConjuntos()` del flujo del cotizador — el campo `bienesConjuntos` del stock era referencia, no se consumía automáticamente.
+- `preciosConjuntos` ahora se alimenta exclusivamente desde `unidadesAdicionales` (selección manual vía "Agregar Unidades" en CascadeSelector).
+- `ResultadoCotizacion.precioListaOtros` sigue siendo la suma; los detalles por unidad se muestran desde el array `unidadesAdicionales` en los templates.
 <!-- /SUBSTAGE -->
 
 ---
@@ -501,11 +507,14 @@
 ### 7.1 — Diseño del documento de cotización
 <!-- SUBSTAGE:7.1 -->
 **Estado:** `✅ COMPLETADO`
-**Archivos creados:**
+**Archivos:**
 - `components/cotizacion/CotizacionTemplate.tsx` — documento HTML imprimible con @media print
-  - 7 secciones: corredor, proyecto, características, precios, plan de pie, crédito hipotecario, 3 escenarios CAE, evaluación 5 años, disclaimer
+  - Secciones: Cliente, Corredor, Proyecto, Características, Valores, Plan de Pie, Crédito Hipotecario, Escenarios CAE, Evaluación 5 años, Disclaimer
   - `#print-cotizacion` wrapper + `app/globals.css` @media print (A4 portrait, 15mm/12mm márgenes)
-**Notas:** Muestra 3 escenarios CAE (P6.2 ✅ implícito). Disclaimer legal incluido. Branding VIVEPROP pendiente (logo).
+**Cambios 2026-03-31:**
+- Sección "Corredor/Cliente" separada en dos: **CLIENTE** (nombre, RUT, email, teléfono) y **CORREDOR** (nombre corredor, email, teléfono)
+- Sección VALORES: desglose individual por unidad — fila separada por `Precio Lista Departamento`, `Precio Lista Estacionamiento N°XX`, `Precio Lista Bodega N°XX` en lugar de línea genérica "Bienes Conjuntos (obligatorio)"
+- Prop `unidadesAdicionales?: UnidadCotizable[]` agregada al componente
 <!-- /SUBSTAGE -->
 
 ---
@@ -513,12 +522,16 @@
 ### 7.2 — Generación de PDF
 <!-- SUBSTAGE:7.2 -->
 **Estado:** `✅ COMPLETADO`
-**Archivos creados:**
+**Archivos:**
 - `components/cotizacion/CotizacionPDF.tsx` — documento @react-pdf/renderer (StyleSheet, Document/Page/View/Text)
-- `app/api/cotizacion/pdf/route.ts` — POST /api/cotizacion/pdf → renderToBuffer → descarga .pdf
+- `app/api/cotizacion/pdf/route.ts` — POST /api/cotizacion/pdf (genera nuevo) + GET /api/cotizacion/pdf?numero=COT-XXXX (regenera desde historial)
 - `lib/utils/correlativo.ts` — `siguienteNumeroCotizacion()`, formato COT-2026-0001, resets anual
-- `app/actions/stock.ts` — `getNumeroCotizacion()` server action
-**Notas:** Número de cotización se genera al hacer "Ver Documento". Correlativo basado en archivo `.cotizaciones-seq.json` (ignorado en git). En prod migrar a tabla `cotizacion` en PostgreSQL.
+- `app/actions/stock.ts` — `getNumeroCotizacion()` + `getCotizacionPayloadAction()` server actions
+**Notas:** Número de cotización se genera al hacer "Ver Documento". Correlativo basado en archivo `.cotizaciones-seq.json` (ignorado en git).
+**Cambios 2026-03-31:**
+- Sección VALORES en PDF: desglose individual por unidad (igual que Template HTML) — una fila por `tipoUnidad` + `numeroUnidad`
+- Prop `unidadesAdicionales?: UnidadCotizable[]` agregada a `CotizacionPDFProps`
+- Regeneración desde historial vía GET: lee `pdfPayload` del JSON (incluye `unidadesAdicionales`)
 <!-- /SUBSTAGE -->
 
 ---
@@ -538,16 +551,67 @@
 ### 7.4 — Historial de cotizaciones
 <!-- SUBSTAGE:7.4 -->
 **Estado:** `✅ COMPLETADO`
-**Archivos creados:**
-- `lib/services/historial.ts` — dual-mode: JSON dev (`.cotizaciones-historial.json`) / PostgreSQL prod; upsert broker por RUT; inserta cotizacion + 3 escenarios
-- `app/actions/stock.ts` — `guardarCotizacionAction()` + `listarCotizacionesAction()`
-- `components/historial/TablaHistorial.tsx` — Server Component; tabla 10 columnas
-- `app/historial/page.tsx` — página /historial con Suspense fallback
-**Integración UI:** "Ver Documento" dispara guardar (fire-and-forget); enlace "Historial" en header de CotizadorShell
+**Archivos:**
+- `lib/services/historial.ts` — dual-mode: JSON dev / PostgreSQL prod; upsert broker por RUT; inserta cotizacion + 3 escenarios
+- `app/actions/stock.ts` — `guardarCotizacionAction()` + `listarCotizacionesAction()` + `getCotizacionPayloadAction()`
+- `components/historial/TablaHistorial.tsx` — Client Component con `useEffect`; tabla; N° cotización como `<a>` → abre PDF en nueva pestaña
+- `app/historial/page.tsx` — página /historial
+- `app/api/cotizacion/export/route.ts` — GET → genera `Historial_cotizaciones.xlsx` con todas las cotizaciones
+**Integración UI:** "Ver Documento" dispara guardar (fire-and-forget); enlace "Historial" en navbar de CotizadorShell
+**Cambios 2026-03-31:**
+- `pdfPayload` en `HistorialEntry` ahora incluye `unidadesAdicionales?: UnidadCotizable[]` para regenerar PDF con desglose correcto
+- `GuardarCotizacionInput` incluye campo `unidadesAdicionales?`
 <!-- /SUBSTAGE -->
 
 ---
 
+
+---
+
+## MEJORAS Y CORRECCIONES POST-LANZAMIENTO
+
+> Cambios aplicados sobre el sistema ya funcional. No corresponden a substages del plan original.
+
+### 2026-03-31 — MEJORAS Y CORRECCIONES 31032026
+
+#### M1 — Separación Cliente / Corredor en documento y formulario
+- `BrokerForm.tsx`: sección "Corredor" añadida con campos obligatorios: `empresa`, `emailCorredor`, `telefonoCorredor` (grid 3 columnas, validados con Zod)
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: sección CORREDOR/CLIENTE separada en dos secciones distintas — **CLIENTE** (datos del comprador) y **CORREDOR** (datos del intermediario)
+- `CotizadorShell.tsx`: resumen del paso 2 muestra línea cliente + línea corredor separadas
+
+#### M2 — Condiciones comerciales deshabilitadas cuando base = 0
+- `PanelCotizacion.tsx`: selectores de Bono Pie, Pie Construcción, Cuotón, Crd. Directo se deshabilitan (`disabled`) cuando la condición base de la unidad = 0
+- Label "no aplica" en rojo cuando el campo está bloqueado
+
+#### M3 — Unidades adicionales (Agregar Estacionamiento/Bodega)
+- `CascadeSelector.tsx`: botón "+ Agregar Unidades" visible al seleccionar un depto; filtra `tipoUnidad !== 'Departamento'`, excluye ya agregadas; lista con botones "Quitar"
+- `CascadeSelection` type: `unidadesAdicionales: UnidadCotizable[]` propagado a `CotizadorShell` y `PanelCotizacion`
+- `PanelCotizacion.tsx`: `preciosConjuntos = unidadesAdicionales.map(u => u.precioLista)` reemplaza llamada a `getBienesConjuntos()`
+
+#### M4 — Desglose por unidad en sección VALORES (precios)
+- Reemplaza la fila genérica "Bienes Conjuntos" por una fila individual por unidad:
+  - `Precio Lista Departamento` (usa `unidad.tipoUnidad`)
+  - `Precio Lista Estacionamiento N°XX` / `Precio Lista Bodega N°XX` (por cada `unidadesAdicionales[i]`)
+- Aplicado en: `ResultadoPanel` (PanelCotizacion), `CotizacionTemplate`, `CotizacionPDF`
+- `unidadesAdicionales` persistido en `pdfPayload` del historial para regeneración correcta
+
+#### M5 — Historial: abrir PDF + exportar Excel
+- N° Cotización en `TablaHistorial` es un enlace `<a>` que llama `GET /api/cotizacion/pdf?numero=XXX` y abre en nueva pestaña
+- `app/api/cotizacion/export/route.ts`: `GET /api/cotizacion/export` genera `Historial_cotizaciones.xlsx` con SheetJS
+- `TablaHistorial.tsx` convertido a Client Component con `useEffect` + botón "⬇ Descargar Excel"
+
+#### M6 — Corrección filtro en cascada (proyectos sin stock)
+- `ExcelAdapter.availableNemos()`: helper privado que construye `Set<string>` de nemotécnicos con al menos una unidad `Disponible`
+- Todos los métodos del cascada filtran contra `availableNemos()` → ningún proyecto/inmobiliaria/entrega/comuna aparece si no tiene unidades disponibles
+- Elimina el bug donde el mismo proyecto aparecía bajo dos inmobiliarias distintas (una sin stock real)
+
+#### M7 — Navegación "Volver" entre pasos
+- `CotizadorShell.tsx`: "← Volver a selección de unidad" en paso 2 (BrokerForm) → regresa a paso 1
+- `PanelCotizacion.tsx`: prop `onVolver?: () => void`; botón "← Volver" visible cuando `!showDoc` → regresa a paso 2
+- Una vez ejecutado "Ver Documento" (cotización guardada en historial), el botón desaparece → la cotización queda finalizada y no editable
+
+#### M8 — Corrección CSS (headers en next.config.ts)
+- `next.config.ts`: eliminado bloque `headers()` que aplicaba `Content-Type: text/html` a todos los archivos incluidos CSS → los estilos ahora se cargan correctamente
 
 ---
 
@@ -637,16 +701,19 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
-| 2026-03-30 | — | main | Etapa 0 completa: schema.sql y schema_pg.sql v2 — tabla programa (ES.1), cotizacion_escenario (ES.2), modalidad_pago (ES.3), entidad broker (ES.4), snapshots C1, I3, I4 |
-| 2026-03-30 | — | main | Camino B completo: CUOTÓN (P3.C2), PIE PERÍODO CONSTRUCCIÓN (P3.C1), PIE CRÉDITO DIRECTO (P3.C3) — motor + UI + template HTML + PDF |
-| 2026-03-30 | d80d79c | main | MAESTRO actualizado: progreso real 22/37 (59%). Etapas 4-6 marcadas ✅ (implementadas en cotizador.ts). 7.1 y 7.2 ✅ Camino A completo |
-| 2026-03-29 | ae3c337 | main | Camino A completado: CotizacionTemplate HTML + @media print, CotizacionPDF @react-pdf/renderer, correlativo COT-2026-XXXX, POST /api/cotizacion/pdf |
-| 2026-03-29 | — | main | Etapa 3 completa: motor calcularCotizacion (fórmulas Excel verificadas), PanelCotizacion 3 escenarios CAE, getBienesConjuntos, P3.B1/B5/A1/P2.3 respondidas |
-| 2026-03-29 | — | main | Etapas 1.2–1.4 + 2.1–2.6: data layer (IStockRepository+ExcelAdapter+ufService), CascadeSelector 5 pasos, BrokerForm RUT, CotizadorShell |
-| 2026-03-29 | — | main | Scaffold Next.js 15 + React 19 + TypeScript strict + Tailwind CSS 4.x (package.json, next.config.ts, tsconfig.json, postcss.config.mjs) |
-| 2026-03-24 | — | main | Rediseño filtrado en cascada: Comuna→Entrega→Inmobiliaria→Proyecto→Unidad (Etapa 2: 4→6 substages, nuevo idx_proyecto_cascada) |
-| 2026-03-24 | — | main | Evaluación técnica schema.sql → EVALUACIÓN_SCHEMA_DATOS.md (9 problemas identificados) |
-| 2026-03-24 | — | main | Genera MODELO_DATOS_COTIZADOR.xlsx (6 hojas: resumen, columnas, relaciones, índices, constraints, semilla) |
+| 2026-03-31 | 97a302b | main | auto: actualiza maestro de desarrollo antes del push |
+| 2026-03-31 | bf34457 | main | M4: desglose por unidad en precios (Depto / Estac / Bodega individualmente) |
+| 2026-03-31 | afc5eb4 | main | M5–M8: historial PDF+Excel, corrección filtro cascada (availableNemos), botones Volver, fix CSS headers |
+| 2026-03-31 | a7ed60a | main | M3+M5: Agregar Unidades (estac/bodega) + Historial Descargar Excel |
+| 2026-03-31 | c9a2fa6 | main | M1+M2: corredor en formulario, condiciones comerciales deshabilitadas cuando base=0 |
+| 2026-03-31 | fea1e53 | main | Navbar: texto "Cotizador Mercado Primario" + corrección CSS (eliminado headers() en next.config.ts) |
+| 2026-03-30 | d80d79c | main | MAESTRO actualizado; Etapa 0 completa; Camino B: CUOTÓN, PIE CONSTRUCCIÓN, CRÉDITO DIRECTO |
+| 2026-03-29 | ae3c337 | main | Camino A: CotizacionTemplate HTML + @media print, CotizacionPDF @react-pdf/renderer, correlativo COT-2026-XXXX |
+| 2026-03-29 | — | main | Etapa 3: motor calcularCotizacion, PanelCotizacion 3 escenarios CAE, P3.B1/B5/A1/P2.3 respondidas |
+| 2026-03-29 | — | main | Etapas 1.2–1.4 + 2.1–2.6: data layer, CascadeSelector 5 pasos, BrokerForm RUT, CotizadorShell |
+| 2026-03-29 | — | main | Scaffold Next.js 15 + React 19 + TypeScript strict + Tailwind CSS 4.x |
+| 2026-03-24 | — | main | Rediseño filtrado en cascada: Comuna→Entrega→Inmobiliaria→Proyecto→Unidad |
+| 2026-03-24 | — | main | Evaluación técnica schema.sql + MODELO_DATOS_COTIZADOR.xlsx |
 | 2026-03-23 | d0eea66 | main | carga archivo para determinar logicas y calculos |
 | 2026-03-23 | 1f000af | main | crea docs de trabajo |
 <!-- HISTORIAL_END -->

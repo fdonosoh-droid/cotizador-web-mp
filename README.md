@@ -101,19 +101,26 @@ npm run import:excel
 ```
 1. Selección de unidad
    └─ Filtros en cascada: Comuna → Entrega → Inmobiliaria → Proyecto → N° Unidad
+      (solo muestra opciones con stock disponible — proyectos sin unidades Disponible se ocultan)
    └─ Filtros adicionales: tipo, programa, piso, orientación, superficie
-   └─ Agregar unidades adicionales (estacionamiento / bodega)
+   └─ Agregar unidades adicionales: botón "+ Agregar Unidades" → estacionamiento / bodega
+      (aparece al seleccionar un departamento; múltiples unidades posibles)
+   └─ Botón "← Volver" disponible en cada paso para editar sin perder datos
 
 2. Datos del cliente y corredor
-   └─ Cliente: nombre, RUT, email, teléfono
-   └─ Corredor: nombre, email, teléfono (todos obligatorios)
+   └─ Cliente: nombre, RUT (validado mod-11), email, teléfono
+   └─ Corredor: nombre/empresa, email, teléfono (todos obligatorios)
+   └─ Botón "← Volver a selección de unidad" para corregir la unidad
 
 3. Cotización
    └─ Parámetros editables: % pie, upfront, plazo, tasas CAE, plusvalía, arriendo estimado
    └─ Condiciones comerciales: bono pie, cuotas pie, pie construcción, cuotón, crédito directo
       (controles deshabilitados automáticamente si la condición base = 0)
-   └─ Resultado: precios, plan de pie, crédito hipotecario, 3 escenarios CAE, evaluación 5 años
-   └─ Acciones: Ver Documento → Imprimir / Descargar PDF / Enviar por Email
+   └─ Resultado: precios desglosados por unidad, plan de pie, crédito hipotecario,
+      3 escenarios CAE, evaluación 5 años
+   └─ Botón "← Volver" disponible antes de finalizar
+   └─ "Ver Documento" → guarda en historial (irreversible) + muestra cotización
+   └─ Acciones post-finalización: Imprimir / Descargar PDF / Enviar por Email
 ```
 
 ---
@@ -195,12 +202,25 @@ El motor en `lib/calculators/cotizador.ts` replica exactamente las fórmulas del
 
 > Los controles de condiciones comerciales se deshabilitan automáticamente cuando el valor base de la condición es 0 (ej: si el proyecto no tiene bono pie, el selector queda bloqueado en 0%).
 
+### Sección VALORES — desglose por unidad
+
+La tabla de valores muestra una fila individual por cada unidad incluida en la cotización:
+
+| Fila | Descripción |
+|------|-------------|
+| `Precio Lista Departamento` | Precio lista de la unidad principal |
+| `Precio Lista Estacionamiento N°XX` | Por cada estacionamiento agregado |
+| `Precio Lista Bodega N°XX` | Por cada bodega agregada |
+| `Precio Lista Total` | Suma de todas las unidades |
+| `Descuento Venta (X%)` | Solo aplica al departamento |
+| `Valor de Venta` | Total post-descuento |
+
 ---
 
 ## Entregables generados
 
 ### Documento en pantalla
-Renderizado como HTML imprimible con secciones: Cliente, Corredor, Proyecto, Características, Valores, Plan de Pie, Crédito Hipotecario, Escenarios CAE, Evaluación 5 Años.
+Renderizado como HTML imprimible con secciones: Cliente, Corredor, Proyecto, Características, Valores (desglose por unidad), Plan de Pie, Crédito Hipotecario, Escenarios CAE, Evaluación 5 Años.
 
 ### PDF descargable
 Generado server-side con `@react-pdf/renderer`. Incluye logo VIVEPROP, mismas secciones que el template HTML. Descarga como `cotizacion-COT-YYYY-NNNN.pdf`.
