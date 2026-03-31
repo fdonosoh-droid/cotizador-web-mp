@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 19:17:52<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->fea1e53<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Agrandar texto al tama;o del logo. Debe Decir "Cotizador Mercado Primario"<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 19:36:11<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->c9a2fa6<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualizaciones MEJORAS Y CORRECCIONES 31032026.docx fase 1. FaltaÍtem 5b: Historial — botón Descargar exporta Excel Historial_cotizaciones.xlsx<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
