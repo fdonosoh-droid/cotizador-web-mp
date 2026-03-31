@@ -1,6 +1,8 @@
 'use client'
 // ============================================================
-// BROKER FORM — datos del corredor / ejecutivo de ventas
+// BROKER FORM — datos del cliente + nombre del corredor
+// nombre/rut/email/telefono = cliente que compra
+// empresa = nombre del corredor que usa la app
 // ============================================================
 
 import { useState } from 'react'
@@ -8,11 +10,11 @@ import { z } from 'zod'
 import { validateRut, formatRut } from '@/lib/utils/rut'
 
 const brokerSchema = z.object({
-  nombre:  z.string().min(2, 'Ingresa el nombre completo'),
-  rut:     z.string().refine(validateRut, 'RUT inválido'),
-  email:   z.string().email('Email inválido'),
+  nombre:   z.string().min(2, 'Ingresa el nombre completo del cliente'),
+  rut:      z.string().refine(validateRut, 'RUT inválido'),
+  email:    z.string().email('Email inválido'),
   telefono: z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono inválido').optional().or(z.literal('')),
-  empresa: z.string().optional(),
+  empresa:  z.string().optional(),   // nombre del corredor que genera la cotización
 })
 
 export type BrokerData = z.infer<typeof brokerSchema>
@@ -68,8 +70,9 @@ export default function BrokerForm({ onSubmit, disabled }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <h2 className="text-base font-semibold text-gray-800">Datos del Corredor</h2>
 
+      {/* Datos del cliente */}
+      <h2 className="text-base font-semibold text-gray-800">Datos del Cliente</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Nombre completo *" error={errors.nombre}>
           <input
@@ -100,7 +103,7 @@ export default function BrokerForm({ onSubmit, disabled }: Props) {
             value={values.email}
             onChange={(e) => handleChange('email', e.target.value)}
             disabled={disabled}
-            placeholder="corredor@ejemplo.cl"
+            placeholder="cliente@ejemplo.cl"
             className={inputClass(!!errors.email)}
           />
         </FormField>
@@ -115,14 +118,18 @@ export default function BrokerForm({ onSubmit, disabled }: Props) {
             className={inputClass(!!errors.telefono)}
           />
         </FormField>
+      </div>
 
-        <FormField label="Empresa / Corredora" error={errors.empresa} className="sm:col-span-2">
+      {/* Nombre del corredor */}
+      <h2 className="text-base font-semibold text-gray-800">Corredor</h2>
+      <div className="grid grid-cols-1">
+        <FormField label="Nombre del corredor" error={errors.empresa}>
           <input
             type="text"
             value={values.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             disabled={disabled}
-            placeholder="Nombre de la corredora (opcional)"
+            placeholder="Tu nombre o nombre de la corredora"
             className={inputClass(false)}
           />
         </FormField>

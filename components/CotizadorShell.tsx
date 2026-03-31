@@ -108,7 +108,7 @@ export default function CotizadorShell() {
       {(step === 'broker' || step === 'quote') && (
         <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-800">2. Datos del corredor</h2>
+            <h2 className="text-base font-semibold text-gray-800">2. Cliente y corredor</h2>
             {step === 'quote' && (
               <button
                 onClick={() => setStep('broker')}
