@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->97a302b<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->mejoras UX: filtro cascada, botones volver, precios por unidad<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 20:49:34<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->be21c6a<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza MAESTRO_DESARROLLO_COTIZADOR.md y README.md<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->37 de 37 substages completadas (100%) — todas en producción<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
