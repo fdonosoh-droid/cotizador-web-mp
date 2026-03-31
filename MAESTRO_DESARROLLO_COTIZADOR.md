@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-30<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->d80d79c<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->historial, email, import script y schema v2 completo<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 11:51:20<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->e9d11fd<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Implementa P2.2 filtros CascadeSelector + fixes P3/P4/P5/P6 + build ESM fix<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->33 de 37 substages completadas (89%) — Etapa 0 ✅ · Camino B ✅ · PgAdapter ✅ · Historial ✅ · Email ✅ · Import Excel→PG ✅<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
