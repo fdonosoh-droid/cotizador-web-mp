@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 16:27:41<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->a0bf640<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Branding: navbar con logo VIVEPROP en shell principal<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 19:17:52<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->fea1e53<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Agrandar texto al tama;o del logo. Debe Decir "Cotizador Mercado Primario"<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
