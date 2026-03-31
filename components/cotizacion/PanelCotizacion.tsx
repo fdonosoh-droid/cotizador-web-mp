@@ -167,104 +167,27 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* ── Parámetros ────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Descuento adicional (P3.A3) */}
+    <div className="space-y-4">
+
+      {/* ── Fila A: Dcto.adicional · Bono Pie · % Pie · Cuotas Pie ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {/* A1 — Descuento adicional */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Dcto. adicional (%)
             {unidad.descuento > 0 && (
-              <span className="ml-1 text-xs text-gray-400">
-                + {(unidad.descuento * 100).toFixed(0)}% base
-              </span>
+              <span className="ml-1 text-xs text-gray-400">+ {(unidad.descuento * 100).toFixed(0)}% base</span>
             )}
           </span>
           <input
-            type="number"
-            min={0} max={30} step={0.5}
+            type="number" min={0} max={30} step={0.5}
             value={descuentoAdicional}
             onChange={(e) => { setResultado(null); setDescuentoAdicional(parseFloat(e.target.value) || 0) }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </label>
 
-        {/* Pie */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">% de Pie</span>
-          <select
-            value={piePct}
-            onChange={(e) => { setResultado(null); setPiePct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            {PIE_OPTIONS.map((o) => (
-              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
-            ))}
-          </select>
-        </label>
-
-        {/* Plazo */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Plazo</span>
-          <select
-            value={plazo}
-            onChange={(e) => { setResultado(null); setPlazo(parseInt(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            {PLAZO_OPTIONS.map((o) => (
-              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
-            ))}
-          </select>
-        </label>
-
-        {/* Arriendo estimado */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Arriendo est. ($/mes)</span>
-          <input
-            type="text"
-            value={arriendo}
-            onChange={(e) => {
-              setResultado(null)
-              setErrorMsg(null)
-              const raw = e.target.value.replace(/\D/g, '')
-              setArriendo(raw ? parseInt(raw).toLocaleString('es-CL') : '')
-            }}
-            placeholder="ej: 450.000"
-            className={`rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
-              errorMsg ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-            }`}
-          />
-          {errorMsg && <p className="text-xs text-red-600">{errorMsg}</p>}
-        </label>
-
-        {/* Plusvalía */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Plusvalía anual (%)</span>
-          <input
-            type="number"
-            min={0} max={20} step={0.5}
-            value={plusvalia}
-            onChange={(e) => { setResultado(null); setPlusvalia(parseFloat(e.target.value) || 0) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </label>
-
-        {/* Upfront a la Promesa — P4.2 */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Upfront Promesa (%)</span>
-          <input
-            type="number"
-            min={0} max={20} step={0.5}
-            value={upfrontPct}
-            onChange={(e) => { setResultado(null); setUpfrontPct(parseFloat(e.target.value) || 0) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </label>
-      </div>
-
-      {/* ── Condiciones comerciales editables ─────────── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {/* Bono Pie */}
+        {/* A2 — Bono Pie */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             % Bono Pie
@@ -281,7 +204,21 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
           </select>
         </label>
 
-        {/* Cuotas Pie */}
+        {/* A3 — % de Pie */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">% de Pie</span>
+          <select
+            value={piePct}
+            onChange={(e) => { setResultado(null); setPiePct(parseFloat(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {PIE_OPTIONS.map((o) => (
+              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
+            ))}
+          </select>
+        </label>
+
+        {/* A4 — Cuotas Pie */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Cuotas Pie
@@ -300,8 +237,11 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
             ))}
           </select>
         </label>
+      </div>
 
-        {/* Pie Período Construcción */}
+      {/* ── Fila B: Pie Construcción · Cuotón · Crd. Directo ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {/* B1 — Pie Período Construcción */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Pie Construcción
@@ -318,7 +258,7 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
           </select>
         </label>
 
-        {/* Cuotón */}
+        {/* B2 — Cuotón */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Cuotón
@@ -335,7 +275,7 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
           </select>
         </label>
 
-        {/* Pie Crédito Directo */}
+        {/* B3 — Pie Crédito Directo */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Crd. Directo
@@ -353,11 +293,70 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         </label>
       </div>
 
-      {/* CAE selectors */}
-      <div className="flex flex-wrap gap-4">
+      {/* ── Fila C: Plusvalía · Upfront · Plazo · Arriendo ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {/* C1 — Plusvalía */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Plusvalía anual (%)</span>
+          <input
+            type="number" min={0} max={20} step={0.5}
+            value={plusvalia}
+            onChange={(e) => { setResultado(null); setPlusvalia(parseFloat(e.target.value) || 0) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </label>
+
+        {/* C2 — Upfront */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Upfront Promesa (%)</span>
+          <input
+            type="number" min={0} max={20} step={0.5}
+            value={upfrontPct}
+            onChange={(e) => { setResultado(null); setUpfrontPct(parseFloat(e.target.value) || 0) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </label>
+
+        {/* C3 — Plazo */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Plazo</span>
+          <select
+            value={plazo}
+            onChange={(e) => { setResultado(null); setPlazo(parseInt(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {PLAZO_OPTIONS.map((o) => (
+              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
+            ))}
+          </select>
+        </label>
+
+        {/* C4 — Arriendo estimado */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Arriendo est. ($/mes)</span>
+          <input
+            type="text"
+            value={arriendo}
+            onChange={(e) => {
+              setResultado(null)
+              setErrorMsg(null)
+              const raw = e.target.value.replace(/\D/g, '')
+              setArriendo(raw ? parseInt(raw).toLocaleString('es-CL') : '')
+            }}
+            placeholder="ej: 450.000"
+            className={`rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
+              errorMsg ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            }`}
+          />
+          {errorMsg && <p className="text-xs text-red-600">{errorMsg}</p>}
+        </label>
+      </div>
+
+      {/* ── Fila D: Escenarios CAE ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {(['Escenario 1', 'Escenario 2', 'Escenario 3'] as const).map((label, i) => (
-          <label key={i} className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-gray-600">{label} CAE:</span>
+          <label key={i} className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">{label} CAE</span>
             <select
               value={tasasCAE[i]}
               onChange={(e) => {
@@ -366,7 +365,7 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
                 next[i] = parseFloat(e.target.value)
                 setTasasCAE(next)
               }}
-              className="rounded border border-gray-300 px-2 py-1 text-sm"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               {CAE_OPTIONS.map((o) => (
                 <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
