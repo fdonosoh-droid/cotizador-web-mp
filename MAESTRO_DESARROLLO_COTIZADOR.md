@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 20:01:22<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->e22f47b<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->auto: actualiza maestro de desarrollo antes del push<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 20:35:24<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->bf34457<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->detalla tipo unidad y valor en cotización<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
