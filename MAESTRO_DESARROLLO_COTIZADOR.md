@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 12:15:52<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->06799f9<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->ROI sobre equity del inversor + CMF API para valor UF<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 16:14:51<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->d549f76<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Fix: agregar xlsx a serverExternalPackages<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->33 de 37 substages completadas (89%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
