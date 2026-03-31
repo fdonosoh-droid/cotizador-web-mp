@@ -3,7 +3,7 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Paquetes Node.js que solo deben ejecutarse en el servidor
-  serverExternalPackages: ['postgres', '@react-pdf/renderer'],
+  serverExternalPackages: ['postgres', '@react-pdf/renderer', 'xlsx'],
   async headers() {
     return [
       {
