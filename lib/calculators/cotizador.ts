@@ -197,12 +197,18 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     const flujoMensualCLP  = arriendoMensualCLP - cuotaMensualCLP      // E73
     const flujoAcumuladoCLP = flujoMensualCLP * CONSTANTES.MESES_ARRIENDO_ANIO * 5  // E77
 
-    // ROI — base depende de si hay bono pie (E88)
-    const roiBase    = bonoPiePct > 0 ? creditoHipFinalCLP : tasacionCLP
-    const roi5Anios  = roiBase > 0
-      ? Math.round((precioVentaAnio5CLP - roiBase) / roiBase * 10000) / 10000
+    // ROI total a 5 años sobre el equity del inversor (pie pagado a la inmobiliaria)
+    // = (plusvalía del capital + flujo neto acumulado) / totalPieInmob
+    // Diferencia entre escenarios CAE viene del flujoAcumulado (cuota varía por CAE)
+    const capitalGain = precioVentaAnio5CLP - valorVentaCLP
+    const equityBase  = totalPieInmobUF * valorUF   // lo que el inversor desembolsó
+    const roi5Anios   = equityBase > 0
+      ? Math.round((capitalGain + flujoAcumuladoCLP) / equityBase * 10000) / 10000
       : 0
-    const roiAnual   = Math.round((Math.pow(1 + roi5Anios, 1 / 5) - 1) * 10000) / 10000  // E89
+    // Protección: si roi5 ≤ -1 la raíz 1/5 sería imaginaria
+    const roiAnual    = roi5Anios > -1
+      ? Math.round((Math.pow(1 + roi5Anios, 1 / 5) - 1) * 10000) / 10000
+      : -1
 
     return {
       cae,

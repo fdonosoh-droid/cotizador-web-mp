@@ -269,7 +269,7 @@ export default function CotizacionTemplate({
             <ERow label="Precio de venta año 5 ($)" valores={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
             <ERow label="Pie pagado ($)" valores={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
             <ERow label="Flujo acumulado ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
-            <ERow label="ROI 5 años" valores={r.escenarios.map((e) => `${(e.roi5Anios * 100).toFixed(1)}%`)} bold />
+            <ERow label="ROI s/pie 5 años" valores={r.escenarios.map((e) => `${(e.roi5Anios * 100).toFixed(1)}%`)} bold />
             <ERow label="ROI anual compuesto" valores={r.escenarios.map((e) => `${(e.roiAnual * 100).toFixed(1)}%`)} shade bold />
           </tbody>
         </table>
