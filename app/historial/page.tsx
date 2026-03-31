@@ -4,7 +4,6 @@
 // ============================================================
 
 import Link from 'next/link'
-import { Suspense } from 'react'
 import TablaHistorial from '@/components/historial/TablaHistorial'
 
 export const metadata = { title: 'Historial de Cotizaciones — Cotizador MP' }
@@ -30,15 +29,7 @@ export default function HistorialPage() {
         </div>
 
         {/* Tabla */}
-        <Suspense
-          fallback={
-            <div className="py-12 text-center text-sm text-gray-400">
-              Cargando historial…
-            </div>
-          }
-        >
-          <TablaHistorial />
-        </Suspense>
+        <TablaHistorial />
       </div>
     </main>
   )

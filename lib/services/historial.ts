@@ -55,6 +55,19 @@ export async function listarCotizaciones(): Promise<CotizacionResumen[]> {
   return _listarJSON()
 }
 
+/** Recupera payload completo para regenerar PDF (solo modo JSON/dev) */
+export async function getCotizacionPayload(numero: string): Promise<HistorialEntry['pdfPayload'] & { fecha: string } | null> {
+  const entries = _leerJSON()
+  const entry = entries.find((e) => e.numero === numero)
+  if (!entry?.pdfPayload) return null
+  return { ...entry.pdfPayload, fecha: entry.fechaDisplay }
+}
+
+/** Devuelve todas las entradas del historial con datos completos (para exportar Excel) */
+export async function listarCotizacionesCompletas(): Promise<HistorialEntry[]> {
+  return _leerJSON()
+}
+
 // ── Implementación DEV — archivo JSON ─────────────────────
 
 const HIST_FILE = path.join(process.cwd(), '.cotizaciones-historial.json')
@@ -71,6 +84,14 @@ interface HistorialEntry {
   valorVentaUF: number
   creditoHipUF: number
   piePct:       number
+  // Payload completo para regenerar PDF (solo en modo JSON/dev)
+  pdfPayload?:  {
+    broker:             BrokerData
+    unidad:             UnidadCotizable
+    resultado:          ResultadoCotizacion
+    arriendoMensualCLP: number
+    plusvaliaAnual:     number
+  }
 }
 
 function _leerJSON(): HistorialEntry[] {
@@ -98,6 +119,13 @@ function _guardarJSON(input: GuardarCotizacionInput): void {
     valorVentaUF: input.resultado.valorVentaUF,
     creditoHipUF: input.resultado.creditoHipFinalUF,
     piePct:       input.piePct,
+    pdfPayload: {
+      broker:             input.broker,
+      unidad:             input.unidad,
+      resultado:          input.resultado,
+      arriendoMensualCLP: input.arriendoCLP,
+      plusvaliaAnual:     input.plusvaliaAnual,
+    },
   }
   entries.unshift(entry)  // más recientes primero
   fs.writeFileSync(HIST_FILE, JSON.stringify(entries, null, 2), 'utf8')

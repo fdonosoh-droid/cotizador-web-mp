@@ -352,7 +352,7 @@ export default function CascadeSelector({ onSelectionChange }: Props) {
               .filter(u => u.numeroUnidad !== null)
               .map(u => ({
                 value: u.numeroUnidad!.toString(),
-                label: `${u.numeroUnidad} — ${u.programa} · P${u.pisoProducto ?? '?'}${u.superficieTotal ? ` · ${u.superficieTotal}m²` : ''}`,
+                label: `${u.numeroUnidad} — ${u.programa} · P${u.pisoProducto ?? '?'}${u.superficieTotal ? ` · ${Number(u.superficieTotal).toFixed(2)}m²` : ''}`,
               }))}
             placeholder={unidadesFiltradas.length === 0 ? 'Sin resultados' : 'Selecciona unidad'}
             disabled={!sel.proyecto || isPending || unidadesFiltradas.length === 0}

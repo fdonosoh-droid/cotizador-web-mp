@@ -10,11 +10,15 @@ import { z } from 'zod'
 import { validateRut, formatRut } from '@/lib/utils/rut'
 
 const brokerSchema = z.object({
-  nombre:   z.string().min(2, 'Ingresa el nombre completo del cliente'),
-  rut:      z.string().refine(validateRut, 'RUT inválido'),
-  email:    z.string().email('Email inválido'),
-  telefono: z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono inválido').optional().or(z.literal('')),
-  empresa:  z.string().optional(),   // nombre del corredor que genera la cotización
+  // ── Datos del cliente (comprador) ──
+  nombre:          z.string().min(2, 'Ingresa el nombre completo del cliente'),
+  rut:             z.string().refine(validateRut, 'RUT inválido'),
+  email:           z.string().email('Email inválido'),
+  telefono:        z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono inválido').optional().or(z.literal('')),
+  // ── Datos del corredor (quien cotiza) ──
+  empresa:         z.string().min(2, 'Ingresa el nombre del corredor'),
+  emailCorredor:   z.string().email('Email del corredor inválido'),
+  telefonoCorredor:z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono del corredor inválido'),
 })
 
 export type BrokerData = z.infer<typeof brokerSchema>
@@ -26,7 +30,8 @@ interface Props {
 
 export default function BrokerForm({ onSubmit, disabled }: Props) {
   const [values, setValues] = useState<BrokerData>({
-    nombre: '', rut: '', email: '', telefono: '', empresa: '',
+    nombre: '', rut: '', email: '', telefono: '',
+    empresa: '', emailCorredor: '', telefonoCorredor: '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof BrokerData, string>>>({})
   const [rutDisplay, setRutDisplay] = useState('')
@@ -120,17 +125,39 @@ export default function BrokerForm({ onSubmit, disabled }: Props) {
         </FormField>
       </div>
 
-      {/* Nombre del corredor */}
+      {/* Datos del corredor */}
       <h2 className="text-base font-semibold text-gray-800">Corredor</h2>
-      <div className="grid grid-cols-1">
-        <FormField label="Nombre del corredor" error={errors.empresa}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <FormField label="Nombre del corredor *" error={errors.empresa}>
           <input
             type="text"
             value={values.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             disabled={disabled}
             placeholder="Tu nombre o nombre de la corredora"
-            className={inputClass(false)}
+            className={inputClass(!!errors.empresa)}
+          />
+        </FormField>
+
+        <FormField label="Email del corredor *" error={errors.emailCorredor}>
+          <input
+            type="email"
+            value={values.emailCorredor}
+            onChange={(e) => handleChange('emailCorredor', e.target.value)}
+            disabled={disabled}
+            placeholder="corredor@ejemplo.cl"
+            className={inputClass(!!errors.emailCorredor)}
+          />
+        </FormField>
+
+        <FormField label="Teléfono del corredor *" error={errors.telefonoCorredor}>
+          <input
+            type="tel"
+            value={values.telefonoCorredor}
+            onChange={(e) => handleChange('telefonoCorredor', e.target.value)}
+            disabled={disabled}
+            placeholder="+56 9 1234 5678"
+            className={inputClass(!!errors.telefonoCorredor)}
           />
         </FormField>
       </div>

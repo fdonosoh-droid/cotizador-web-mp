@@ -191,12 +191,16 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             % Bono Pie
-            <span className="ml-1 text-xs text-gray-400">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
+            {unidad.bonoPie === 0
+              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
+              : <span className="ml-1 text-xs text-gray-400">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
+            }
           </span>
           <select
             value={bonoPiePct}
+            disabled={unidad.bonoPie === 0}
             onChange={(e) => { setResultado(null); setBonoPiePct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
           >
             {withBase(unidad.bonoPie, BONO_PIE_OPTIONS).map((v) => (
               <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
@@ -245,12 +249,16 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Pie Construcción
-            <span className="ml-1 text-xs text-gray-400">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
+            {unidad.piePeriodoConstruccion === 0
+              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
+              : <span className="ml-1 text-xs text-gray-400">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
+            }
           </span>
           <select
             value={pieConstruccionPct}
+            disabled={unidad.piePeriodoConstruccion === 0}
             onChange={(e) => { setResultado(null); setPieConstruccionPct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
           >
             {withBase(unidad.piePeriodoConstruccion, PIE_CONSTRUCCION_OPTIONS).map((v) => (
               <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
@@ -262,12 +270,16 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Cuotón
-            <span className="ml-1 text-xs text-gray-400">base {(unidad.cuoton * 100).toFixed(0)}%</span>
+            {unidad.cuoton === 0
+              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
+              : <span className="ml-1 text-xs text-gray-400">base {(unidad.cuoton * 100).toFixed(0)}%</span>
+            }
           </span>
           <select
             value={cuotonPct}
+            disabled={unidad.cuoton === 0}
             onChange={(e) => { setResultado(null); setCuotonPct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
           >
             {withBase(unidad.cuoton, CUOTON_OPTIONS).map((v) => (
               <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
@@ -279,12 +291,16 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Crd. Directo
-            <span className="ml-1 text-xs text-gray-400">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
+            {unidad.pieCreditoDirecto === 0
+              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
+              : <span className="ml-1 text-xs text-gray-400">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
+            }
           </span>
           <select
             value={pieCreditoDirectoPct}
+            disabled={unidad.pieCreditoDirecto === 0}
             onChange={(e) => { setResultado(null); setPieCreditoDirectoPct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
           >
             {withBase(unidad.pieCreditoDirecto, PIE_CREDITO_DIRECTO_OPTIONS).map((v) => (
               <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>

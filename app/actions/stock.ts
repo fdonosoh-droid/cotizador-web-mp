@@ -70,3 +70,9 @@ export async function guardarCotizacionAction(
 export async function listarCotizacionesAction(): Promise<CotizacionResumen[]> {
   return listarCotizaciones()
 }
+
+/** Recupera payload completo de una cotización por número (para regenerar PDF) */
+export async function getCotizacionPayloadAction(numero: string) {
+  const { getCotizacionPayload } = await import('@/lib/services/historial')
+  return getCotizacionPayload(numero)
+}

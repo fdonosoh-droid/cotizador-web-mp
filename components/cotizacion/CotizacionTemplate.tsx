@@ -42,15 +42,24 @@ export default function CotizacionTemplate({
         </div>
       </header>
 
-      {/* ── DATOS DEL CORREDOR ─────────────────────────────── */}
+      {/* ── DATOS DEL CLIENTE ─────────────────────────────── */}
       <section className="cotizacion-section mb-5">
-        <SectionTitle>Corredor</SectionTitle>
+        <SectionTitle>Cliente</SectionTitle>
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
           <Field label="Nombre"   value={broker.nombre} />
           <Field label="RUT"      value={broker.rut} />
           <Field label="E-mail"   value={broker.email} />
           {broker.telefono && <Field label="Teléfono" value={broker.telefono} />}
-          {broker.empresa  && <Field label="Empresa"  value={broker.empresa} />}
+        </div>
+      </section>
+
+      {/* ── DATOS DEL CORREDOR ─────────────────────────────── */}
+      <section className="cotizacion-section mb-5">
+        <SectionTitle>Corredor</SectionTitle>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+          <Field label="Nombre"   value={broker.empresa ?? ''} />
+          <Field label="E-mail"   value={broker.emailCorredor ?? ''} />
+          {broker.telefonoCorredor && <Field label="Teléfono" value={broker.telefonoCorredor} />}
         </div>
       </section>
 
@@ -77,9 +86,9 @@ export default function CotizacionTemplate({
           <Field label="Tipología"   value={unidad.programa} />
           <Field label="Dormitorios" value={unidad.dormitoriosDisplay ?? '—'} />
           <Field label="Baños"       value={String(unidad.banos ?? '—')} />
-          <Field label="Sup. Útil"   value={unidad.superficieUtil   ? `${unidad.superficieUtil} m²`   : '—'} />
-          <Field label="Sup. Terraza" value={unidad.superficieTerraza ? `${unidad.superficieTerraza} m²` : '—'} />
-          <Field label="Sup. Total"  value={unidad.superficieTotal  ? `${unidad.superficieTotal} m²`  : '—'} />
+          <Field label="Sup. Útil"   value={unidad.superficieUtil   ? `${Number(unidad.superficieUtil).toFixed(2)} m²`   : '—'} />
+          <Field label="Sup. Terraza" value={unidad.superficieTerraza ? `${Number(unidad.superficieTerraza).toFixed(2)} m²` : '—'} />
+          <Field label="Sup. Total"  value={unidad.superficieTotal  ? `${Number(unidad.superficieTotal).toFixed(2)} m²`  : '—'} />
         </div>
         {unidad.bienesConjuntos && (
           <p className="mt-2 text-xs text-orange-700 font-medium">

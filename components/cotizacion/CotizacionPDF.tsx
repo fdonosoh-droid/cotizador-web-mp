@@ -102,15 +102,24 @@ export function CotizacionPDF({
           </View>
         </View>
 
-        {/* CORREDOR */}
+        {/* CLIENTE */}
         <View style={s.section}>
-          <Text style={s.sTitle}>Corredor</Text>
+          <Text style={s.sTitle}>Cliente</Text>
           <View style={s.grid2}>
             <F label="Nombre"    value={broker.nombre} />
             <F label="RUT"       value={broker.rut} />
             <F label="E-mail"    value={broker.email} />
-            {broker.telefono && <F label="Teléfono" value={broker.telefono} />}
-            {broker.empresa  && <F label="Empresa"  value={broker.empresa} />}
+            {broker.telefono ? <F label="Teléfono" value={broker.telefono} /> : null}
+          </View>
+        </View>
+
+        {/* CORREDOR */}
+        <View style={s.section}>
+          <Text style={s.sTitle}>Corredor</Text>
+          <View style={s.grid2}>
+            <F label="Nombre"    value={broker.empresa ?? ''} />
+            <F label="E-mail"    value={broker.emailCorredor ?? ''} />
+            {broker.telefonoCorredor ? <F label="Teléfono" value={broker.telefonoCorredor} /> : null}
           </View>
         </View>
 
@@ -137,9 +146,9 @@ export function CotizacionPDF({
             <F label="Tipología"    value={unidad.programa} />
             <F label="Dormitorios"  value={unidad.dormitoriosDisplay ?? '—'} />
             <F label="Baños"        value={String(unidad.banos ?? '—')} />
-            <F label="Sup. Útil"    value={unidad.superficieUtil    ? `${unidad.superficieUtil} m²`    : '—'} />
-            <F label="Sup. Terraza" value={unidad.superficieTerraza ? `${unidad.superficieTerraza} m²` : '—'} />
-            <F label="Sup. Total"   value={unidad.superficieTotal   ? `${unidad.superficieTotal} m²`   : '—'} />
+            <F label="Sup. Útil"    value={unidad.superficieUtil    ? `${Number(unidad.superficieUtil).toFixed(2)} m²`    : '—'} />
+            <F label="Sup. Terraza" value={unidad.superficieTerraza ? `${Number(unidad.superficieTerraza).toFixed(2)} m²` : '—'} />
+            <F label="Sup. Total"   value={unidad.superficieTotal   ? `${Number(unidad.superficieTotal).toFixed(2)} m²`   : '—'} />
           </View>
           {unidad.bienesConjuntos && (
             <Text style={s.bcWarn}>⚠ Bienes conjuntos obligatorios: {unidad.bienesConjuntos}</Text>

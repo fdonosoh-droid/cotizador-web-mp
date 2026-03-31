@@ -67,7 +67,7 @@ export default function CotizadorShell() {
           <div className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800">
             <strong>{unidad.nombreProyecto}</strong>{' — '}
             Unidad {unidad.numeroUnidad} · {unidad.tipoUnidad} · {unidad.programa}
-            {unidad.superficieTotal ? ` · ${unidad.superficieTotal} m²` : ''}
+            {unidad.superficieTotal ? ` · ${Number(unidad.superficieTotal).toFixed(2)} m²` : ''}
             {' · '}
             <strong>
               {unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF
@@ -122,10 +122,10 @@ export default function CotizadorShell() {
             {step === 'broker' ? (
               <BrokerForm onSubmit={handleBrokerSubmit} />
             ) : broker ? (
-              <p className="text-sm text-gray-700">
-                <strong>{broker.nombre}</strong> · {broker.rut} · {broker.email}
-                {broker.empresa ? ` · ${broker.empresa}` : ''}
-              </p>
+              <div className="space-y-0.5 text-sm text-gray-700">
+                <p><span className="text-gray-500">Cliente:</span> <strong>{broker.nombre}</strong> · {broker.rut} · {broker.email}{broker.telefono ? ` · ${broker.telefono}` : ''}</p>
+                <p><span className="text-gray-500">Corredor:</span> <strong>{broker.empresa}</strong> · {broker.emailCorredor} · {broker.telefonoCorredor}</p>
+              </div>
             ) : null}
           </div>
         </section>
