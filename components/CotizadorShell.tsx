@@ -64,28 +64,32 @@ export default function CotizadorShell() {
         <CascadeSelector onSelectionChange={handleSelectionChange} />
 
         {unidad && (
-          <div className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800">
-            <strong>{unidad.nombreProyecto}</strong>{' — '}
-            Unidad {unidad.numeroUnidad} · {unidad.tipoUnidad} · {unidad.programa}
-            {unidad.superficieTotal ? ` · ${Number(unidad.superficieTotal).toFixed(2)} m²` : ''}
-            {' · '}
-            <strong>
-              {unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF
-            </strong>
-            {unidad.descuento > 0 && (
-              <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-800">
-                Dcto {(unidad.descuento * 100).toFixed(0)}%
-              </span>
-            )}
-            {unidad.bonoPie > 0 && (
-              <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800">
-                Bono Pie {(unidad.bonoPie * 100).toFixed(0)}%
-              </span>
-            )}
-            {unidad.bienesConjuntos && (
-              <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-800">
-                BC: {unidad.bienesConjuntos}
-              </span>
+          <div className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 space-y-1">
+            <div>
+              <strong>{unidad.nombreProyecto}</strong>{' — '}
+              Unidad {unidad.numeroUnidad} · {unidad.tipoUnidad} · {unidad.programa}
+              {unidad.superficieTotal ? ` · ${Number(unidad.superficieTotal).toFixed(2)} m²` : ''}
+              {' · '}
+              <strong>
+                {unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF
+              </strong>
+              {unidad.descuento > 0 && (
+                <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-800">
+                  Dcto {(unidad.descuento * 100).toFixed(0)}%
+                </span>
+              )}
+              {unidad.bonoPie > 0 && (
+                <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800">
+                  Bono Pie {(unidad.bonoPie * 100).toFixed(0)}%
+                </span>
+              )}
+            </div>
+            {selection?.unidadesAdicionales && selection.unidadesAdicionales.length > 0 && (
+              <div className="text-xs text-blue-700">
+                + {selection.unidadesAdicionales.map(u =>
+                  `${u.tipoUnidad} ${u.numeroUnidad} (${u.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF)`
+                ).join(' · ')}
+              </div>
             )}
           </div>
         )}
@@ -135,7 +139,11 @@ export default function CotizadorShell() {
       {step === 'quote' && unidad && broker && (
         <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-gray-800">3. Cotización</h2>
-          <PanelCotizacion unidad={unidad} broker={broker} />
+          <PanelCotizacion
+            unidad={unidad}
+            broker={broker}
+            unidadesAdicionales={selection?.unidadesAdicionales ?? []}
+          />
         </section>
       )}
       </div>

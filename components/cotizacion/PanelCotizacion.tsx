@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useRef, useState, useTransition } from 'react'
-import { getBienesConjuntos, getUFdelDia, getNumeroCotizacion, guardarCotizacionAction } from '@/app/actions/stock'
+import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -19,14 +19,16 @@ import {
 } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'
+import type { CascadeSelection } from '@/components/cascade/CascadeSelector'
 import CotizacionTemplate from './CotizacionTemplate'
 
 interface Props {
-  unidad: UnidadCotizable
-  broker: BrokerData
+  unidad:               UnidadCotizable
+  broker:               BrokerData
+  unidadesAdicionales?: CascadeSelection['unidadesAdicionales']
 }
 
-export default function PanelCotizacion({ unidad, broker }: Props) {
+export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = [] }: Props) {
   const [isPending, startTransition] = useTransition()
 
   // Parámetros editables
@@ -134,12 +136,7 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
     setErrorMsg(null)
 
     startTransition(async () => {
-      const [valorUF, conjuntos] = await Promise.all([
-        getUFdelDia(),
-        unidad.bienesConjuntos
-          ? getBienesConjuntos(unidad.nemotecnico, unidad.bienesConjuntos)
-          : Promise.resolve([]),
-      ])
+      const valorUF = await getUFdelDia()
 
       const input: InputCotizacion = {
         precioListaDepto:          unidad.precioLista,
@@ -147,7 +144,7 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         descuentoAdicionalPct:     descuentoAdicional / 100,
         bonoPiePct,
         reservaCLP:                unidad.reserva,
-        preciosConjuntos:          conjuntos.map((c) => c.precioLista),
+        preciosConjuntos:          unidadesAdicionales.map((u) => u.precioLista),
         piePct,
         upfrontPct:                upfrontPct / 100,
         plazoAnios:                plazo,
