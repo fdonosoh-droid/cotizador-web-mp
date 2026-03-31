@@ -7,9 +7,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // Solo aplicar a páginas HTML, no a assets estáticos (CSS/JS/imágenes)
+        source: '/((?!_next/static|_next/image|favicon.ico).*)',
         headers: [
-          { key: 'Content-Type', value: 'text/html; charset=utf-8' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
