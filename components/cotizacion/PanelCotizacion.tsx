@@ -12,7 +12,11 @@ import {
   type EscenarioCAE,
 } from '@/lib/calculators/cotizador'
 import { formatCLP, formatUF } from '@/lib/data/uf-format'
-import { CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS } from '@/lib/config/cotizadorConfig'
+import {
+  CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS,
+  BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
+  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase,
+} from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'
 import CotizacionTemplate from './CotizacionTemplate'
@@ -33,6 +37,13 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
   const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
   const [arriendo,            setArriendo]            = useState<string>('')
   const [plusvalia,           setPlusvalia]           = useState(2)
+
+  // Condiciones comerciales editables (inicializadas desde la unidad seleccionada)
+  const [bonoPiePct,          setBonoPiePct]          = useState(unidad.bonoPie)
+  const [cuotasPieN,          setCuotasPieN]          = useState(unidad.cuotasPie || 60)
+  const [pieConstruccionPct,  setPieConstruccionPct]  = useState(unidad.piePeriodoConstruccion)
+  const [cuotonPct,           setCuotonPct]           = useState(unidad.cuoton)
+  const [pieCreditoDirectoPct,setPieCreditoDirectoPct]= useState(unidad.pieCreditoDirecto)
 
   // Resultado + modo cotización
   const [resultado,       setResultado]       = useState<ResultadoCotizacion | null>(null)
@@ -134,7 +145,7 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         precioListaDepto:          unidad.precioLista,
         descuentoPct:              unidad.descuento,
         descuentoAdicionalPct:     descuentoAdicional / 100,
-        bonoPiePct:                unidad.bonoPie,
+        bonoPiePct,
         reservaCLP:                unidad.reserva,
         preciosConjuntos:          conjuntos.map((c) => c.precioLista),
         piePct,
@@ -142,9 +153,10 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
         plazoAnios:                plazo,
         tasasCAE,
         valorUF,
-        cuotonPct:                 unidad.cuoton,
-        piePeriodoConstruccionPct: unidad.piePeriodoConstruccion,
-        pieCreditoDirectoPct:      unidad.pieCreditoDirecto,
+        cuotonPct,
+        piePeriodoConstruccionPct: pieConstruccionPct,
+        pieCreditoDirectoPct,
+        cuotasPieN,
         arriendoMensualCLP:        arriendoCLP,
         plusvaliaAnual:            plusvalia / 100,
       }
@@ -247,6 +259,97 @@ export default function PanelCotizacion({ unidad, broker }: Props) {
             onChange={(e) => { setResultado(null); setUpfrontPct(parseFloat(e.target.value) || 0) }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
+        </label>
+      </div>
+
+      {/* ── Condiciones comerciales editables ─────────── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {/* Bono Pie */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">
+            % Bono Pie
+            <span className="ml-1 text-xs text-gray-400">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
+          </span>
+          <select
+            value={bonoPiePct}
+            onChange={(e) => { setResultado(null); setBonoPiePct(parseFloat(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {withBase(unidad.bonoPie, BONO_PIE_OPTIONS).map((v) => (
+              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
+            ))}
+          </select>
+        </label>
+
+        {/* Cuotas Pie */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">
+            Cuotas Pie
+            <span className="ml-1 text-xs text-gray-400">base {unidad.cuotasPie}</span>
+          </span>
+          <select
+            value={cuotasPieN}
+            onChange={(e) => { setResultado(null); setCuotasPieN(parseInt(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {(CUOTAS_PIE_OPTIONS.includes(unidad.cuotasPie || 60)
+              ? CUOTAS_PIE_OPTIONS
+              : [...CUOTAS_PIE_OPTIONS, unidad.cuotasPie || 60].sort((a, b) => a - b)
+            ).map((v) => (
+              <option key={v} value={v}>{v} {v === 1 ? 'cuota' : 'cuotas'}</option>
+            ))}
+          </select>
+        </label>
+
+        {/* Pie Período Construcción */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">
+            Pie Construcción
+            <span className="ml-1 text-xs text-gray-400">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
+          </span>
+          <select
+            value={pieConstruccionPct}
+            onChange={(e) => { setResultado(null); setPieConstruccionPct(parseFloat(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {withBase(unidad.piePeriodoConstruccion, PIE_CONSTRUCCION_OPTIONS).map((v) => (
+              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
+            ))}
+          </select>
+        </label>
+
+        {/* Cuotón */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">
+            Cuotón
+            <span className="ml-1 text-xs text-gray-400">base {(unidad.cuoton * 100).toFixed(0)}%</span>
+          </span>
+          <select
+            value={cuotonPct}
+            onChange={(e) => { setResultado(null); setCuotonPct(parseFloat(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {withBase(unidad.cuoton, CUOTON_OPTIONS).map((v) => (
+              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
+            ))}
+          </select>
+        </label>
+
+        {/* Pie Crédito Directo */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">
+            Crd. Directo
+            <span className="ml-1 text-xs text-gray-400">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
+          </span>
+          <select
+            value={pieCreditoDirectoPct}
+            onChange={(e) => { setResultado(null); setPieCreditoDirectoPct(parseFloat(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {withBase(unidad.pieCreditoDirecto, PIE_CREDITO_DIRECTO_OPTIONS).map((v) => (
+              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
+            ))}
+          </select>
         </label>
       </div>
 

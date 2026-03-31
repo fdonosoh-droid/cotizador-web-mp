@@ -47,6 +47,28 @@ export const CONSTANTES = {
   PLUSVALIA_DEFAULT:    0.02,
 } as const
 
+/** Opciones de Bono Pie (decimal). Se combinan con el valor base de la condición comercial */
+export const BONO_PIE_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+
+/** Opciones de Cuotas Pie (número de cuotas) */
+export const CUOTAS_PIE_OPTIONS = [1, 12, 24, 36, 48, 60, 72, 84]
+
+/** Opciones de Pie Período Construcción (decimal) */
+export const PIE_CONSTRUCCION_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25]
+
+/** Opciones de Cuotón (decimal) */
+export const CUOTON_OPTIONS = [0, 0.01, 0.02, 0.03, 0.05, 0.10]
+
+/** Opciones de Pie Crédito Directo (decimal) */
+export const PIE_CREDITO_DIRECTO_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+
+/** Combina opciones estándar con el valor base (si no está en la lista) */
+export function withBase(base: number, options: number[]): number[] {
+  const rounded = Math.round(base * 10000) / 10000
+  if (options.some(o => Math.abs(o - rounded) < 0.0001)) return options
+  return [...options, rounded].sort((a, b) => a - b)
+}
+
 /** Valores default preseleccionados en la UI */
 export const DEFAULTS = {
   cae:     CAE_OPTIONS.filter(o => o.default).map(o => o.valor) as [number, number, number],

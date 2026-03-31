@@ -30,6 +30,7 @@ export interface InputCotizacion {
   cuotonPct:                 number   // decimal — pago único adicional a la inmobiliaria (P3.C2)
   piePeriodoConstruccionPct: number   // decimal — pie adicional en cuotas decrecientes (P3.C1)
   pieCreditoDirectoPct:      number   // decimal — % financiado directamente por inmobiliaria (P3.C3)
+  cuotasPieN:                number   // cantidad de cuotas del saldo de pie (editables en UI)
 
   /** Evaluación de inversión */
   arriendoMensualCLP: number   // estimado del broker
@@ -127,7 +128,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const {
     precioListaDepto, descuentoPct, descuentoAdicionalPct, bonoPiePct, reservaCLP,
     preciosConjuntos, piePct, upfrontPct, plazoAnios, tasasCAE, valorUF,
-    cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct,
+    cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct, cuotasPieN,
     arriendoMensualCLP, plusvaliaAnual,
   } = input
 
@@ -149,8 +150,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const saldoPieUF       = pieTotalUF - reservaUF - upfrontUF          // E43
   const saldoPieCLP      = saldoPieUF * valorUF
 
-  // Cuotas del pie: según condición comercial (default 60)
-  const cuotasPieN       = 60                                          // D58
+  // Cuotas del pie: viene del input (editable en UI, default de condición comercial)
   const valorCuotaPieUF  = cuotasPieN > 0 ? saldoPieUF / cuotasPieN : saldoPieUF  // E58
   const valorCuotaPieCLP = valorCuotaPieUF * valorUF
 
