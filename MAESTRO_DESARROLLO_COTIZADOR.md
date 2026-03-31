@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 19:43:27<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->a7ed60a<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualizaciones MEJORAS Y CORRECCIONES 31032026.docx fase 2. 5b: Historial — botón Descargar exporta Excel Historial_cotizaciones.xlsx<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 19:59:58<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->59ffb2f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->crea README.md<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
