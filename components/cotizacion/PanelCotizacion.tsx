@@ -26,9 +26,10 @@ interface Props {
   unidad:               UnidadCotizable
   broker:               BrokerData
   unidadesAdicionales?: CascadeSelection['unidadesAdicionales']
+  onVolver?:            () => void
 }
 
-export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = [] }: Props) {
+export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = [], onVolver }: Props) {
   const [isPending, startTransition] = useTransition()
 
   // Parámetros editables
@@ -72,13 +73,14 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numero:             numeroCot,
-          fecha:              fechaCot,
+          numero:               numeroCot,
+          fecha:                fechaCot,
           broker,
           unidad,
+          unidadesAdicionales,
           resultado,
-          arriendoMensualCLP: arriendoCLPCalc,
-          plusvaliaAnual:     plusvalia,
+          arriendoMensualCLP:   arriendoCLPCalc,
+          plusvaliaAnual:       plusvalia,
         }),
       })
       if (!res.ok) throw new Error('Error al generar PDF')
@@ -105,14 +107,15 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numero:             numeroCot,
-          fecha:              fechaCot,
+          numero:               numeroCot,
+          fecha:                fechaCot,
           broker,
           unidad,
+          unidadesAdicionales,
           resultado,
-          arriendoMensualCLP: arriendoCLPCalc,
-          plusvaliaAnual:     plusvalia,
-          emailCliente:       emailCliente.trim() || undefined,
+          arriendoMensualCLP:   arriendoCLPCalc,
+          plusvaliaAnual:       plusvalia,
+          emailCliente:         emailCliente.trim() || undefined,
         }),
       })
       if (!res.ok) {
@@ -390,13 +393,15 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
       {/* Botones */}
       <div className="flex gap-3 flex-wrap">
-        <button
-          onClick={handleCotizar}
-          disabled={isPending}
-          className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isPending ? 'Calculando…' : 'Generar Cotización'}
-        </button>
+        {!showDoc && (
+          <button
+            onClick={handleCotizar}
+            disabled={isPending}
+            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Calculando…' : 'Generar Cotización'}
+          </button>
+        )}
 
         {resultado && !showDoc && (
           <button
@@ -413,6 +418,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
                 fecha,
                 broker,
                 unidad,
+                unidadesAdicionales,
                 resultado,
                 piePct,
                 plazoAnios:     plazo,
@@ -424,6 +430,15 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             className="rounded-md border border-blue-600 px-6 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
           >
             Ver Documento
+          </button>
+        )}
+
+        {!showDoc && onVolver && (
+          <button
+            onClick={onVolver}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            ← Volver
           </button>
         )}
 
@@ -442,11 +457,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             >
               {pdfLoading ? 'Generando PDF…' : '⬇ Descargar PDF'}
             </button>
-          </>
-        )}
-
-        {showDoc && (
-          <>
             <button
               onClick={() => {
                 setShowEmailForm((v) => !v)
@@ -456,12 +466,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
               className="rounded-md border border-teal-600 px-6 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
             >
               ✉ Enviar por Email
-            </button>
-            <button
-              onClick={() => setShowDoc(false)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-            >
-              ← Volver
             </button>
           </>
         )}
@@ -504,7 +508,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
       )}
 
       {/* ── Resultado resumido ────────────────────────── */}
-      {resultado && !showDoc && <ResultadoPanel r={resultado} />}
+      {resultado && !showDoc && <ResultadoPanel r={resultado} unidad={unidad} unidadesAdicionales={unidadesAdicionales} />}
 
       {/* ── Documento de cotización ──────────────────── */}
       {resultado && showDoc && (
@@ -514,6 +518,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             fecha={fechaCot}
             broker={broker}
             unidad={unidad}
+            unidadesAdicionales={unidadesAdicionales}
             resultado={resultado}
             arriendoMensualCLP={arriendoCLPCalc}
             plusvaliaAnual={plusvalia}
@@ -526,16 +531,22 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
 // ── Sub-componente resultado ──────────────────────────────
 
-function ResultadoPanel({ r }: { r: ResultadoCotizacion }) {
+function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
+  r: ResultadoCotizacion
+  unidad: UnidadCotizable
+  unidadesAdicionales?: UnidadCotizable[]
+}) {
   return (
     <div className="space-y-6 rounded-lg border border-blue-100 bg-blue-50 p-5">
 
       {/* Precios */}
       <Section title="Precios">
-        <Row label="Precio Lista Depto"    uf={r.precioListaDepto}  clp={r.precioListaDepto * r.valorUF} />
-        {r.precioListaOtros > 0 && (
-          <Row label="Bienes conjuntos" uf={r.precioListaOtros} clp={r.precioListaOtros * r.valorUF} />
-        )}
+        <Row label={`Precio Lista ${unidad.tipoUnidad}`} uf={r.precioListaDepto} clp={r.precioListaDepto * r.valorUF} />
+        {unidadesAdicionales.map((u, i) => (
+          <Row key={i}
+            label={`Precio Lista ${u.tipoUnidad}${u.numeroUnidad ? ` N°${u.numeroUnidad}` : ''}`}
+            uf={u.precioLista} clp={u.precioLista * r.valorUF} />
+        ))}
         <Row label="Precio Lista Total"   uf={r.precioListaTotal} bold />
         <Row label={`Descuento (depto)`}  uf={r.precioListaDepto - r.precioDescDepto} negative />
         <Row label="Valor de Venta"       uf={r.valorVentaUF}    clp={r.valorVentaCLP} bold />

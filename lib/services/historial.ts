@@ -13,16 +13,17 @@ import type { ResultadoCotizacion }  from '@/lib/calculators/cotizador'
 // ── Tipos públicos ────────────────────────────────────────
 
 export interface GuardarCotizacionInput {
-  numero:         string             // 'COT-2026-0001'
-  fecha:          string             // fecha legible para display
-  broker:         BrokerData
-  unidad:         UnidadCotizable
-  resultado:      ResultadoCotizacion
-  piePct:         number
-  plazoAnios:     number
-  tasasCAE:       [number, number, number]
-  arriendoCLP:    number
-  plusvaliaAnual: number             // decimal (ej: 0.02)
+  numero:               string             // 'COT-2026-0001'
+  fecha:                string             // fecha legible para display
+  broker:               BrokerData
+  unidad:               UnidadCotizable
+  unidadesAdicionales?: UnidadCotizable[]
+  resultado:            ResultadoCotizacion
+  piePct:               number
+  plazoAnios:           number
+  tasasCAE:             [number, number, number]
+  arriendoCLP:          number
+  plusvaliaAnual:       number             // decimal (ej: 0.02)
 }
 
 export interface CotizacionResumen {
@@ -86,11 +87,12 @@ interface HistorialEntry {
   piePct:       number
   // Payload completo para regenerar PDF (solo en modo JSON/dev)
   pdfPayload?:  {
-    broker:             BrokerData
-    unidad:             UnidadCotizable
-    resultado:          ResultadoCotizacion
-    arriendoMensualCLP: number
-    plusvaliaAnual:     number
+    broker:               BrokerData
+    unidad:               UnidadCotizable
+    unidadesAdicionales?: UnidadCotizable[]
+    resultado:            ResultadoCotizacion
+    arriendoMensualCLP:   number
+    plusvaliaAnual:       number
   }
 }
 
@@ -120,11 +122,12 @@ function _guardarJSON(input: GuardarCotizacionInput): void {
     creditoHipUF: input.resultado.creditoHipFinalUF,
     piePct:       input.piePct,
     pdfPayload: {
-      broker:             input.broker,
-      unidad:             input.unidad,
-      resultado:          input.resultado,
-      arriendoMensualCLP: input.arriendoCLP,
-      plusvaliaAnual:     input.plusvaliaAnual,
+      broker:               input.broker,
+      unidad:               input.unidad,
+      unidadesAdicionales:  input.unidadesAdicionales,
+      resultado:            input.resultado,
+      arriendoMensualCLP:   input.arriendoCLP,
+      plusvaliaAnual:       input.plusvaliaAnual,
     },
   }
   entries.unshift(entry)  // más recientes primero

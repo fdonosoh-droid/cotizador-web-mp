@@ -166,23 +166,45 @@ function distinct<T>(arr: T[]): T[] {
 // ---------- ExcelAdapter -----------------------------------------------------
 
 export class ExcelAdapter implements IStockRepository {
+  /** Nemotécnicos que tienen al menos una unidad Disponible en stock */
+  private availableNemos(): Set<string> {
+    return new Set(
+      stock()
+        .filter((s) => s.estadoStock === 'Disponible')
+        .map((s) => s.nemotecnico),
+    )
+  }
+
   async getComunas(): Promise<string[]> {
-    return distinct(proyectos().map((p) => p.comuna).filter(Boolean))
+    const avail = this.availableNemos()
+    return distinct(
+      proyectos()
+        .filter((p) => avail.has(p.nemotecnico))
+        .map((p) => p.comuna)
+        .filter(Boolean),
+    )
   }
 
   async getEntregas(comuna: string): Promise<string[]> {
+    const avail = this.availableNemos()
     return distinct(
       proyectos()
-        .filter((p) => p.comuna === comuna)
+        .filter((p) => p.comuna === comuna && avail.has(p.nemotecnico))
         .map((p) => p.tipoEntrega)
         .filter(Boolean),
     )
   }
 
   async getInmobiliarias(comuna: string, entrega: string): Promise<string[]> {
+    const avail = this.availableNemos()
     return distinct(
       proyectos()
-        .filter((p) => p.comuna === comuna && p.tipoEntrega === entrega)
+        .filter(
+          (p) =>
+            p.comuna === comuna &&
+            p.tipoEntrega === entrega &&
+            avail.has(p.nemotecnico),
+        )
         .map((p) => p.alianza)
         .filter(Boolean),
     )
@@ -193,12 +215,14 @@ export class ExcelAdapter implements IStockRepository {
     entrega: string,
     inmobiliaria: string,
   ): Promise<ProyectoRow[]> {
+    const avail = this.availableNemos()
     return proyectos()
       .filter(
         (p) =>
           p.comuna === comuna &&
           p.tipoEntrega === entrega &&
-          p.alianza === inmobiliaria,
+          p.alianza === inmobiliaria &&
+          avail.has(p.nemotecnico),
       )
       .sort((a, b) => a.nombreProyecto.localeCompare(b.nombreProyecto))
   }

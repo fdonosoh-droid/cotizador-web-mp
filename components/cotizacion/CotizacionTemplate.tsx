@@ -15,13 +15,14 @@ export interface CotizacionTemplateProps {
   fecha:     string              // ej: "29 de marzo de 2026"
   broker:    BrokerData
   unidad:    UnidadCotizable
+  unidadesAdicionales?: UnidadCotizable[]
   resultado: ResultadoCotizacion
   arriendoMensualCLP: number
   plusvaliaAnual:     number
 }
 
 export default function CotizacionTemplate({
-  numero, fecha, broker, unidad, resultado, arriendoMensualCLP, plusvaliaAnual,
+  numero, fecha, broker, unidad, unidadesAdicionales = [], resultado, arriendoMensualCLP, plusvaliaAnual,
 }: CotizacionTemplateProps) {
   const r = resultado
   const uf = r.valorUF
@@ -110,16 +111,17 @@ export default function CotizacionTemplate({
             </tr>
           </thead>
           <tbody>
-            <TRow label="Precio Lista Depto"
+            <TRow label={`Precio Lista ${unidad.tipoUnidad}`}
               uf={r.precioListaDepto}
               pct={r.precioListaTotal > 0 ? r.precioListaDepto / r.precioListaTotal : 0}
               clp={r.precioListaDepto * uf} shade />
-            {r.precioListaOtros > 0 && (
-              <TRow label="Bienes Conjuntos (obligatorio)"
-                uf={r.precioListaOtros}
-                pct={r.precioListaTotal > 0 ? r.precioListaOtros / r.precioListaTotal : 0}
-                clp={r.precioListaOtros * uf} />
-            )}
+            {unidadesAdicionales.map((u, i) => (
+              <TRow key={i}
+                label={`Precio Lista ${u.tipoUnidad}${u.numeroUnidad ? ` N°${u.numeroUnidad}` : ''}`}
+                uf={u.precioLista}
+                pct={r.precioListaTotal > 0 ? u.precioLista / r.precioListaTotal : 0}
+                clp={u.precioLista * uf} />
+            ))}
             <TRow label="Precio Lista Total"
               uf={r.precioListaTotal}
               pct={1}

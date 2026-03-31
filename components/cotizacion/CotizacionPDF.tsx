@@ -67,18 +67,19 @@ const s = StyleSheet.create({
 // ── Componente principal ──────────────────────────────────
 
 export interface CotizacionPDFProps {
-  numero:             string
-  fecha:              string
-  broker:             BrokerData
-  unidad:             UnidadCotizable
-  resultado:          ResultadoCotizacion
-  arriendoMensualCLP: number
-  plusvaliaAnual:     number
-  logoBase64?:        string | null
+  numero:               string
+  fecha:                string
+  broker:               BrokerData
+  unidad:               UnidadCotizable
+  unidadesAdicionales?: UnidadCotizable[]
+  resultado:            ResultadoCotizacion
+  arriendoMensualCLP:   number
+  plusvaliaAnual:       number
+  logoBase64?:          string | null
 }
 
 export function CotizacionPDF({
-  numero, fecha, broker, unidad, resultado: r, arriendoMensualCLP, plusvaliaAnual, logoBase64,
+  numero, fecha, broker, unidad, unidadesAdicionales = [], resultado: r, arriendoMensualCLP, plusvaliaAnual, logoBase64,
 }: CotizacionPDFProps) {
   const uf = r.valorUF
 
@@ -160,19 +161,19 @@ export function CotizacionPDF({
           <Text style={s.sTitle}>Valores</Text>
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
           <TR shade={false} bold={false} cols={[
-            `Precio Lista Depto`,
+            `Precio Lista ${unidad.tipoUnidad}`,
             `${formatUF(r.precioListaDepto)} UF`,
             r.precioListaTotal > 0 ? pct(r.precioListaDepto / r.precioListaTotal) : '',
             formatCLP(r.precioListaDepto * uf),
           ]} widths={['50%', '17%', '13%', '20%']} />
-          {r.precioListaOtros > 0 && (
-            <TR shade cols={[
-              'Bienes Conjuntos (obligatorio)',
-              `${formatUF(r.precioListaOtros)} UF`,
-              r.precioListaTotal > 0 ? pct(r.precioListaOtros / r.precioListaTotal) : '',
-              formatCLP(r.precioListaOtros * uf),
+          {unidadesAdicionales.map((u, i) => (
+            <TR key={i} shade cols={[
+              `Precio Lista ${u.tipoUnidad}${u.numeroUnidad ? ` N°${u.numeroUnidad}` : ''}`,
+              `${formatUF(u.precioLista)} UF`,
+              r.precioListaTotal > 0 ? pct(u.precioLista / r.precioListaTotal) : '',
+              formatCLP(u.precioLista * uf),
             ]} widths={['50%', '17%', '13%', '20%']} />
-          )}
+          ))}
           {r.precioListaDepto !== r.precioDescDepto && (
             <TR cols={[
               r.descuentoAdicionalPct > 0

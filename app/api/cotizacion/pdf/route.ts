@@ -56,12 +56,13 @@ export async function GET(req: NextRequest) {
 
     const props: CotizacionPDFProps = {
       numero,
-      fecha:              payload.fecha,
-      broker:             payload.broker,
-      unidad:             payload.unidad,
-      resultado:          payload.resultado,
-      arriendoMensualCLP: payload.arriendoMensualCLP,
-      plusvaliaAnual:     payload.plusvaliaAnual,
+      fecha:                payload.fecha,
+      broker:               payload.broker,
+      unidad:               payload.unidad,
+      unidadesAdicionales:  payload.unidadesAdicionales,
+      resultado:            payload.resultado,
+      arriendoMensualCLP:   payload.arriendoMensualCLP,
+      plusvaliaAnual:       payload.plusvaliaAnual,
     }
     const uint8 = await generarPDF(props)
     return new NextResponse(Buffer.from(uint8), {

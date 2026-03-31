@@ -124,7 +124,17 @@ export default function CotizadorShell() {
           </div>
           <div className="mt-4">
             {step === 'broker' ? (
-              <BrokerForm onSubmit={handleBrokerSubmit} />
+              <>
+                <BrokerForm onSubmit={handleBrokerSubmit} />
+                <div className="mt-3">
+                  <button
+                    onClick={() => setStep('select')}
+                    className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+                  >
+                    ← Volver a selección de unidad
+                  </button>
+                </div>
+              </>
             ) : broker ? (
               <div className="space-y-0.5 text-sm text-gray-700">
                 <p><span className="text-gray-500">Cliente:</span> <strong>{broker.nombre}</strong> · {broker.rut} · {broker.email}{broker.telefono ? ` · ${broker.telefono}` : ''}</p>
@@ -143,6 +153,7 @@ export default function CotizadorShell() {
             unidad={unidad}
             broker={broker}
             unidadesAdicionales={selection?.unidadesAdicionales ?? []}
+            onVolver={() => setStep('broker')}
           />
         </section>
       )}
