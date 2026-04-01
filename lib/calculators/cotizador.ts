@@ -172,15 +172,21 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const totalPieInmobUF = pieTotalUF + cuotonUF + piePeriodoConstruccionUF
 
   // ── D. Crédito & tasación ────────────────────────────────────────────
-  // P3.B4: tasación = valor de venta + aporte bono pie de la inmobiliaria
-  const bonoPieUF          = Math.round(valorVentaUF * bonoPiePct * 100) / 100
+  // Fórmula Excel maestra (Calculadora BP+Mutuo, celdas D31/D33/D35/D36):
+  //   D33 = 1 − piePct − bonoPiePct          → fracción crédito hipotecario puro
+  //   D35 = valorVenta*(1−pie) / D33         → tasación (despejada)
+  //   D36 = tasación × bonoPiePct            → aporte inmobiliaria en UF
+  // El % de aporte se aplica sobre la TASACIÓN (no sobre el valor de venta)
+  const creditoHipBaseUF   = valorVentaUF * (1 - piePct)              // E44 — monto base a financiar
+  const chPct              = 1 - piePct - bonoPiePct                   // D33
+  const tasacionUFfinal    = bonoPiePct > 0
+    ? Math.round(creditoHipBaseUF / chPct * 100) / 100                // D35
+    : valorVentaUF                                                     // sin bono: tasación = valor venta
+  const bonoPieUF          = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
   const saldoAporteInmobUF = bonoPieUF                                 // E48
-  const tasacionUF         = valorVentaUF + bonoPieUF                  // P3.B4
-  const tasacionCLP        = tasacionUF * valorUF
-  // creditoHipBase se mantiene como referencia (valor a financiar sin bono)
-  const creditoHipBaseUF   = valorVentaUF * (1 - piePct)              // E44 (referencia)
+  const tasacionCLP        = tasacionUFfinal * valorUF
   // P5.3: el banco presta sobre la tasación, menos lo que el cliente ya pagó de pie
-  const creditoHipFinalUF  = tasacionUF - totalPieInmobUF             // P5.3
+  const creditoHipFinalUF  = tasacionUFfinal - totalPieInmobUF        // P5.3
   const creditoHipFinalCLP = creditoHipFinalUF * valorUF
 
   // ── E. Evaluación común ───────────────────────────────────────────────
@@ -196,8 +202,8 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     const cuotaMensualUF    = cuotaMensualCLP / valorUF                // E67
     const flujoMensualCLP   = arriendoCLP - cuotaMensualCLP            // E73
     const flujoAcumuladoCLP = flujoMensualCLP * CONSTANTES.MESES_ARRIENDO_ANIO * 5  // E77
-    const capRate           = tasacionUF > 0
-      ? (arriendoCLP * CONSTANTES.MESES_ARRIENDO_ANIO / valorUF) / tasacionUF  // E86
+    const capRate           = tasacionUFfinal > 0
+      ? (arriendoCLP * CONSTANTES.MESES_ARRIENDO_ANIO / valorUF) / tasacionUFfinal  // E86
       : 0
 
     const capitalGain = precioVentaAnio5CLP - valorVentaCLP
@@ -251,7 +257,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     descuentoAdicionalPct,
     bonoPieUF,
     saldoAporteInmobUF:           Math.round(saldoAporteInmobUF * 100) / 100,
-    tasacionUF:                   Math.round(tasacionUF * 100) / 100,
+    tasacionUF:                   Math.round(tasacionUFfinal * 100) / 100,
     tasacionCLP:                  Math.round(tasacionCLP),
     creditoHipBaseUF:             Math.round(creditoHipBaseUF * 100) / 100,
     creditoHipFinalUF:            Math.round(creditoHipFinalUF * 100) / 100,
