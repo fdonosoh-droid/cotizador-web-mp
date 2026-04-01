@@ -275,7 +275,7 @@ export function CotizacionPDF({
         {/* DISCLAIMER */}
         <View style={s.footer} fixed>
           <Text style={s.footerTxt}>
-            Esta cotización y su información son estimativas y está basada en las condiciones comerciales establecidas por la inmobiliaria al momento de su generación. VIVEPROP o el broker que genera esta cotización no se hacen responsables por eventuales diferencias entre lo aquí expresado y los valores que en definitiva determine la inmobiliaria para cada caso. Los montos en UF están sujetos a variación según el índice oficial publicado por el Banco Central de Chile. Las condiciones del crédito hipotecario dependen de la evaluación de cada institución financiera. Cotización generada el {fecha}.
+            Esta cotización ha sido elaborada para apoyarte en la evaluación de esta oportunidad inmobiliaria, considerando las condiciones comerciales vigentes informadas por la inmobiliaria a la fecha de emisión. La información aquí contenida es de carácter referencial y puede experimentar variaciones en valores, beneficios o condiciones comerciales según lo que finalmente defina la inmobiliaria para cada caso. Asimismo, los montos expresados en UF están sujetos a la variación del índice oficial publicado por el Banco Central de Chile, y las condiciones de financiamiento hipotecario dependerán de la evaluación y aprobación de la entidad financiera respectiva. Cotización emitida el {fecha}.
           </Text>
         </View>
 
