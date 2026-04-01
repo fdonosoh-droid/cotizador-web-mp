@@ -224,7 +224,7 @@ export default function CotizacionTemplate({
               uf={r.valorVentaUF} pct={r.valorVentaUF/r.tasacionUF} clp={r.valorVentaCLP} shade />
             {r.saldoAporteInmobUF > 0 && (
               <TRow label={`Aporte Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`}
-                uf={r.saldoAporteInmobUF} pct={r.saldoAporteInmobUF/r.tasacionUF} clp={r.saldoAporteInmobUF*uf} />
+                uf={r.saldoAporteInmobUF} pct={unidad.bonoPie} clp={r.saldoAporteInmobUF*uf} />
             )}
             <TRow label="Tasación Banco"
               uf={r.tasacionUF} pct={1} clp={r.tasacionCLP} bold shade />
