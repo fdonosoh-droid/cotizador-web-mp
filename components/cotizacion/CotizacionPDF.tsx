@@ -161,7 +161,7 @@ export function CotizacionPDF({
           <Text style={s.sTitle}>Valores</Text>
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
           <TR shade={false} bold={false} cols={[
-            `Precio Lista ${unidad.tipoUnidad}`,
+            `Precio Lista ${unidad.tipoUnidad}${unidad.numeroUnidad ? ` N°${unidad.numeroUnidad}` : ''}`,
             `${formatUF(r.precioListaDepto)} UF`,
             r.precioListaTotal > 0 ? pct(r.precioListaDepto / r.precioListaTotal) : '',
             formatCLP(r.precioListaDepto * uf),

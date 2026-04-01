@@ -111,7 +111,7 @@ export default function CotizacionTemplate({
             </tr>
           </thead>
           <tbody>
-            <TRow label={`Precio Lista ${unidad.tipoUnidad}`}
+            <TRow label={`Precio Lista ${unidad.tipoUnidad}${unidad.numeroUnidad ? ` N°${unidad.numeroUnidad}` : ''}`}
               uf={r.precioListaDepto}
               pct={r.precioListaTotal > 0 ? r.precioListaDepto / r.precioListaTotal : 0}
               clp={r.precioListaDepto * uf} shade />

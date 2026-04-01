@@ -3,7 +3,7 @@
 // PANEL COTIZACIÓN — resultados con escenarios CAE/pie/plazo
 // ============================================================
 
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction } from '@/app/actions/stock'
 import {
   calcularCotizacion,
@@ -541,7 +541,7 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
 
       {/* Precios */}
       <Section title="Precios">
-        <Row label={`Precio Lista ${unidad.tipoUnidad}`} uf={r.precioListaDepto} clp={r.precioListaDepto * r.valorUF} />
+        <Row label={`Precio Lista ${unidad.tipoUnidad}${unidad.numeroUnidad ? ` N°${unidad.numeroUnidad}` : ''}`} uf={r.precioListaDepto} clp={r.precioListaDepto * r.valorUF} />
         {unidadesAdicionales.map((u, i) => (
           <Row key={i}
             label={`Precio Lista ${u.tipoUnidad}${u.numeroUnidad ? ` N°${u.numeroUnidad}` : ''}`}
