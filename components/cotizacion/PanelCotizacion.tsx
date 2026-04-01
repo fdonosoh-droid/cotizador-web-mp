@@ -14,7 +14,7 @@ import {
 import { formatCLP, formatUF } from '@/lib/data/uf-format'
 import {
   CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS,
-  BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
+  DESCUENTO_ADICIONAL_OPTIONS, BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
   CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase,
 } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
@@ -35,7 +35,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   // Parámetros editables
   const [piePct,              setPiePct]              = useState(DEFAULTS.pie)
   const [upfrontPct,          setUpfrontPct]          = useState(DEFAULTS.upfront * 100)  // en %
-  const [descuentoAdicional,  setDescuentoAdicional]  = useState(0)  // en %
+  const [descuentoAdicional,  setDescuentoAdicional]  = useState(Math.round(unidad.descuento * 10000) / 100)  // en % — default = condiciones comerciales
   const [plazo,               setPlazo]               = useState(DEFAULTS.plazo)
   const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
   const [arriendos,           setArriendos]           = useState<[string, string, string]>(['', '', ''])
@@ -141,8 +141,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
       const input: InputCotizacion = {
         precioListaDepto:          unidad.precioLista,
-        descuentoPct:              unidad.descuento,
-        descuentoAdicionalPct:     descuentoAdicional / 100,
+        descuentoPct:              0,
+        descuentoAdicionalPct:     descuentoAdicional / 100,  // contiene el descuento total seleccionado
         bonoPiePct,
         reservaCLP:                unidad.reserva,
         preciosConjuntos:          unidadesAdicionales.map((u) => u.precioLista),
@@ -166,22 +166,26 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   return (
     <div className="space-y-4">
 
-      {/* ── Fila A: Dcto.adicional · Bono Pie · % Pie · Cuotas Pie ── */}
+      {/* ── Fila A: Dcto. · Aporte Inmob. · % Pie · Cuotas Pie ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {/* A1 — Descuento adicional */}
+        {/* A1 — Descuento */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
-            Dcto. adicional (%)
+            Descuento adicional (%)
             {unidad.descuento > 0 && (
-              <span className="ml-1 text-xs text-gray-400">+ {(unidad.descuento * 100).toFixed(0)}% base</span>
+              <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.descuento * 100).toFixed(0)}%</span>
             )}
           </span>
-          <input
-            type="number" min={0} max={30} step={0.5}
+          <select
             value={descuentoAdicional}
-            onChange={(e) => { setResultado(null); setDescuentoAdicional(parseFloat(e.target.value) || 0) }}
+            onChange={(e) => { setResultado(null); setDescuentoAdicional(parseFloat(e.target.value)) }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          >
+            {withBase(unidad.descuento, DESCUENTO_ADICIONAL_OPTIONS).map((v) => {
+              const pct = Math.round(v * 10000) / 100
+              return <option key={pct} value={pct}>{pct.toFixed(1)}%</option>
+            })}
+          </select>
         </label>
 
         {/* A2 — Bono Pie */}
@@ -190,7 +194,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             Aporte Inmobiliaria (%)
             {unidad.bonoPie === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-xs text-gray-400">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
+              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
             }
           </span>
           <select
@@ -223,7 +227,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Cuotas Pie
-            <span className="ml-1 text-xs text-gray-400">base {unidad.cuotasPie}</span>
+            <span className="ml-1 text-sm font-bold text-blue-900">base {unidad.cuotasPie}</span>
           </span>
           <select
             value={cuotasPieN}
@@ -248,7 +252,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             Pie Construcción
             {unidad.piePeriodoConstruccion === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-xs text-gray-400">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
+              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
             }
           </span>
           <select
@@ -269,7 +273,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             Cuotón
             {unidad.cuoton === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-xs text-gray-400">base {(unidad.cuoton * 100).toFixed(0)}%</span>
+              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.cuoton * 100).toFixed(0)}%</span>
             }
           </span>
           <select
@@ -287,10 +291,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         {/* B3 — Pie Crédito Directo */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
-            Crd. Directo
+            Crédito Directo
             {unidad.pieCreditoDirecto === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-xs text-gray-400">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
+              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
             }
           </span>
           <select

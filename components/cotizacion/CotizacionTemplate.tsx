@@ -127,11 +127,7 @@ export default function CotizacionTemplate({
               clp={r.precioListaTotal * uf} bold />
             {r.precioListaDepto !== r.precioDescDepto && (
               <TRow
-                label={
-                  r.descuentoAdicionalPct > 0
-                    ? `Descuento Venta (${(unidad.descuento*100).toFixed(0)}% base + ${(r.descuentoAdicionalPct*100).toFixed(1)}% adicional)`
-                    : `Descuento Venta (${(unidad.descuento*100).toFixed(0)}%)`
-                }
+                label={`Descuento Venta (${(r.descuentoAdicionalPct * 100).toFixed(1)}%)`}
                 uf={-(r.precioListaDepto - r.precioDescDepto)}
                 clp={-(r.precioListaDepto - r.precioDescDepto) * uf}
                 shade negative />

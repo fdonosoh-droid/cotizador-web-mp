@@ -175,9 +175,7 @@ export function CotizacionPDF({
           ))}
           {r.precioListaDepto !== r.precioDescDepto && (
             <TR cols={[
-              r.descuentoAdicionalPct > 0
-                ? `Descuento Venta (${(unidad.descuento*100).toFixed(0)}% base + ${(r.descuentoAdicionalPct*100).toFixed(1)}% adicional)`
-                : `Descuento Venta (${(unidad.descuento * 100).toFixed(0)}%)`,
+              `Descuento Venta (${(r.descuentoAdicionalPct * 100).toFixed(1)}%)`,
               `-${formatUF(r.precioListaDepto - r.precioDescDepto)} UF`,
               '', formatCLP(-(r.precioListaDepto - r.precioDescDepto) * uf),
             ]} widths={['50%', '17%', '13%', '20%']} redLast />
