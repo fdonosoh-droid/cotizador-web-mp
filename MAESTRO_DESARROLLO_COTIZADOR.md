@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-01 18:53:42<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->caeeeae<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->corrección inicial calculo aporte inmobiaria basado en metodo calculo MAESTRA<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-01 19:00:00<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->3a840e3<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Corrección fórmula tasación/aporte inmobiliaria (Excel maestra); mejoras UI; renombres display<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
@@ -323,6 +323,16 @@
 - Eliminado `getBienesConjuntos()` del flujo del cotizador — el campo `bienesConjuntos` del stock era referencia, no se consumía automáticamente.
 - `preciosConjuntos` ahora se alimenta exclusivamente desde `unidadesAdicionales` (selección manual vía "Agregar Unidades" en CascadeSelector).
 - `ResultadoCotizacion.precioListaOtros` sigue siendo la suma; los detalles por unidad se muestran desde el array `unidadesAdicionales` en los templates.
+**Corrección 2026-04-01 — Fórmula tasación/aporte inmobiliaria (Excel maestra Calculadora BP+Mutuo):**
+- **Antes (incorrecto):** `bonoPieUF = valorVentaUF × bonoPiePct` → `tasacionUF = valorVentaUF + bonoPieUF`. El % se aplicaba sobre el valor de venta → columna % mostraba 9.1% en lugar de 10%.
+- **Ahora (correcto, según celdas D31/D33/D35/D36 de Excel maestra):**
+  ```
+  chPct       = 1 − piePct − bonoPiePct               // D33: fracción CH puro
+  tasacionUF  = valorVenta × (1−pie) / chPct           // D35: tasación despejada
+  bonoPieUF   = tasacionUF × bonoPiePct                // D36: aporte en UF
+  ```
+- El % del aporte se aplica sobre la **tasación** (no sobre el valor de venta) → label (10%) y columna % ahora son consistentes.
+- Sin bono pie: `tasacionUF = valorVentaUF` (sin cambio).
 <!-- /SUBSTAGE -->
 
 ---
@@ -609,6 +619,37 @@
 - `CotizadorShell.tsx`: "← Volver a selección de unidad" en paso 2 (BrokerForm) → regresa a paso 1
 - `PanelCotizacion.tsx`: prop `onVolver?: () => void`; botón "← Volver" visible cuando `!showDoc` → regresa a paso 2
 - Una vez ejecutado "Ver Documento" (cotización guardada en historial), el botón desaparece → la cotización queda finalizada y no editable
+
+#### M10 — Corrección fórmula tasación / Aporte Inmobiliaria (2026-04-01)
+- **Problema:** columna % de "Aporte Inmobiliaria" mostraba 9.1% aunque la condición comercial es 10%. La fórmula aplicaba el % sobre el Valor de Venta en vez de la Tasación.
+- **Corrección en `lib/calculators/cotizador.ts`:** implementada fórmula de Excel maestra (Calculadora BP+Mutuo, celdas D33/D35/D36):
+  - `tasacionUF = valorVenta × (1−pie) / (1−pie−bono)` (tasación despejada)
+  - `bonoPieUF  = tasacionUF × bonoPiePct` (aporte sobre tasación)
+- Label, columna UF, columna % y columna $ ahora son 100% consistentes con la condición comercial.
+
+#### M11 — Renombramiento "Bono Pie" → "Aporte Inmobiliaria" (2026-04-01)
+- `PanelCotizacion.tsx`: label selector → "Aporte Inmobiliaria (%)"
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: fila tabla → "Aporte Inmobiliaria (X%)"
+- `CotizadorShell.tsx`: badge resumen → "Aporte Inmob. X%"
+- Modelos de datos, cálculos y variables internas sin cambio (siguen usando `bonoPie`, `bonoPiePct`)
+
+#### M12 — Descuento: input libre → select con default de condiciones comerciales (2026-04-01)
+- `PanelCotizacion.tsx`: campo "Descuento adicional (%)" cambiado de `<input type="number">` a `<select>`
+- Default pre-seleccionado = `unidad.descuento` (condición comercial del proyecto)
+- Opciones disponibles: 0% a 10% + valor base de la unidad si no está en la lista (`withBase`)
+- Calculador: `descuentoPct = 0`, `descuentoAdicionalPct = totalSeleccionado` (absorbe el total)
+- Template y PDF: label simplificado a `"Descuento Venta (X%)"` sin desglose "base + adicional"
+- `lib/config/cotizadorConfig.ts`: nueva constante `DESCUENTO_ADICIONAL_OPTIONS`
+
+#### M13 — Corrección labels UI (2026-04-01)
+- "Crd. Directo" → "Crédito Directo" en Fila B de PanelCotizacion
+- Textos "base X%" → `text-sm font-bold text-blue-900` (mismo tamaño que label, negrita, azul navy)
+- Textos "no aplica" → sin cambio (`text-xs text-red-400`)
+- Display opciones descuento: enteros sin decimal (10% en vez de 10.0%)
+
+#### M14 — Disclaimer de cotización actualizado (2026-04-01)
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: texto del pie de página reemplazado por versión más cordial y comercial
+- "Cotización generada el..." → "Cotización emitida el..."
 
 #### M8 — Corrección CSS (headers en next.config.ts)
 - `next.config.ts`: eliminado bloque `headers()` que aplicaba `Content-Type: text/html` a todos los archivos incluidos CSS → los estilos ahora se cargan correctamente

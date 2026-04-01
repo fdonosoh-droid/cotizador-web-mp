@@ -114,7 +114,7 @@ npm run import:excel
 
 3. Cotización
    └─ Parámetros editables: % pie, upfront, plazo, tasas CAE, plusvalía, arriendo estimado
-   └─ Condiciones comerciales: bono pie, cuotas pie, pie construcción, cuotón, crédito directo
+   └─ Condiciones comerciales: aporte inmobiliaria, cuotas pie, pie construcción, cuotón, crédito directo
       (controles deshabilitados automáticamente si la condición base = 0)
    └─ Resultado: precios desglosados por unidad, plan de pie, crédito hipotecario,
       3 escenarios CAE, evaluación 5 años
@@ -183,7 +183,7 @@ El motor en `lib/calculators/cotizador.ts` replica exactamente las fórmulas del
 | **Precios** | Precio lista, descuento (base + adicional), valor de venta |
 | **Pie** | Pie total, reserva, upfront, saldo pie, cuotas pie |
 | **Modalidades** | Cuotón (P3.C2), Pie Construcción (P3.C1), Crédito Directo (P3.C3) |
-| **Tasación** | Valor venta + bono pie inmobiliaria |
+| **Tasación** | `valorVenta × (1−pie) / (1−pie−aporte)` — fórmula Excel maestra Calculadora BP+Mutuo |
 | **Crédito hipotecario** | Tasación − pie total pagado a inmobiliaria |
 | **Escenarios CAE** | 3 columnas: cuota mensual, flujo neto, flujo acumulado |
 | **ROI 5 años** | `(plusvalía capital + flujo acumulado) / equity (pie pagado)` |
@@ -197,10 +197,11 @@ El motor en `lib/calculators/cotizador.ts` replica exactamente las fórmulas del
 - Tasas CAE: 3 escenarios simultáneos (4.0% / 4.5% / 5.0% / 5.5%)
 - Descuento adicional negociado
 - Plusvalía anual estimada
-- Arriendo mensual estimado
-- Bono Pie, Cuotas Pie, Pie Construcción, Cuotón, Crédito Directo
+- **Descuento adicional:** selector con default pre-cargado desde condiciones comerciales del proyecto
+- **Arriendo mensual estimado: 3 valores independientes** (uno por escenario CAE)
+- Aporte Inmobiliaria, Cuotas Pie, Pie Construcción, Cuotón, Crédito Directo
 
-> Los controles de condiciones comerciales se deshabilitan automáticamente cuando el valor base de la condición es 0 (ej: si el proyecto no tiene bono pie, el selector queda bloqueado en 0%).
+> Los controles de condiciones comerciales se deshabilitan automáticamente cuando el valor base de la condición es 0 (ej: si el proyecto no tiene Aporte Inmobiliaria, el selector queda bloqueado en 0%).
 
 ### Sección VALORES — desglose por unidad
 
