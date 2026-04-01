@@ -32,18 +32,20 @@ export interface InputCotizacion {
   pieCreditoDirectoPct:      number   // decimal — % financiado directamente por inmobiliaria (P3.C3)
   cuotasPieN:                number   // cantidad de cuotas del saldo de pie (editables en UI)
 
-  /** Evaluación de inversión */
-  arriendoMensualCLP: number   // estimado del broker
-  plusvaliaAnual:     number   // decimal, default 0.02
+  /** Evaluación de inversión — un arriendo estimado por escenario CAE */
+  arriendosMensualesCLP: [number, number, number]
+  plusvaliaAnual:        number   // decimal, default 0.02
 }
 
 /** Resultado de un escenario CAE */
 export interface EscenarioCAE {
   cae:                number   // decimal
+  arriendoMensualCLP: number   // arriendo estimado para este escenario
   cuotaMensualCLP:    number
   cuotaMensualUF:     number
   flujoMensualCLP:    number   // arriendo - cuota
   flujoAcumuladoCLP:  number   // flujo * 11 * 5
+  capRate:            number   // (arriendo*11/uf) / tasacion
   roi5Anios:          number   // decimal
   roiAnual:           number   // decimal
 }
@@ -105,7 +107,7 @@ export interface ResultadoCotizacion {
   plusvaliaAcumulada:  number
   precioVentaAnio5CLP: number  // valorVentaCLP*(1+plus)^5*0.95 [E82]
   piePagadoCLP:        number  // pieTotalUF * valorUF
-  capRate:             number  // (arriendo*11/uf) / tasacion [E86]
+  // capRate está por escenario en EscenarioCAE
 }
 
 // ---------- función PMT (equivalente Excel) ------------------------------
@@ -129,7 +131,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     precioListaDepto, descuentoPct, descuentoAdicionalPct, bonoPiePct, reservaCLP,
     preciosConjuntos, piePct, upfrontPct, plazoAnios, tasasCAE, valorUF,
     cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct, cuotasPieN,
-    arriendoMensualCLP, plusvaliaAnual,
+    arriendosMensualesCLP, plusvaliaAnual,
   } = input
 
   // ── A. Precios lista ──────────────────────────────────────────────────
@@ -185,37 +187,36 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const plusvaliaAcumulada  = Math.pow(1 + plusvaliaAnual, 5) - 1     // E81
   const precioVentaAnio5CLP = valorVentaCLP * (1 + plusvaliaAcumulada) * CONSTANTES.HAIRCUT_VENTA  // E82
   const piePagadoCLP        = pieTotalUF * valorUF                    // E79 (G40)
-  const capRate             = tasacionUF > 0
-    ? (arriendoMensualCLP * CONSTANTES.MESES_ARRIENDO_ANIO / valorUF) / tasacionUF  // E86
-    : 0
 
-  // ── F. 3 escenarios CAE ───────────────────────────────────────────────
-  const escenarios = tasasCAE.map((cae): EscenarioCAE => {
+  // ── F. 3 escenarios CAE (cada uno con su propio arriendo y cap rate) ──
+  const escenarios = tasasCAE.map((cae, i): EscenarioCAE => {
+    const arriendoCLP = arriendosMensualesCLP[i]
     const n = plazoAnios * 12
-    const cuotaMensualCLP  = pmt(cae / 12, n, creditoHipFinalCLP)     // E66
-    const cuotaMensualUF   = cuotaMensualCLP / valorUF                 // E67
-    const flujoMensualCLP  = arriendoMensualCLP - cuotaMensualCLP      // E73
+    const cuotaMensualCLP   = pmt(cae / 12, n, creditoHipFinalCLP)    // E66
+    const cuotaMensualUF    = cuotaMensualCLP / valorUF                // E67
+    const flujoMensualCLP   = arriendoCLP - cuotaMensualCLP            // E73
     const flujoAcumuladoCLP = flujoMensualCLP * CONSTANTES.MESES_ARRIENDO_ANIO * 5  // E77
+    const capRate           = tasacionUF > 0
+      ? (arriendoCLP * CONSTANTES.MESES_ARRIENDO_ANIO / valorUF) / tasacionUF  // E86
+      : 0
 
-    // ROI total a 5 años sobre el equity del inversor (pie pagado a la inmobiliaria)
-    // = (plusvalía del capital + flujo neto acumulado) / totalPieInmob
-    // Diferencia entre escenarios CAE viene del flujoAcumulado (cuota varía por CAE)
     const capitalGain = precioVentaAnio5CLP - valorVentaCLP
-    const equityBase  = totalPieInmobUF * valorUF   // lo que el inversor desembolsó
+    const equityBase  = totalPieInmobUF * valorUF
     const roi5Anios   = equityBase > 0
       ? Math.round((capitalGain + flujoAcumuladoCLP) / equityBase * 10000) / 10000
       : 0
-    // Protección: si roi5 ≤ -1 la raíz 1/5 sería imaginaria
     const roiAnual    = roi5Anios > -1
       ? Math.round((Math.pow(1 + roi5Anios, 1 / 5) - 1) * 10000) / 10000
       : -1
 
     return {
       cae,
-      cuotaMensualCLP:   Math.round(cuotaMensualCLP),
-      cuotaMensualUF:    Math.round(cuotaMensualUF * 100) / 100,
-      flujoMensualCLP:   Math.round(flujoMensualCLP),
-      flujoAcumuladoCLP: Math.round(flujoAcumuladoCLP),
+      arriendoMensualCLP: arriendoCLP,
+      cuotaMensualCLP:    Math.round(cuotaMensualCLP),
+      cuotaMensualUF:     Math.round(cuotaMensualUF * 100) / 100,
+      flujoMensualCLP:    Math.round(flujoMensualCLP),
+      flujoAcumuladoCLP:  Math.round(flujoAcumuladoCLP),
+      capRate:            Math.round(capRate * 10000) / 10000,
       roi5Anios,
       roiAnual,
     }
@@ -259,6 +260,5 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     plusvaliaAcumulada:           Math.round(plusvaliaAcumulada * 10000) / 10000,
     precioVentaAnio5CLP:          Math.round(precioVentaAnio5CLP),
     piePagadoCLP:                 Math.round(totalPieInmobUF * valorUF),
-    capRate:                      Math.round(capRate * 10000) / 10000,
   }
 }

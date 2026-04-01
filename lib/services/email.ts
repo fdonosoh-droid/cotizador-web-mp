@@ -131,8 +131,8 @@ function buildHtml(p: CotizacionPDFProps): string {
         <td style="padding:6px 12px;border:1px solid #e5e7eb;font-weight:600">${uf(r.creditoHipFinalUF)} UF</td>
       </tr>
       <tr>
-        <td style="padding:6px 12px;border:1px solid #e5e7eb;color:#6b7280">Cap Rate</td>
-        <td style="padding:6px 12px;border:1px solid #e5e7eb">${pct(r.capRate)}</td>
+        <td style="padding:6px 12px;border:1px solid #e5e7eb;color:#6b7280">Cap Rate (Esc.1)</td>
+        <td style="padding:6px 12px;border:1px solid #e5e7eb">${pct(r.escenarios[0].capRate)}</td>
       </tr>
     </table>
 

@@ -17,12 +17,11 @@ export interface CotizacionTemplateProps {
   unidad:    UnidadCotizable
   unidadesAdicionales?: UnidadCotizable[]
   resultado: ResultadoCotizacion
-  arriendoMensualCLP: number
   plusvaliaAnual:     number
 }
 
 export default function CotizacionTemplate({
-  numero, fecha, broker, unidad, unidadesAdicionales = [], resultado, arriendoMensualCLP, plusvaliaAnual,
+  numero, fecha, broker, unidad, unidadesAdicionales = [], resultado, plusvaliaAnual,
 }: CotizacionTemplateProps) {
   const r = resultado
   const uf = r.valorUF
@@ -254,7 +253,7 @@ export default function CotizacionTemplate({
           <tbody>
             <ERow label="Cuota mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.cuotaMensualCLP))} shade />
             <ERow label="Cuota mensual (UF)" valores={r.escenarios.map((e) => `${formatUF(e.cuotaMensualUF)} UF`)} />
-            <ERow label={`Arriendo est. mensual ($)`} valores={r.escenarios.map(() => formatCLP(arriendoMensualCLP))} shade />
+            <ERow label={`Arriendo est. mensual ($)`} valores={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
             <ERow label="Flujo mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoMensualCLP))}
               colorFn={(i) => r.escenarios[i].flujoMensualCLP >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'} />
             <ERow label="Flujo acumulado 5 años ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
@@ -278,7 +277,7 @@ export default function CotizacionTemplate({
             <ERow label="Precio de venta año 5 ($)" valores={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
             <ERow label="Pie pagado ($)" valores={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
             <ERow label="Flujo acumulado ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
-            <ERow label="Cap Rate anual" valores={r.escenarios.map(() => `${(r.capRate * 100).toFixed(1)}%`)} />
+            <ERow label="Cap Rate anual" valores={r.escenarios.map((e) => `${(e.capRate * 100).toFixed(1)}%`)} />
             <ERow label="ROI s/pie 5 años" valores={r.escenarios.map((e) => `${(e.roi5Anios * 100).toFixed(1)}%`)} bold />
             <ERow label="ROI anual compuesto" valores={r.escenarios.map((e) => `${(e.roiAnual * 100).toFixed(1)}%`)} shade bold />
           </tbody>

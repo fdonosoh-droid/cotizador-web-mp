@@ -73,13 +73,12 @@ export interface CotizacionPDFProps {
   unidad:               UnidadCotizable
   unidadesAdicionales?: UnidadCotizable[]
   resultado:            ResultadoCotizacion
-  arriendoMensualCLP:   number
   plusvaliaAnual:       number
   logoBase64?:          string | null
 }
 
 export function CotizacionPDF({
-  numero, fecha, broker, unidad, unidadesAdicionales = [], resultado: r, arriendoMensualCLP, plusvaliaAnual, logoBase64,
+  numero, fecha, broker, unidad, unidadesAdicionales = [], resultado: r, plusvaliaAnual, logoBase64,
 }: CotizacionPDFProps) {
   const uf = r.valorUF
 
@@ -256,7 +255,7 @@ export function CotizacionPDF({
           <THead cols={['Concepto', ...r.escenarios.map(e => `CAE ${(e.cae*100).toFixed(1)}%`)]} widths={['40%','20%','20%','20%']} />
           <ERow label="Cuota mensual ($)"          vals={r.escenarios.map(e => formatCLP(e.cuotaMensualCLP))} shade />
           <ERow label="Cuota mensual (UF)"         vals={r.escenarios.map(e => `${formatUF(e.cuotaMensualUF)} UF`)} />
-          <ERow label="Arriendo est. mensual ($)"  vals={r.escenarios.map(() => formatCLP(arriendoMensualCLP))} shade />
+          <ERow label="Arriendo est. mensual ($)"  vals={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
           <ERow label="Flujo mensual ($)"          vals={r.escenarios.map(e => formatCLP(e.flujoMensualCLP))} flujoColors={r.escenarios.map(e => e.flujoMensualCLP >= 0)} />
           <ERow label="Flujo acumulado 5 años ($)" vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
         </View>
@@ -268,7 +267,7 @@ export function CotizacionPDF({
           <ERow label="Precio de venta año 5 ($)"  vals={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
           <ERow label="Pie pagado ($)"              vals={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
           <ERow label="Flujo acumulado ($)"  vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
-          <ERow label="Cap Rate anual"      vals={r.escenarios.map(() => pct(r.capRate))} />
+          <ERow label="Cap Rate anual"      vals={r.escenarios.map((e) => pct(e.capRate))} />
           <ERow label="ROI s/pie 5 años"   vals={r.escenarios.map(e => `${(e.roi5Anios*100).toFixed(1)}%`)} bold />
           <ERow label="ROI anual compuesto"         vals={r.escenarios.map(e => `${(e.roiAnual*100).toFixed(1)}%`)} shade bold />
         </View>

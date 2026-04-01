@@ -38,7 +38,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [descuentoAdicional,  setDescuentoAdicional]  = useState(0)  // en %
   const [plazo,               setPlazo]               = useState(DEFAULTS.plazo)
   const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
-  const [arriendo,            setArriendo]            = useState<string>('')
+  const [arriendos,           setArriendos]           = useState<[string, string, string]>(['', '', ''])
   const [plusvalia,           setPlusvalia]           = useState(2)
 
   // Condiciones comerciales editables (inicializadas desde la unidad seleccionada)
@@ -49,9 +49,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [pieCreditoDirectoPct,setPieCreditoDirectoPct]= useState(unidad.pieCreditoDirecto)
 
   // Resultado + modo cotización
-  const [resultado,       setResultado]       = useState<ResultadoCotizacion | null>(null)
-  const [arriendoCLPCalc, setArriendoCLPCalc] = useState(0)
-  const [showDoc,         setShowDoc]         = useState(false)
+  const [resultado,  setResultado]  = useState<ResultadoCotizacion | null>(null)
+  const [showDoc,    setShowDoc]    = useState(false)
   const [errorMsg,        setErrorMsg]        = useState<string | null>(null)
   const [pdfLoading,      setPdfLoading]      = useState(false)
 
@@ -73,14 +72,13 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numero:               numeroCot,
-          fecha:                fechaCot,
+          numero:             numeroCot,
+          fecha:              fechaCot,
           broker,
           unidad,
           unidadesAdicionales,
           resultado,
-          arriendoMensualCLP:   arriendoCLPCalc,
-          plusvaliaAnual:       plusvalia,
+          plusvaliaAnual:     plusvalia,
         }),
       })
       if (!res.ok) throw new Error('Error al generar PDF')
@@ -107,15 +105,14 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numero:               numeroCot,
-          fecha:                fechaCot,
+          numero:           numeroCot,
+          fecha:            fechaCot,
           broker,
           unidad,
           unidadesAdicionales,
           resultado,
-          arriendoMensualCLP:   arriendoCLPCalc,
-          plusvaliaAnual:       plusvalia,
-          emailCliente:         emailCliente.trim() || undefined,
+          plusvaliaAnual:   plusvalia,
+          emailCliente:     emailCliente.trim() || undefined,
         }),
       })
       if (!res.ok) {
@@ -131,9 +128,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   }
 
   function handleCotizar() {
-    const arriendoCLP = parseInt(arriendo.replace(/\D/g, ''), 10)
-    if (!arriendoCLP || arriendoCLP <= 0) {
-      setErrorMsg('Ingresa el arriendo mensual estimado')
+    const parsed = arriendos.map((a) => parseInt(a.replace(/\D/g, ''), 10)) as [number, number, number]
+    const invalid = parsed.findIndex((v) => !v || v <= 0)
+    if (invalid >= 0) {
+      setErrorMsg(`Ingresa el arriendo estimado del Escenario ${invalid + 1}`)
       return
     }
     setErrorMsg(null)
@@ -157,11 +155,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         piePeriodoConstruccionPct: pieConstruccionPct,
         pieCreditoDirectoPct,
         cuotasPieN,
-        arriendoMensualCLP:        arriendoCLP,
+        arriendosMensualesCLP:     parsed,
         plusvaliaAnual:            plusvalia / 100,
       }
       setResultado(calcularCotizacion(input))
-      setArriendoCLPCalc(arriendoCLP)
       setShowDoc(false)
     })
   }
@@ -309,8 +306,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         </label>
       </div>
 
-      {/* ── Fila C: Plusvalía · Upfront · Plazo · Arriendo ── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* ── Fila C: Plusvalía · Upfront · Plazo ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* C1 — Plusvalía */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">Plusvalía anual (%)</span>
@@ -347,25 +344,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           </select>
         </label>
 
-        {/* C4 — Arriendo estimado */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Arriendo est. ($/mes)</span>
-          <input
-            type="text"
-            value={arriendo}
-            onChange={(e) => {
-              setResultado(null)
-              setErrorMsg(null)
-              const raw = e.target.value.replace(/\D/g, '')
-              setArriendo(raw ? parseInt(raw).toLocaleString('es-CL') : '')
-            }}
-            placeholder="ej: 450.000"
-            className={`rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
-              errorMsg ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-            }`}
-          />
-          {errorMsg && <p className="text-xs text-red-600">{errorMsg}</p>}
-        </label>
       </div>
 
       {/* ── Fila D: Escenarios CAE ── */}
@@ -390,6 +368,34 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           </label>
         ))}
       </div>
+
+      {/* ── Fila E: Arriendo estimado por escenario ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {([0, 1, 2] as const).map((i) => (
+          <label key={i} className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">
+              Arriendo est. Esc. {i + 1} ($/mes)
+            </span>
+            <input
+              type="text"
+              value={arriendos[i]}
+              onChange={(e) => {
+                setResultado(null)
+                setErrorMsg(null)
+                const raw = e.target.value.replace(/\D/g, '')
+                const next = [...arriendos] as [string, string, string]
+                next[i] = raw ? parseInt(raw).toLocaleString('es-CL') : ''
+                setArriendos(next)
+              }}
+              placeholder="ej: 450.000"
+              className={`rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
+                errorMsg && !arriendos[i] ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+              }`}
+            />
+          </label>
+        ))}
+      </div>
+      {errorMsg && <p className="text-xs text-red-600">{errorMsg}</p>}
 
       {/* Botones */}
       <div className="flex gap-3 flex-wrap">
@@ -423,7 +429,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
                 piePct,
                 plazoAnios:     plazo,
                 tasasCAE,
-                arriendoCLP:    arriendoCLPCalc,
                 plusvaliaAnual: plusvalia / 100,
               }).catch((e) => console.error('[historial]', e))
             }}
@@ -520,7 +525,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             unidad={unidad}
             unidadesAdicionales={unidadesAdicionales}
             resultado={resultado}
-            arriendoMensualCLP={arriendoCLPCalc}
             plusvaliaAnual={plusvalia}
           />
         </div>
@@ -601,7 +605,6 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
       <Section title="Evaluación a 5 años">
         <Row label={`Plusvalía (${(r.plusvaliaAcumulada * 100).toFixed(1)}%)`} clp={r.precioVentaAnio5CLP} />
         <Row label="Pie pagado (inversión)" clp={r.piePagadoCLP} />
-        <Row label="Cap Rate anual" pct={r.capRate * 100} />
       </Section>
     </div>
   )
@@ -616,11 +619,13 @@ function EscenarioCard({ esc }: { esc: EscenarioCAE }) {
       </p>
       <dl className="space-y-1 text-sm">
         <DT label="Cuota mensual" value={formatCLP(esc.cuotaMensualCLP)} />
+        <DT label="Arriendo est."  value={formatCLP(esc.arriendoMensualCLP)} />
         <DT label="Flujo mensual"
             value={formatCLP(esc.flujoMensualCLP)}
             className={positive ? 'text-green-700' : 'text-red-600'}
         />
         <DT label="Flujo 5 años"  value={formatCLP(esc.flujoAcumuladoCLP)} />
+        <DT label="Cap Rate"      value={`${(esc.capRate * 100).toFixed(2)}%`} />
         <DT label="ROI 5 años"    value={`${(esc.roi5Anios * 100).toFixed(1)}%`} />
         <DT label="ROI anual"     value={`${(esc.roiAnual * 100).toFixed(1)}%`} />
       </dl>

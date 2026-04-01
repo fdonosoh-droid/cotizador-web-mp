@@ -22,7 +22,6 @@ export interface GuardarCotizacionInput {
   piePct:               number
   plazoAnios:           number
   tasasCAE:             [number, number, number]
-  arriendoCLP:          number
   plusvaliaAnual:       number             // decimal (ej: 0.02)
 }
 
@@ -91,7 +90,6 @@ interface HistorialEntry {
     unidad:               UnidadCotizable
     unidadesAdicionales?: UnidadCotizable[]
     resultado:            ResultadoCotizacion
-    arriendoMensualCLP:   number
     plusvaliaAnual:       number
   }
 }
@@ -126,7 +124,6 @@ function _guardarJSON(input: GuardarCotizacionInput): void {
       unidad:               input.unidad,
       unidadesAdicionales:  input.unidadesAdicionales,
       resultado:            input.resultado,
-      arriendoMensualCLP:   input.arriendoCLP,
       plusvaliaAnual:       input.plusvaliaAnual,
     },
   }
@@ -238,9 +235,9 @@ async function _guardarPG(input: GuardarCotizacionInput): Promise<void> {
         roi_5anios, roi_anual, cap_rate
       ) VALUES (
         ${idCotizacion}, ${i + 1}, ${esc.cae},
-        ${input.arriendoCLP}, ${esc.cuotaMensualCLP}, ${esc.cuotaMensualUF},
+        ${esc.arriendoMensualCLP}, ${esc.cuotaMensualCLP}, ${esc.cuotaMensualUF},
         ${esc.flujoMensualCLP}, ${esc.flujoAcumuladoCLP},
-        ${esc.roi5Anios}, ${esc.roiAnual}, ${r.capRate}
+        ${esc.roi5Anios}, ${esc.roiAnual}, ${esc.capRate}
       )
       ON CONFLICT (id_cotizacion, numero_escenario) DO NOTHING
     `

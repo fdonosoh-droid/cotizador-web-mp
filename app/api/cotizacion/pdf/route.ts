@@ -61,7 +61,6 @@ export async function GET(req: NextRequest) {
       unidad:               payload.unidad,
       unidadesAdicionales:  payload.unidadesAdicionales,
       resultado:            payload.resultado,
-      arriendoMensualCLP:   payload.arriendoMensualCLP,
       plusvaliaAnual:       payload.plusvaliaAnual,
     }
     const uint8 = await generarPDF(props)
