@@ -235,7 +235,6 @@ export default function CotizacionTemplate({
               uf={r.tasacionUF} pct={1} clp={r.tasacionCLP} bold shade />
             <TRow label="Crédito Hipotecario"
               uf={r.creditoHipFinalUF} pct={r.creditoHipFinalUF/r.tasacionUF} clp={r.creditoHipFinalCLP} bold highlight />
-            <TRow label="Cap Rate anual" pct={r.capRate} shade />
           </tbody>
         </table>
       </section>
@@ -279,6 +278,7 @@ export default function CotizacionTemplate({
             <ERow label="Precio de venta año 5 ($)" valores={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
             <ERow label="Pie pagado ($)" valores={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
             <ERow label="Flujo acumulado ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
+            <ERow label="Cap Rate anual" valores={r.escenarios.map(() => `${(r.capRate * 100).toFixed(1)}%`)} />
             <ERow label="ROI s/pie 5 años" valores={r.escenarios.map((e) => `${(e.roi5Anios * 100).toFixed(1)}%`)} bold />
             <ERow label="ROI anual compuesto" valores={r.escenarios.map((e) => `${(e.roiAnual * 100).toFixed(1)}%`)} shade bold />
           </tbody>

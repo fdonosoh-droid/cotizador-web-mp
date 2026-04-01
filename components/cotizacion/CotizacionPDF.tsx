@@ -248,7 +248,6 @@ export function CotizacionPDF({
           )}
           <TR bold shade cols={['Tasación Banco', `${formatUF(r.tasacionUF)} UF`, '100%', formatCLP(r.tasacionCLP)]} widths={['50%','17%','13%','20%']} />
           <TR highlight bold cols={['Crédito Hipotecario', `${formatUF(r.creditoHipFinalUF)} UF`, pct(r.creditoHipFinalUF/r.tasacionUF), formatCLP(r.creditoHipFinalCLP)]} widths={['50%','17%','13%','20%']} />
-          <TR shade cols={['Cap Rate anual', '', pct(r.capRate), '']} widths={['50%','17%','13%','20%']} />
         </View>
 
         {/* ESCENARIOS CAE */}
@@ -268,8 +267,9 @@ export function CotizacionPDF({
           <THead cols={['Concepto', ...r.escenarios.map(e => `CAE ${(e.cae*100).toFixed(1)}%`)]} widths={['40%','20%','20%','20%']} />
           <ERow label="Precio de venta año 5 ($)"  vals={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
           <ERow label="Pie pagado ($)"              vals={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
-          <ERow label="Flujo acumulado ($)"         vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
-          <ERow label="ROI s/pie 5 años"             vals={r.escenarios.map(e => `${(e.roi5Anios*100).toFixed(1)}%`)} bold />
+          <ERow label="Flujo acumulado ($)"  vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
+          <ERow label="Cap Rate anual"      vals={r.escenarios.map(() => pct(r.capRate))} />
+          <ERow label="ROI s/pie 5 años"   vals={r.escenarios.map(e => `${(e.roi5Anios*100).toFixed(1)}%`)} bold />
           <ERow label="ROI anual compuesto"         vals={r.escenarios.map(e => `${(e.roiAnual*100).toFixed(1)}%`)} shade bold />
         </View>
 

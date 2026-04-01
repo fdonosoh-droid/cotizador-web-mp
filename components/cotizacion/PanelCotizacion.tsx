@@ -585,7 +585,6 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
           <Row label="Aporte Inmobiliaria (Bono Pie)" uf={r.saldoAporteInmobUF} />
         )}
         <Row label="Crédito Hipotecario"  uf={r.creditoHipFinalUF} clp={r.creditoHipFinalCLP} bold />
-        <Row label="Cap Rate anual"       pct={r.capRate * 100} />
       </Section>
 
       {/* Escenarios CAE */}
@@ -602,6 +601,7 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
       <Section title="Evaluación a 5 años">
         <Row label={`Plusvalía (${(r.plusvaliaAcumulada * 100).toFixed(1)}%)`} clp={r.precioVentaAnio5CLP} />
         <Row label="Pie pagado (inversión)" clp={r.piePagadoCLP} />
+        <Row label="Cap Rate anual" pct={r.capRate * 100} />
       </Section>
     </div>
   )
