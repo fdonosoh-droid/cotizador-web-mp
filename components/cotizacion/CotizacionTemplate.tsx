@@ -227,7 +227,7 @@ export default function CotizacionTemplate({
             <TRow label="Valor de Venta"
               uf={r.valorVentaUF} pct={r.valorVentaUF/r.tasacionUF} clp={r.valorVentaCLP} shade />
             {r.saldoAporteInmobUF > 0 && (
-              <TRow label={`Bono Pie Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`}
+              <TRow label={`Aporte Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`}
                 uf={r.saldoAporteInmobUF} pct={r.saldoAporteInmobUF/r.tasacionUF} clp={r.saldoAporteInmobUF*uf} />
             )}
             <TRow label="Tasación Banco"

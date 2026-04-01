@@ -80,7 +80,7 @@ export default function CotizadorShell() {
               )}
               {unidad.bonoPie > 0 && (
                 <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800">
-                  Bono Pie {(unidad.bonoPie * 100).toFixed(0)}%
+                  Aporte Inmob. {(unidad.bonoPie * 100).toFixed(0)}%
                 </span>
               )}
             </div>

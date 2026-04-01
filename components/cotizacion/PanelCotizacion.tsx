@@ -187,7 +187,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         {/* A2 — Bono Pie */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
-            % Bono Pie
+            Aporte Inmobiliaria (%)
             {unidad.bonoPie === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
               : <span className="ml-1 text-xs text-gray-400">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
@@ -586,7 +586,7 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
       <Section title="Crédito Hipotecario">
         <Row label="Tasación (compraventa banco)" uf={r.tasacionUF} clp={r.tasacionCLP} />
         {r.saldoAporteInmobUF > 0 && (
-          <Row label="Aporte Inmobiliaria (Bono Pie)" uf={r.saldoAporteInmobUF} />
+          <Row label="Aporte Inmobiliaria" uf={r.saldoAporteInmobUF} />
         )}
         <Row label="Crédito Hipotecario"  uf={r.creditoHipFinalUF} clp={r.creditoHipFinalCLP} bold />
       </Section>
