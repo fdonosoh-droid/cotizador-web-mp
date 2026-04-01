@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-03-31 22:02:17<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->049208f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Guarda Última Cotización actualizada<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-01 18:53:42<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->caeeeae<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->corrección inicial calculo aporte inmobiaria basado en metodo calculo MAESTRA<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
