@@ -183,7 +183,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           >
             {withBase(unidad.descuento, DESCUENTO_ADICIONAL_OPTIONS).map((v) => {
               const pct = Math.round(v * 10000) / 100
-              return <option key={pct} value={pct}>{pct.toFixed(1)}%</option>
+              return <option key={pct} value={pct}>{Number.isInteger(pct) ? pct.toFixed(0) : pct.toFixed(1)}%</option>
             })}
           </select>
         </label>
