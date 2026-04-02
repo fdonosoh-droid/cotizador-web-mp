@@ -240,6 +240,7 @@ export function CotizacionPDF({
           <Text style={s.sTitle}>Crédito Hipotecario</Text>
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
           <TR shade cols={['Valor de Venta', `${formatUF(r.valorVentaUF)} UF`, pct(r.valorVentaUF/r.tasacionUF), formatCLP(r.valorVentaCLP)]} widths={['50%','17%','13%','20%']} />
+          <TR cols={[`Pie (${(r.piePct*100).toFixed(0)}%)`, `${formatUF(r.pieTotalUF)} UF`, pct(r.piePct), formatCLP(r.pieTotalUF * uf)]} widths={['50%','17%','13%','20%']} />
           {r.saldoAporteInmobUF > 0 && (
             <TR cols={[`Aporte Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`, `${formatUF(r.saldoAporteInmobUF)} UF`, pct(unidad.bonoPie), formatCLP(r.saldoAporteInmobUF * uf)]} widths={['50%','17%','13%','20%']} />
           )}
