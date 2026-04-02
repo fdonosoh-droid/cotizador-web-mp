@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-02 11:46:29<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->26fb789<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Depuracion 1 calculos y despliege según condiciones comerciales<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-02 11:46:30<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->5d7eaf0<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->auto: actualiza maestro de desarrollo antes del push<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
