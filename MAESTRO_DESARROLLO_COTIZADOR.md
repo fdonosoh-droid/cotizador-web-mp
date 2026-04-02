@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-01 20:55:29<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->ac5d40e<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->crea archivo recopilacion prompt utiles al proyecto<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-02 10:05:51<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->f24f660<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->en la parte de crédito hipotecario muestra el pie total<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
