@@ -38,6 +38,14 @@ export interface InputCotizacion {
 
   /** LTV máximo del banco (1.0 = sin límite; 0.80 = Maestra — creditoHip = tasación × 80%) */
   ltvMaxPct:             number
+
+  /**
+   * Regla de cálculo del bono pie:
+   *  'maestra'            — D35 Excel (bonoPie = tasación×bono%; tasación despejada) + LTV 80%
+   *  'precio-lista-depto' — bonoPie = precioListaDepto × bono% (INGEVEC y default)
+   *  'precio-lista-total' — bonoPie = precioListaTotal × bono% (URMENETA)
+   */
+  tipoCalculoBono: 'maestra' | 'precio-lista-depto' | 'precio-lista-total'
 }
 
 /** Resultado de un escenario CAE */
@@ -134,7 +142,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     precioListaDepto, descuentoPct, descuentoAdicionalPct, bonoPiePct, reservaCLP,
     preciosConjuntos, piePct, upfrontPct, plazoAnios, tasasCAE, valorUF,
     cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct, cuotasPieN,
-    arriendosMensualesCLP, plusvaliaAnual, ltvMaxPct,
+    arriendosMensualesCLP, plusvaliaAnual, ltvMaxPct, tipoCalculoBono,
   } = input
 
   // ── A. Precios lista ──────────────────────────────────────────────────
@@ -174,35 +182,62 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   // (crédito directo es financiamiento separado, no reduce el crédito hipotecario bancario)
   const totalPieInmobUF = pieTotalUF + cuotonUF + piePeriodoConstruccionUF
 
-  // ── D. Crédito & tasación ────────────────────────────────────────────
-  // Fórmula Excel maestra (Calculadora BP+Mutuo, celdas D31/D33/D35/D36):
-  //   D33 = 1 − piePct − bonoPiePct          → fracción crédito hipotecario puro
-  //   D35 = valorVenta*(1−pie) / D33         → tasación (despejada)
-  //   D36 = tasación × bonoPiePct            → aporte inmobiliaria en UF
-  // El % de aporte se aplica sobre la TASACIÓN (no sobre el valor de venta)
-  const creditoHipBaseUF   = valorVentaUF * (1 - piePct)              // E44 — monto base a financiar
-  const chPct              = 1 - piePct - bonoPiePct                   // D33
-  const tasacionUFfinal    = bonoPiePct > 0
-    ? Math.round(creditoHipBaseUF / chPct * 100) / 100                // D35
-    : valorVentaUF                                                     // sin bono: tasación = valor venta
-  const bonoPieUF          = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
-  const tasacionCLP        = tasacionUFfinal * valorUF
+  // ── D. Crédito & tasación — fórmula según inmobiliaria ─────────────────
+  //
+  // MAESTRA (tipoCalculoBono='maestra'):
+  //   D35: tasación = valorVenta*(1−pie) / (1−pie−bono%)  [bono% sobre tasación]
+  //   D36: bonoPieUF = tasación × bono%
+  //   creditoHip = tasación × 80% (LTV especial)
+  //   saldoAporte = tasación − pie − creditoHip
+  //
+  // INGEVEC y otros (tipoCalculoBono='precio-lista-depto'):
+  //   bonoPieUF = precioListaDepto × bono%
+  //   tasación  = valorVenta + bonoPieUF
+  //   creditoHip = tasación − totalPieInmob  (P5.3 estándar)
+  //   saldoAporte = bonoPieUF
+  //
+  // URMENETA (tipoCalculoBono='precio-lista-total'):
+  //   bonoPieUF = precioListaTotal × bono%
+  //   tasación  = valorVenta + bonoPieUF
+  //   creditoHip = tasación − totalPieInmob  (P5.3 estándar)
+  //   saldoAporte = bonoPieUF
 
-  // Regla LTV especial (ej. Maestra): creditoHip = tasación × ltvMaxPct
-  // Para el resto: creditoHip = tasación − totalPieInmob (fórmula estándar P5.3)
-  const creditoHipFinalUF  = ltvMaxPct < 1
-    ? Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100             // Maestra: 80% LTV
-    : tasacionUFfinal - totalPieInmobUF                               // Estándar P5.3
+  const creditoHipBaseUF = valorVentaUF * (1 - piePct)               // E44 — referencia
+
+  let bonoPieUF: number
+  let tasacionUFfinal: number
+  let creditoHipFinalUF: number
+  let saldoAporteInmobUF: number
+
+  if (tipoCalculoBono === 'maestra') {
+    // D35 (bono% es % de tasación)
+    const chPct = 1 - piePct - bonoPiePct                             // D33
+    tasacionUFfinal  = bonoPiePct > 0
+      ? Math.round(creditoHipBaseUF / chPct * 100) / 100             // D35
+      : valorVentaUF
+    bonoPieUF        = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
+    creditoHipFinalUF  = Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100 // 80% LTV
+    saldoAporteInmobUF = Math.round((tasacionUFfinal - pieTotalUF - creditoHipFinalUF) * 100) / 100
+  } else if (tipoCalculoBono === 'precio-lista-total') {
+    // URMENETA: bono sobre precio lista total (depto + bienes conjuntos)
+    bonoPieUF          = Math.round(precioListaTotal * bonoPiePct * 100) / 100
+    tasacionUFfinal    = bonoPiePct > 0
+      ? Math.round((valorVentaUF + bonoPieUF) * 100) / 100
+      : valorVentaUF
+    creditoHipFinalUF  = tasacionUFfinal - totalPieInmobUF            // P5.3
+    saldoAporteInmobUF = bonoPieUF
+  } else {
+    // INGEVEC y default: bono sobre precio lista departamento
+    bonoPieUF          = Math.round(precioListaDepto * bonoPiePct * 100) / 100
+    tasacionUFfinal    = bonoPiePct > 0
+      ? Math.round((valorVentaUF + bonoPieUF) * 100) / 100
+      : valorVentaUF
+    creditoHipFinalUF  = tasacionUFfinal - totalPieInmobUF            // P5.3
+    saldoAporteInmobUF = bonoPieUF
+  }
+
   const creditoHipFinalCLP = creditoHipFinalUF * valorUF
-
-  // Aporte inmobiliaria efectivo:
-  // - Estándar: tasacion × bonoPie% (= bonoPieUF, según D36)
-  // - Maestra: tasacion − totalPieInmob − creditoHip (absorbe la diferencia de LTV)
-  // Maestra: aporte = Tasación − Pie − CréditoHip (fórmula usuario)
-  // Estándar: aporte = tasación × bonoPie% (D36)
-  const saldoAporteInmobUF = ltvMaxPct < 1
-    ? Math.round((tasacionUFfinal - pieTotalUF - creditoHipFinalUF) * 100) / 100
-    : bonoPieUF                                                        // E48
+  const tasacionCLP        = tasacionUFfinal * valorUF
 
   // ── E. Evaluación común ───────────────────────────────────────────────
   const plusvaliaAcumulada  = Math.pow(1 + plusvaliaAnual, 5) - 1     // E81

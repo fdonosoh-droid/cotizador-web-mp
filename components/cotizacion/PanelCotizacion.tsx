@@ -15,7 +15,7 @@ import { formatCLP, formatUF } from '@/lib/data/uf-format'
 import {
   CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS,
   DESCUENTO_ADICIONAL_OPTIONS, BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
-  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase, getLtvMaxPct,
+  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase, getLtvMaxPct, getTipoCalculoBono,
 } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'
@@ -33,8 +33,13 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [isPending, startTransition] = useTransition()
 
   // Parámetros editables
-  const [piePct,              setPiePct]              = useState(DEFAULTS.pie)
-  const [upfrontPct,          setUpfrontPct]          = useState(DEFAULTS.upfront * 100)  // en %
+  // Regla: cuando hay bono pie, pie default = max(0, 20% - bonoPie%); upfront = 0 bloqueado
+  const [piePct,              setPiePct]              = useState(
+    unidad.bonoPie > 0 ? Math.max(0, 0.20 - unidad.bonoPie) : DEFAULTS.pie
+  )
+  const [upfrontPct,          setUpfrontPct]          = useState(
+    unidad.bonoPie > 0 ? 0 : DEFAULTS.upfront * 100
+  )  // en %
   const [descuentoAdicional,  setDescuentoAdicional]  = useState(Math.round(unidad.descuento * 10000) / 100)  // en % — default = condiciones comerciales
   const [plazo,               setPlazo]               = useState(DEFAULTS.plazo)
   const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
@@ -158,6 +163,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         arriendosMensualesCLP:     parsed,
         plusvaliaAnual:            plusvalia / 100,
         ltvMaxPct:                 getLtvMaxPct(unidad.alianza),
+        tipoCalculoBono:           getTipoCalculoBono(unidad.alianza),
       }
       setResultado(calcularCotizacion(input))
       setShowDoc(false)
@@ -326,12 +332,18 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
         {/* C2 — Upfront */}
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Upfront Promesa (%)</span>
+          <span className="text-sm font-medium text-gray-700">
+            Upfront Promesa (%)
+            {unidad.bonoPie > 0 && (
+              <span className="ml-1 text-xs text-red-400">no aplica</span>
+            )}
+          </span>
           <input
             type="number" min={0} max={20} step={0.5}
             value={upfrontPct}
+            disabled={unidad.bonoPie > 0}
             onChange={(e) => { setResultado(null); setUpfrontPct(parseFloat(e.target.value) || 0) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
           />
         </label>
 

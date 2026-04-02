@@ -68,15 +68,25 @@ export const PIE_CREDITO_DIRECTO_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.3
 /** LTV máximo para inmobiliarias con regla especial (80% de tasación) */
 export const LTV_MAESTRA = 0.80
 
-/** Alianzas con regla LTV especial (comparación case-insensitive) */
-export const ALIANZAS_LTV_ESPECIAL: { alianza: string; ltv: number }[] = [
-  { alianza: 'maestra', ltv: LTV_MAESTRA },
-]
-
 /** Retorna el LTV máximo para una alianza dada (1.0 = sin límite especial) */
 export function getLtvMaxPct(alianza: string): number {
+  return alianza.toLowerCase().includes('maestra') ? LTV_MAESTRA : 1.0
+}
+
+/**
+ * Tipo de cálculo del bono pie por inmobiliaria:
+ *  'maestra'            — D35 Excel + LTV 80%
+ *  'precio-lista-depto' — bonoPie = precioListaDepto × bono% (INGEVEC y default)
+ *  'precio-lista-total' — bonoPie = precioListaTotal × bono% (URMENETA)
+ */
+export type TipoCalculoBono = 'maestra' | 'precio-lista-depto' | 'precio-lista-total'
+
+/** Retorna el tipo de cálculo de bono pie según la alianza */
+export function getTipoCalculoBono(alianza: string): TipoCalculoBono {
   const norm = alianza.toLowerCase()
-  return ALIANZAS_LTV_ESPECIAL.find(a => norm.includes(a.alianza))?.ltv ?? 1.0
+  if (norm.includes('maestra'))  return 'maestra'
+  if (norm.includes('urmeneta')) return 'precio-lista-total'
+  return 'precio-lista-depto'   // INGEVEC y resto de inmobiliarias
 }
 
 /** Combina opciones estándar con el valor base (si no está en la lista) */
