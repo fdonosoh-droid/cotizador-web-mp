@@ -35,6 +35,9 @@ export interface InputCotizacion {
   /** Evaluación de inversión — un arriendo estimado por escenario CAE */
   arriendosMensualesCLP: [number, number, number]
   plusvaliaAnual:        number   // decimal, default 0.02
+
+  /** LTV máximo del banco (1.0 = sin límite; 0.80 = Maestra — creditoHip = tasación × 80%) */
+  ltvMaxPct:             number
 }
 
 /** Resultado de un escenario CAE */
@@ -131,7 +134,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     precioListaDepto, descuentoPct, descuentoAdicionalPct, bonoPiePct, reservaCLP,
     preciosConjuntos, piePct, upfrontPct, plazoAnios, tasasCAE, valorUF,
     cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct, cuotasPieN,
-    arriendosMensualesCLP, plusvaliaAnual,
+    arriendosMensualesCLP, plusvaliaAnual, ltvMaxPct,
   } = input
 
   // ── A. Precios lista ──────────────────────────────────────────────────
@@ -183,11 +186,23 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     ? Math.round(creditoHipBaseUF / chPct * 100) / 100                // D35
     : valorVentaUF                                                     // sin bono: tasación = valor venta
   const bonoPieUF          = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
-  const saldoAporteInmobUF = bonoPieUF                                 // E48
   const tasacionCLP        = tasacionUFfinal * valorUF
-  // P5.3: el banco presta sobre la tasación, menos lo que el cliente ya pagó de pie
-  const creditoHipFinalUF  = tasacionUFfinal - totalPieInmobUF        // P5.3
+
+  // Regla LTV especial (ej. Maestra): creditoHip = tasación × ltvMaxPct
+  // Para el resto: creditoHip = tasación − totalPieInmob (fórmula estándar P5.3)
+  const creditoHipFinalUF  = ltvMaxPct < 1
+    ? Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100             // Maestra: 80% LTV
+    : tasacionUFfinal - totalPieInmobUF                               // Estándar P5.3
   const creditoHipFinalCLP = creditoHipFinalUF * valorUF
+
+  // Aporte inmobiliaria efectivo:
+  // - Estándar: tasacion × bonoPie% (= bonoPieUF, según D36)
+  // - Maestra: tasacion − totalPieInmob − creditoHip (absorbe la diferencia de LTV)
+  // Maestra: aporte = Tasación − Pie − CréditoHip (fórmula usuario)
+  // Estándar: aporte = tasación × bonoPie% (D36)
+  const saldoAporteInmobUF = ltvMaxPct < 1
+    ? Math.round((tasacionUFfinal - pieTotalUF - creditoHipFinalUF) * 100) / 100
+    : bonoPieUF                                                        // E48
 
   // ── E. Evaluación común ───────────────────────────────────────────────
   const plusvaliaAcumulada  = Math.pow(1 + plusvaliaAnual, 5) - 1     // E81

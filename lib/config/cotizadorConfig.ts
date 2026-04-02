@@ -65,6 +65,20 @@ export const CUOTON_OPTIONS = [0, 0.01, 0.02, 0.03, 0.05, 0.10]
 /** Opciones de Pie Crédito Directo (decimal) */
 export const PIE_CREDITO_DIRECTO_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
 
+/** LTV máximo para inmobiliarias con regla especial (80% de tasación) */
+export const LTV_MAESTRA = 0.80
+
+/** Alianzas con regla LTV especial (comparación case-insensitive) */
+export const ALIANZAS_LTV_ESPECIAL: { alianza: string; ltv: number }[] = [
+  { alianza: 'maestra', ltv: LTV_MAESTRA },
+]
+
+/** Retorna el LTV máximo para una alianza dada (1.0 = sin límite especial) */
+export function getLtvMaxPct(alianza: string): number {
+  const norm = alianza.toLowerCase()
+  return ALIANZAS_LTV_ESPECIAL.find(a => norm.includes(a.alianza))?.ltv ?? 1.0
+}
+
 /** Combina opciones estándar con el valor base (si no está en la lista) */
 export function withBase(base: number, options: number[]): number[] {
   const rounded = Math.round(base * 10000) / 10000

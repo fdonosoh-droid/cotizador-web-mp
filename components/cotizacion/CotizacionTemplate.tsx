@@ -225,8 +225,8 @@ export default function CotizacionTemplate({
             <TRow label={`Pie (${(r.piePct*100).toFixed(0)}%)`}
               uf={r.pieTotalUF} pct={r.piePct} clp={r.pieTotalUF*uf} />
             {r.saldoAporteInmobUF > 0 && (
-              <TRow label={`Aporte Inmobiliaria (${(unidad.bonoPie*100).toFixed(0)}%)`}
-                uf={r.saldoAporteInmobUF} pct={unidad.bonoPie} clp={r.saldoAporteInmobUF*uf} />
+              <TRow label={`Aporte Inmobiliaria (${(r.saldoAporteInmobUF/r.tasacionUF*100).toFixed(0)}%)`}
+                uf={r.saldoAporteInmobUF} pct={r.saldoAporteInmobUF/r.tasacionUF} clp={r.saldoAporteInmobUF*uf} />
             )}
             <TRow label="Tasación Banco"
               uf={r.tasacionUF} pct={1} clp={r.tasacionCLP} bold shade />

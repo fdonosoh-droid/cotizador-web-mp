@@ -15,7 +15,7 @@ import { formatCLP, formatUF } from '@/lib/data/uf-format'
 import {
   CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS,
   DESCUENTO_ADICIONAL_OPTIONS, BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
-  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase,
+  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase, getLtvMaxPct,
 } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'
@@ -157,6 +157,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         cuotasPieN,
         arriendosMensualesCLP:     parsed,
         plusvaliaAnual:            plusvalia / 100,
+        ltvMaxPct:                 getLtvMaxPct(unidad.alianza),
       }
       setResultado(calcularCotizacion(input))
       setShowDoc(false)
