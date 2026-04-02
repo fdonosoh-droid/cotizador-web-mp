@@ -3,8 +3,8 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-02 10:50:54<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->6fa8f7f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->aplica regla específica bono pie INMOBILIARIA MAESTRA<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-02 11:46:29<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->26fb789<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Depuracion 1 calculos y despliege según condiciones comerciales<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
 | **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
 <!-- META_END -->
