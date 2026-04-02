@@ -79,7 +79,9 @@ export interface ResultadoCotizacion {
   // ── C. Pie ───────────────────────────────────────────────
   piePct:              number
   upfrontPct:          number  // % upfront (variable por inmob)
-  pieTotalUF:          number  // valorVenta * piePct       [E40]
+  pieTotalDeptoUF:     number  // precioDescDepto × piePct
+  pieTotalConjuntosUF: number  // precioListaOtros × 20% (fijo para bienes conjuntos)
+  pieTotalUF:          number  // pieTotalDepto + pieTotalConjuntos
   reservaUF:           number  // reservaCLP / valorUF      [E41]
   upfrontUF:           number  // valorVenta * upfrontPct   [E42]
   saldoPieUF:          number  // pieTotalUF - reserva - upfront [E43]
@@ -103,12 +105,13 @@ export interface ResultadoCotizacion {
 
   // ── D. Crédito hipotecario & tasación ────────────────────
   descuentoAdicionalPct: number // descuento extra negociado (P3.A3)
-  bonoPieUF:           number  // valorVenta * bonoPie%      (aporte inmobiliaria al banco)
+  bonoPieUF:           number  // aporte inmobiliaria al banco (UF)
   saldoAporteInmobUF:  number  // igual a bonoPieUF          [E48]
-  tasacionUF:          number  // valorVenta + bonoPie        [P3.B4]
+  aportePct:           number  // % de aporte según condiciones comerciales (para display)
+  tasacionUF:          number  // tasación banco             [P3.B4]
   tasacionCLP:         number
   creditoHipBaseUF:    number  // valorVenta*(1-pie)         (referencia)
-  creditoHipFinalUF:   number  // tasacion - totalPieInmob   [P5.3]
+  creditoHipFinalUF:   number  // fórmula por inmobiliaria
   creditoHipFinalCLP:  number
 
   // ── E. Escenarios CAE (3 columnas) ───────────────────────
@@ -157,7 +160,11 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const valorVentaCLP    = valorVentaUF * valorUF
 
   // ── C. Pie ────────────────────────────────────────────────────────────
-  const pieTotalUF       = valorVentaUF * piePct                       // E40
+  // Bienes conjuntos (estac/bodega) siempre pagan 20% de pie independientemente del pie del depto
+  const PIE_CONJUNTOS_PCT             = 0.20
+  const pieTotalDeptoUF               = Math.round(precioDescDepto * piePct * 100) / 100
+  const pieTotalConjuntosUF           = Math.round(precioListaOtros * PIE_CONJUNTOS_PCT * 100) / 100
+  const pieTotalUF                    = pieTotalDeptoUF + pieTotalConjuntosUF  // E40 revisado
   const reservaUF        = reservaCLP / valorUF                        // E41
   const upfrontUF        = Math.round(valorVentaUF * upfrontPct * 100) / 100  // E42 — variable (P4.2)
   const saldoPieUF       = pieTotalUF - reservaUF - upfrontUF          // E43
@@ -193,13 +200,13 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   // INGEVEC y otros (tipoCalculoBono='precio-lista-depto'):
   //   bonoPieUF = precioListaDepto × bono%
   //   tasación  = valorVenta + bonoPieUF
-  //   creditoHip = tasación − totalPieInmob  (P5.3 estándar)
+  //   creditoHip = valorVenta − pieTotalUF − saldoAporte
   //   saldoAporte = bonoPieUF
   //
   // URMENETA (tipoCalculoBono='precio-lista-total'):
   //   bonoPieUF = precioListaTotal × bono%
   //   tasación  = valorVenta + bonoPieUF
-  //   creditoHip = tasación − totalPieInmob  (P5.3 estándar)
+  //   creditoHip = valorVenta − pieTotalUF − saldoAporte
   //   saldoAporte = bonoPieUF
 
   const creditoHipBaseUF = valorVentaUF * (1 - piePct)               // E44 — referencia
@@ -208,6 +215,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   let tasacionUFfinal: number
   let creditoHipFinalUF: number
   let saldoAporteInmobUF: number
+  let aportePct: number  // % para display en tabla
 
   if (tipoCalculoBono === 'maestra') {
     // D35 (bono% es % de tasación)
@@ -218,22 +226,27 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     bonoPieUF        = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
     creditoHipFinalUF  = Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100 // 80% LTV
     saldoAporteInmobUF = Math.round((tasacionUFfinal - pieTotalUF - creditoHipFinalUF) * 100) / 100
+    aportePct          = tasacionUFfinal > 0 ? saldoAporteInmobUF / tasacionUFfinal : 0
   } else if (tipoCalculoBono === 'precio-lista-total') {
     // URMENETA: bono sobre precio lista total (depto + bienes conjuntos)
     bonoPieUF          = Math.round(precioListaTotal * bonoPiePct * 100) / 100
     tasacionUFfinal    = bonoPiePct > 0
       ? Math.round((valorVentaUF + bonoPieUF) * 100) / 100
       : valorVentaUF
-    creditoHipFinalUF  = tasacionUFfinal - totalPieInmobUF            // P5.3
     saldoAporteInmobUF = bonoPieUF
+    aportePct          = bonoPiePct                                   // % condiciones comerciales
+    // creditoHip = valorVenta − pie − aporte
+    creditoHipFinalUF  = Math.round((valorVentaUF - pieTotalUF - saldoAporteInmobUF) * 100) / 100
   } else {
     // INGEVEC y default: bono sobre precio lista departamento
     bonoPieUF          = Math.round(precioListaDepto * bonoPiePct * 100) / 100
     tasacionUFfinal    = bonoPiePct > 0
       ? Math.round((valorVentaUF + bonoPieUF) * 100) / 100
       : valorVentaUF
-    creditoHipFinalUF  = tasacionUFfinal - totalPieInmobUF            // P5.3
     saldoAporteInmobUF = bonoPieUF
+    aportePct          = bonoPiePct                                   // % condiciones comerciales
+    // creditoHip = valorVenta − pie − aporte
+    creditoHipFinalUF  = Math.round((valorVentaUF - pieTotalUF - saldoAporteInmobUF) * 100) / 100
   }
 
   const creditoHipFinalCLP = creditoHipFinalUF * valorUF
@@ -289,6 +302,8 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     valorVentaCLP:                Math.round(valorVentaCLP),
     piePct,
     upfrontPct,
+    pieTotalDeptoUF:              Math.round(pieTotalDeptoUF * 100) / 100,
+    pieTotalConjuntosUF:          Math.round(pieTotalConjuntosUF * 100) / 100,
     pieTotalUF:                   Math.round(pieTotalUF * 100) / 100,
     reservaUF:                    Math.round(reservaUF * 100) / 100,
     upfrontUF,
@@ -307,6 +322,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     descuentoAdicionalPct,
     bonoPieUF,
     saldoAporteInmobUF:           Math.round(saldoAporteInmobUF * 100) / 100,
+    aportePct:                    Math.round(aportePct * 10000) / 10000,
     tasacionUF:                   Math.round(tasacionUFfinal * 100) / 100,
     tasacionCLP:                  Math.round(tasacionCLP),
     creditoHipBaseUF:             Math.round(creditoHipBaseUF * 100) / 100,

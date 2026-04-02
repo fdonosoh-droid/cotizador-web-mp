@@ -240,9 +240,9 @@ export function CotizacionPDF({
           <Text style={s.sTitle}>Crédito Hipotecario</Text>
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
           <TR shade cols={['Valor de Venta', `${formatUF(r.valorVentaUF)} UF`, pct(r.valorVentaUF/r.tasacionUF), formatCLP(r.valorVentaCLP)]} widths={['50%','17%','13%','20%']} />
-          <TR cols={[`Pie (${(r.piePct*100).toFixed(0)}%)`, `${formatUF(r.pieTotalUF)} UF`, pct(r.piePct), formatCLP(r.pieTotalUF * uf)]} widths={['50%','17%','13%','20%']} />
+          <TR cols={[`Pie (${(r.pieTotalUF/r.valorVentaUF*100).toFixed(0)}%)`, `${formatUF(r.pieTotalUF)} UF`, pct(r.pieTotalUF/r.valorVentaUF), formatCLP(r.pieTotalUF * uf)]} widths={['50%','17%','13%','20%']} />
           {r.saldoAporteInmobUF > 0 && (
-            <TR cols={[`Aporte Inmobiliaria (${(r.saldoAporteInmobUF/r.tasacionUF*100).toFixed(0)}%)`, `${formatUF(r.saldoAporteInmobUF)} UF`, pct(r.saldoAporteInmobUF/r.tasacionUF), formatCLP(r.saldoAporteInmobUF * uf)]} widths={['50%','17%','13%','20%']} />
+            <TR cols={[`Aporte Inmobiliaria (${(r.aportePct*100).toFixed(0)}%)`, `${formatUF(r.saldoAporteInmobUF)} UF`, pct(r.aportePct), formatCLP(r.saldoAporteInmobUF * uf)]} widths={['50%','17%','13%','20%']} />
           )}
           <TR bold shade cols={['Tasación Banco', `${formatUF(r.tasacionUF)} UF`, '100%', formatCLP(r.tasacionCLP)]} widths={['50%','17%','13%','20%']} />
           <TR highlight bold cols={['Crédito Hipotecario', `${formatUF(r.creditoHipFinalUF)} UF`, pct(r.creditoHipFinalUF/r.tasacionUF), formatCLP(r.creditoHipFinalCLP)]} widths={['50%','17%','13%','20%']} />
