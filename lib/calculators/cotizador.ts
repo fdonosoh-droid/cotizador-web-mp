@@ -108,6 +108,8 @@ export interface ResultadoCotizacion {
   bonoPieUF:           number  // aporte inmobiliaria al banco (UF)
   saldoAporteInmobUF:  number  // igual a bonoPieUF          [E48]
   aportePct:           number  // % de aporte según condiciones comerciales (para display)
+  /** Pie que participa en el cálculo crediticio (Maestra=solo depto; otros=pie total incl. conjuntos) */
+  pieCreditoHipUF:     number
   tasacionUF:          number  // tasación banco             [P3.B4]
   tasacionCLP:         number
   creditoHipBaseUF:    number  // valorVenta*(1-pie)         (referencia)
@@ -215,7 +217,8 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   let tasacionUFfinal: number
   let creditoHipFinalUF: number
   let saldoAporteInmobUF: number
-  let aportePct: number  // % para display en tabla
+  let aportePct: number       // % para display en tabla
+  let pieCreditoHipUF: number // pie usado en tabla CH (Maestra=solo depto, otros=total)
 
   if (tipoCalculoBono === 'maestra') {
     // D35 (bono% es % de tasación)
@@ -225,7 +228,9 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
       : valorVentaUF
     bonoPieUF        = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
     creditoHipFinalUF  = Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100 // 80% LTV
-    saldoAporteInmobUF = Math.round((tasacionUFfinal - pieTotalUF - creditoHipFinalUF) * 100) / 100
+    // Maestra: aporte usa SOLO pie del depto (no conjuntos), igual que Excel maestra
+    pieCreditoHipUF    = pieTotalDeptoUF
+    saldoAporteInmobUF = Math.round((tasacionUFfinal - pieCreditoHipUF - creditoHipFinalUF) * 100) / 100
     aportePct          = tasacionUFfinal > 0 ? saldoAporteInmobUF / tasacionUFfinal : 0
   } else if (tipoCalculoBono === 'precio-lista-total') {
     // URMENETA: bono sobre precio lista total (depto + bienes conjuntos)
@@ -235,8 +240,8 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
       : valorVentaUF
     saldoAporteInmobUF = bonoPieUF
     aportePct          = bonoPiePct                                   // % condiciones comerciales
-    // creditoHip = valorVenta − pie − aporte
-    creditoHipFinalUF  = Math.round((valorVentaUF - pieTotalUF - saldoAporteInmobUF) * 100) / 100
+    pieCreditoHipUF    = pieTotalUF                                   // pie total incl. conjuntos
+    creditoHipFinalUF  = Math.round((valorVentaUF - pieCreditoHipUF - saldoAporteInmobUF) * 100) / 100
   } else {
     // INGEVEC y default: bono sobre precio lista departamento
     bonoPieUF          = Math.round(precioListaDepto * bonoPiePct * 100) / 100
@@ -245,8 +250,8 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
       : valorVentaUF
     saldoAporteInmobUF = bonoPieUF
     aportePct          = bonoPiePct                                   // % condiciones comerciales
-    // creditoHip = valorVenta − pie − aporte
-    creditoHipFinalUF  = Math.round((valorVentaUF - pieTotalUF - saldoAporteInmobUF) * 100) / 100
+    pieCreditoHipUF    = pieTotalUF                                   // pie total incl. conjuntos
+    creditoHipFinalUF  = Math.round((valorVentaUF - pieCreditoHipUF - saldoAporteInmobUF) * 100) / 100
   }
 
   const creditoHipFinalCLP = creditoHipFinalUF * valorUF
@@ -323,6 +328,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     bonoPieUF,
     saldoAporteInmobUF:           Math.round(saldoAporteInmobUF * 100) / 100,
     aportePct:                    Math.round(aportePct * 10000) / 10000,
+    pieCreditoHipUF:              Math.round(pieCreditoHipUF * 100) / 100,
     tasacionUF:                   Math.round(tasacionUFfinal * 100) / 100,
     tasacionCLP:                  Math.round(tasacionCLP),
     creditoHipBaseUF:             Math.round(creditoHipBaseUF * 100) / 100,

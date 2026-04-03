@@ -222,8 +222,8 @@ export default function CotizacionTemplate({
           <tbody>
             <TRow label="Valor de Venta"
               uf={r.valorVentaUF} pct={r.valorVentaUF/r.tasacionUF} clp={r.valorVentaCLP} shade />
-            <TRow label={`Pie (${(r.pieTotalUF/r.valorVentaUF*100).toFixed(0)}%)`}
-              uf={r.pieTotalUF} pct={r.pieTotalUF/r.valorVentaUF} clp={r.pieTotalUF*uf} />
+            <TRow label={`Pie (${(r.pieCreditoHipUF/r.valorVentaUF*100).toFixed(0)}%)`}
+              uf={r.pieCreditoHipUF} pct={r.pieCreditoHipUF/r.valorVentaUF} clp={r.pieCreditoHipUF*uf} />
             {r.saldoAporteInmobUF > 0 && (
               <TRow label={`Aporte Inmobiliaria (${(r.aportePct*100).toFixed(0)}%)`}
                 uf={r.saldoAporteInmobUF} pct={r.aportePct} clp={r.saldoAporteInmobUF*uf} />
