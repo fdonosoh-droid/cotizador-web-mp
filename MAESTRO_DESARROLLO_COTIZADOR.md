@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-02 11:53:13<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->65c3fae<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->auto: actualiza maestro de desarrollo antes del push<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-05<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->520c7a8<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->ordena Piso y N Unidad en forma ascendente numerica<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->0 de 37 substages completadas (0%) — 0 en progreso<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Motor de cálculo validado · Mejoras post-lanzamiento M1–M20 aplicadas<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -216,6 +216,11 @@
 **Estado:** `✅ COMPLETADO`
 **Archivos creados:**
 - `lib/config/cotizadorConfig.ts` — CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, CONSTANTES, DEFAULTS
+- `getReglaInmobiliaria(alianza, reglas)` — carga reglas por inmobiliaria desde Excel; fallback hardcoded
+- `getParamNum(parametros, nombre, fallback)` — extrae parámetro numérico de la lista Excel
+**Hojas Excel (INPUT_FILES.xlsx):**
+- `REGLAS_INMOBILIARIAS` — columnas: ALIANZA, TIPO_CALCULO_BONO, LTV_MAX_PCT, PIE_CONJUNTOS_PCT, DESCRIPCION_BONO_PIE
+- `PARAMETROS_CALCULO` — columnas: PARAMETRO, VALOR, TIPO, DESCRIPCION (15 parámetros del motor)
 <!-- /SUBSTAGE -->
 
 ---
@@ -339,8 +344,26 @@
 
 ### 3.6 — Matriz de reglas por inmobiliaria
 <!-- SUBSTAGE:3.6 -->
-**Estado:** `🟡 PARCIAL` — reglas de MAESTRA e INGEVEC cubiertas implícitamente. Pendiente tabla explícita.
-**Notas:** El motor `calcularCotizacion` es paramétrico: acepta `descuentoPct=0` (INGEVEC) y `bonoPiePct=0` sin errores. La lógica de cuotón, pie construcción y crédito directo (P3.C1–P3.C3) aún pendiente.
+**Estado:** `✅ COMPLETADO`
+**Implementado:**
+- `tipoCalculoBono: 'maestra' | 'precio-lista-depto' | 'precio-lista-total'` en `InputCotizacion`
+- `ltvMaxPct: number` — 0.80 para Maestra (LTV 80%), 1.0 para el resto
+- `pieConjuntosPct?: number` — % de pie para bienes conjuntos; Maestra usa `piePct` (igual que depto)
+- Reglas cargadas dinámicamente desde hoja `REGLAS_INMOBILIARIAS` de INPUT_FILES.xlsx
+- `PanelCotizacion` llama `getReglasInmobiliarias()` en cada cotización y pasa regla al motor
+**Reglas por inmobiliaria:**
+
+| Inmobiliaria | tipoCalculoBono | LTV | Pie Conjuntos |
+|---|---|---|---|
+| MAESTRA | `maestra` | 80% | igual que depto (piePct) |
+| INGEVEC | `precio-lista-depto` | 100% | 20% fijo |
+| URMENETA | `precio-lista-total` | 100% | 20% fijo |
+| Resto | `precio-lista-depto` | 100% | 20% fijo |
+
+**Fórmulas por tipo:**
+- **Maestra:** `tasación = valorVenta×(1−pie)/(1−pie−bono)` · `CH = tasación×80%` · `aporte = tasación−pie−CH`
+- **precio-lista-depto:** `bonoPieUF = precioListaDepto×bono%` · `CH = valorVenta−pieTotalUF−aporte`
+- **precio-lista-total:** `bonoPieUF = precioListaTotal×bono%` · `CH = valorVenta−pieTotalUF−aporte`
 <!-- /SUBSTAGE -->
 
 ---
@@ -651,6 +674,46 @@
 - `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: texto del pie de página reemplazado por versión más cordial y comercial
 - "Cotización generada el..." → "Cotización emitida el..."
 
+### 2026-04-05 — MEJORAS Y CORRECCIONES 05042026
+
+#### M15 — Migración a parámetros dinámicos desde Excel (2026-04-05)
+- `INPUT_FILES.xlsx`: hojas `REGLAS_INMOBILIARIAS` y `PARAMETROS_CALCULO` creadas con reglas extraídas de hojas de análisis
+- `lib/data/types.ts`: tipos `ReglaInmobiliariaRow` y `ParametroCalculoRow`
+- `lib/data/excel-adapter.ts`: loaders con caché para ambas hojas; `PgAdapter` con stubs (pendiente migración PG)
+- `lib/data/repository.ts` + `pg-adapter.ts`: interfaz `IStockRepository` actualizada; stubs en PgAdapter
+- `lib/data/index.ts`: re-exporta los nuevos tipos
+- `app/actions/stock.ts`: server actions `getReglasInmobiliarias()` y `getParametrosCalculo()`
+- `lib/config/cotizadorConfig.ts`: `getReglaInmobiliaria(alianza, reglas)` y `getParamNum()` reemplazan funciones hardcoded deprecadas
+- `lib/calculators/cotizador.ts`: `pieConjuntosPct` como input opcional (default 0.20)
+- `components/cotizacion/PanelCotizacion.tsx`: carga reglas en `handleCotizar` vía `Promise.all`, usa `getReglaInmobiliaria`
+
+#### M16 — Corrección cálculo Maestra con bienes conjuntos (2026-04-05)
+- **Problema:** para Maestra con bienes conjuntos, los conjuntos pagaban 20% de pie (regla genérica), cuando la fórmula D35 implica que el pie aplica sobre el `valorVentaUF` completo (depto + conjuntos al mismo `piePct`)
+- **Corrección en `lib/calculators/cotizador.ts`:**
+  - `PIE_CONJUNTOS_PCT = tipoCalculoBono === 'maestra' ? piePct : (pieConjuntosPct ?? 0.20)`
+  - `pieCreditoHipUF = pieTotalUF` (antes era solo `pieTotalDeptoUF`)
+- **Resultado:** `PieTotal = valorVentaUF × piePct` · `SaldoPie` y `AporteInmobiliaria` ahora correctos para Maestra con conjuntos
+- Verificado con caso real: Pie=331.75 UF ✓ · SaldoPie=262.9 UF ✓ · Aporte=414.69 UF ✓
+
+#### M17 — Corrección % Pie Total en Plan de Pago con bienes conjuntos (2026-04-05)
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: columna `%` de fila "Pie Total" cambiada de `r.piePct` a `r.pieTotalUF / r.valorVentaUF`
+- Antes: mostraba % del depto (ej. 10%); con conjuntos el % efectivo era mayor
+- Ahora: muestra el % real sobre valorVentaUF (refleja contribución de conjuntos a 20% / piePct según inmobiliaria)
+
+#### M18 — Disclaimer pie de cotización (texto definitivo) (2026-04-05)
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: primer párrafo cambia a "Esta cotización **es referencial** y ha sido elaborada..."
+- "Cotización emitida el {fecha}" → "Cotización emitida {fecha}" (elimina "el" redundante)
+
+#### M19 — Botón "Nueva Cotización" en navbar (2026-04-05)
+- `CotizadorShell.tsx`: botón "← Nueva Cotización" aparece en el navbar únicamente en el paso 3 (Cotización)
+- Al hacer clic resetea `step → 'select'`, `selection → null`, `broker → null`
+- Idéntico al botón de `/historial` en apariencia (border azul)
+
+#### M20 — Ordenamiento ascendente numérico en filtros (2026-04-05)
+- `CascadeSelector.tsx`: función `distinct()` actualizada para ordenar numéricamente (`1, 2…16`) en vez de lexicográfico (`1, 10, 11…2`)
+- Dropdown "N° Unidad": array `unidadesFiltradas` ordenado por `numeroUnidad` numérico antes de mapear opciones
+- Afecta filtros: Piso, N° Unidad (los demás filtros son strings no numéricos)
+
 #### M8 — Corrección CSS (headers en next.config.ts)
 - `next.config.ts`: eliminado bloque `headers()` que aplicaba `Content-Type: text/html` a todos los archivos incluidos CSS → los estilos ahora se cargan correctamente
 
@@ -742,6 +805,13 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-04-05 | 520c7a8 | main | M20: ordena Piso y N Unidad en forma ascendente numerica |
+| 2026-04-05 | d04deab | main | M19: agrega boton Nueva Cotizacion en navbar al llegar al paso 3 |
+| 2026-04-05 | a46b549 | main | M18: actualiza texto disclaimer pie de cotizacion |
+| 2026-04-05 | caa20b9 | main | M16: corrige calculo de pie para Maestra con bienes conjuntos |
+| 2026-04-05 | 536833b | main | M17: corrige % Pie Total en Plan de Pago cuando hay bienes conjuntos |
+| 2026-04-05 | f3f4410 | main | M15: migra config a parametros dinamicos desde Excel (REGLAS_INMOBILIARIAS + PARAMETROS_CALCULO) |
+| 2026-04-02 | 3210912 | main | CREA ANALISIS DE FUNCIONALIDADES CALCULOS |
 | 2026-03-31 | 97a302b | main | auto: actualiza maestro de desarrollo antes del push |
 | 2026-03-31 | bf34457 | main | M4: desglose por unidad en precios (Depto / Estac / Bodega individualmente) |
 | 2026-03-31 | afc5eb4 | main | M5–M8: historial PDF+Excel, corrección filtro cascada (availableNemos), botones Volver, fix CSS headers |

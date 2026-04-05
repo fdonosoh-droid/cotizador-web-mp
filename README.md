@@ -24,7 +24,7 @@ Aplicación web para generación de cotizaciones de compra de propiedades en mer
 ## Requisitos previos
 
 - Node.js 20+
-- Archivo `INPUT_FILES.xlsx` con las hojas: `STOCK NUEVOS`, `CONDICIONES_COMERCIALES`, `PROYECTOS`, `UF`
+- Archivo `INPUT_FILES.xlsx` con las hojas: `STOCK NUEVOS`, `CONDICIONES_COMERCIALES`, `PROYECTOS`, `UF`, `REGLAS_INMOBILIARIAS`, `PARAMETROS_CALCULO`
 - (Producción) PostgreSQL 15+ con el schema de `scripts/schema_pg.sql`
 
 ---
@@ -83,6 +83,8 @@ Colocar el archivo `INPUT_FILES.xlsx` en la raíz del proyecto. Debe contener la
 | `CONDICIONES_COMERCIALES` | Descuentos, bonos pie, cuotas, modalidades por proyecto y tipología |
 | `PROYECTOS` | Datos maestros de proyectos (dirección, comuna, tipo entrega) |
 | `UF` | Serie histórica de valores UF (desde 1977) |
+| `REGLAS_INMOBILIARIAS` | Reglas de cálculo por alianza: tipo bono pie, LTV máximo, % pie conjuntos |
+| `PARAMETROS_CALCULO` | Constantes del motor de cálculo (upfront, haircut, meses arriendo, etc.) |
 
 ### Modo producción (PostgreSQL)
 
@@ -121,6 +123,7 @@ npm run import:excel
    └─ Botón "← Volver" disponible antes de finalizar
    └─ "Ver Documento" → guarda en historial (irreversible) + muestra cotización
    └─ Acciones post-finalización: Imprimir / Descargar PDF / Enviar por Email
+   └─ Botón "← Nueva Cotización" en navbar (visible en paso 3) → reinicia el flujo completo
 ```
 
 ---
@@ -149,11 +152,11 @@ cotizador-web-mp/
 │   └── historial/TablaHistorial.tsx # Tabla de cotizaciones con export
 │
 ├── lib/
-│   ├── calculators/cotizador.ts    # Motor de cálculo (fórmulas Excel replicadas)
-│   ├── config/cotizadorConfig.ts   # Parámetros configurables (CAE, pie, plazos)
+│   ├── calculators/cotizador.ts    # Motor de cálculo (fórmulas Excel replicadas, reglas por inmobiliaria)
+│   ├── config/cotizadorConfig.ts   # Parámetros configurables + getReglaInmobiliaria()
 │   ├── data/
-│   │   ├── types.ts                # StockRow, CondicionComercialRow, UnidadCotizable
-│   │   ├── excel-adapter.ts        # Adaptador Excel (desarrollo)
+│   │   ├── types.ts                # StockRow, CondicionComercialRow, UnidadCotizable, ReglaInmobiliariaRow
+│   │   ├── excel-adapter.ts        # Adaptador Excel + REGLAS_INMOBILIARIAS + PARAMETROS_CALCULO
 │   │   ├── pg-adapter.ts           # Adaptador PostgreSQL (producción)
 │   │   ├── repository.ts           # Interfaz IStockRepository
 │   │   └── uf-service.ts           # Valor UF del día (CMF API + fallback)
@@ -183,8 +186,8 @@ El motor en `lib/calculators/cotizador.ts` replica exactamente las fórmulas del
 | **Precios** | Precio lista, descuento (base + adicional), valor de venta |
 | **Pie** | Pie total, reserva, upfront, saldo pie, cuotas pie |
 | **Modalidades** | Cuotón (P3.C2), Pie Construcción (P3.C1), Crédito Directo (P3.C3) |
-| **Tasación** | `valorVenta × (1−pie) / (1−pie−aporte)` — fórmula Excel maestra Calculadora BP+Mutuo |
-| **Crédito hipotecario** | Tasación − pie total pagado a inmobiliaria |
+| **Tasación / CH** | Fórmula según inmobiliaria (ver reglas por tipo abajo) |
+| **Crédito hipotecario** | Tasación − pie − aporte inmobiliaria |
 | **Escenarios CAE** | 3 columnas: cuota mensual, flujo neto, flujo acumulado |
 | **ROI 5 años** | `(plusvalía capital + flujo acumulado) / equity (pie pagado)` |
 | **Cap Rate** | `(arriendo × 11 meses / UF) / tasación` |
@@ -202,6 +205,21 @@ El motor en `lib/calculators/cotizador.ts` replica exactamente las fórmulas del
 - Aporte Inmobiliaria, Cuotas Pie, Pie Construcción, Cuotón, Crédito Directo
 
 > Los controles de condiciones comerciales se deshabilitan automáticamente cuando el valor base de la condición es 0 (ej: si el proyecto no tiene Aporte Inmobiliaria, el selector queda bloqueado en 0%).
+
+### Reglas de cálculo por inmobiliaria
+
+Las reglas se cargan dinámicamente desde la hoja `REGLAS_INMOBILIARIAS` de `INPUT_FILES.xlsx`:
+
+| Inmobiliaria | Tipo bono pie | LTV | Pie bienes conjuntos |
+|---|---|---|---|
+| **MAESTRA** | % sobre tasación (D35/D36) | 80% | igual que depto (piePct) |
+| **INGEVEC** | % sobre precio lista depto | 100% | 20% fijo |
+| **URMENETA** | % sobre precio lista total (depto+conjuntos) | 100% | 20% fijo |
+| Resto | % sobre precio lista depto | 100% | 20% fijo |
+
+- **MAESTRA:** `tasación = valorVenta×(1−pie)/(1−pie−bono)` · `CH = tasación×80%` · `aporte = tasación−pie−CH`
+- **INGEVEC/otros:** `bonoPieUF = precioListaDepto×bono%` · `CH = valorVenta−pieTotalUF−aporte`
+- **URMENETA:** `bonoPieUF = precioListaTotal×bono%` · `CH = valorVenta−pieTotalUF−aporte`
 
 ### Sección VALORES — desglose por unidad
 
