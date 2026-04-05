@@ -190,7 +190,7 @@ export function CotizacionPDF({
         <View style={s.section}>
           <Text style={s.sTitle}>Plan de Pago — Pie ({(r.piePct * 100).toFixed(0)}%)</Text>
           <THead cols={['Concepto', 'UF', '%', '$']} widths={['50%', '17%', '13%', '20%']} />
-          <TR bold  cols={['Pie Total', `${formatUF(r.pieTotalUF)} UF`, pct(r.piePct), formatCLP(r.pieTotalUF * uf)]}  widths={['50%','17%','13%','20%']} />
+          <TR bold  cols={['Pie Total', `${formatUF(r.pieTotalUF)} UF`, pct(r.pieTotalUF/r.valorVentaUF), formatCLP(r.pieTotalUF * uf)]}  widths={['50%','17%','13%','20%']} />
           <TR shade cols={['Reserva',   `${formatUF(r.reservaUF)} UF`,  pct(r.reservaUF/r.valorVentaUF), formatCLP(r.reservaUF * uf)]}  widths={['50%','17%','13%','20%']} />
           <TR       cols={[`Upfront a la Promesa (${(r.upfrontPct*100).toFixed(0)}%)`, `${formatUF(r.upfrontUF)} UF`, pct(r.upfrontPct), formatCLP(r.upfrontUF * uf)]} widths={['50%','17%','13%','20%']} />
           <TR shade cols={[`Saldo Pie — ${r.cuotasPieN} cuotas`, `${formatUF(r.saldoPieUF)} UF`, pct(r.saldoPieUF/r.valorVentaUF), formatCLP(r.saldoPieCLP)]} widths={['50%','17%','13%','20%']} />

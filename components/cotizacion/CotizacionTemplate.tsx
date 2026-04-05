@@ -153,7 +153,7 @@ export default function CotizacionTemplate({
             </tr>
           </thead>
           <tbody>
-            <TRow label="Pie Total"            uf={r.pieTotalUF}      pct={r.piePct}          clp={r.pieTotalUF*uf} bold shade />
+            <TRow label="Pie Total"            uf={r.pieTotalUF}      pct={r.pieTotalUF/r.valorVentaUF}          clp={r.pieTotalUF*uf} bold shade />
             <TRow label="Reserva"              uf={r.reservaUF}       pct={r.reservaUF/r.valorVentaUF}   clp={r.reservaUF*uf} />
             <TRow label={`Upfront a la Promesa (${(r.upfrontPct*100).toFixed(0)}%)`} uf={r.upfrontUF} pct={r.upfrontPct} clp={r.upfrontUF*uf} shade />
             <TRow label={`Saldo Pie — ${r.cuotasPieN} cuotas`}
