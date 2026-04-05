@@ -43,12 +43,22 @@ export default function CotizadorShell() {
             <Image src="/logo.png" alt="VIVEPROP" width={160} height={30} className="object-contain" priority />
             <span className="hidden text-lg font-semibold text-gray-600 sm:block">Cotizador Mercado Primario</span>
           </div>
-          <Link
-            href="/historial"
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 whitespace-nowrap"
-          >
-            Historial
-          </Link>
+          <div className="flex items-center gap-2">
+            {step === 'quote' && (
+              <button
+                onClick={() => { setStep('select'); setSelection(null); setBroker(null) }}
+                className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
+              >
+                ← Nueva Cotización
+              </button>
+            )}
+            <Link
+              href="/historial"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 whitespace-nowrap"
+            >
+              Historial
+            </Link>
+          </div>
         </div>
       </nav>
 
