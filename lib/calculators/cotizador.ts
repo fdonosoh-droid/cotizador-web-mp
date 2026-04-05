@@ -165,8 +165,9 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   const valorVentaCLP    = valorVentaUF * valorUF
 
   // ── C. Pie ────────────────────────────────────────────────────────────
-  // Bienes conjuntos (estac/bodega) siempre pagan 20% de pie independientemente del pie del depto
-  const PIE_CONJUNTOS_PCT             = input.pieConjuntosPct ?? 0.20
+  // Maestra: bienes conjuntos pagan el mismo piePct que el depto (fórmula D35 aplica valorVenta completo)
+  // Otros:   bienes conjuntos siempre pagan 20% fijo independiente del piePct del depto
+  const PIE_CONJUNTOS_PCT             = tipoCalculoBono === 'maestra' ? piePct : (input.pieConjuntosPct ?? 0.20)
   const pieTotalDeptoUF               = Math.round(precioDescDepto * piePct * 100) / 100
   const pieTotalConjuntosUF           = Math.round(precioListaOtros * PIE_CONJUNTOS_PCT * 100) / 100
   const pieTotalUF                    = pieTotalDeptoUF + pieTotalConjuntosUF  // E40 revisado
@@ -197,10 +198,11 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
   // ── D. Crédito & tasación — fórmula según inmobiliaria ─────────────────
   //
   // MAESTRA (tipoCalculoBono='maestra'):
-  //   D35: tasación = valorVenta*(1−pie) / (1−pie−bono%)  [bono% sobre tasación]
+  //   Pie conjuntos pagan piePct (igual que depto) → pieTotalUF = valorVentaUF × piePct
+  //   D35: tasación = valorVenta*(1−pie) / (1−pie−bono%)  [creditoHipBase = valorVenta*(1−pie)]
   //   D36: bonoPieUF = tasación × bono%
   //   creditoHip = tasación × 80% (LTV especial)
-  //   saldoAporte = tasación − pie − creditoHip
+  //   saldoAporte = tasación − pieTotalUF − creditoHip
   //
   // INGEVEC y otros (tipoCalculoBono='precio-lista-depto'):
   //   bonoPieUF = precioListaDepto × bono%
@@ -231,8 +233,8 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
       : valorVentaUF
     bonoPieUF        = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
     creditoHipFinalUF  = Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100 // 80% LTV
-    // Maestra: aporte usa SOLO pie del depto (no conjuntos), igual que Excel maestra
-    pieCreditoHipUF    = pieTotalDeptoUF
+    // Maestra: pie en CH = pieTotalUF (depto + conjuntos al mismo piePct, refleja valorVenta completo)
+    pieCreditoHipUF    = pieTotalUF
     saldoAporteInmobUF = Math.round((tasacionUFfinal - pieCreditoHipUF - creditoHipFinalUF) * 100) / 100
     aportePct          = tasacionUFfinal > 0 ? saldoAporteInmobUF / tasacionUFfinal : 0
   } else if (tipoCalculoBono === 'precio-lista-total') {
