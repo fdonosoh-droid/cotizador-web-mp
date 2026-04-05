@@ -5,7 +5,7 @@
 // ============================================================
 
 import { stockRepository } from '@/lib/data'
-import type { ProyectoRow, UnidadCotizable } from '@/lib/data'
+import type { ProyectoRow, UnidadCotizable, ReglaInmobiliariaRow, ParametroCalculoRow } from '@/lib/data'
 import { siguienteNumeroCotizacion } from '@/lib/utils/correlativo'
 import {
   guardarCotizacion,
@@ -52,6 +52,14 @@ export async function getBienesConjuntos(
 
 export async function getUFdelDia(): Promise<number> {
   return stockRepository.getUFdelDia()
+}
+
+export async function getReglasInmobiliarias(): Promise<ReglaInmobiliariaRow[]> {
+  return stockRepository.getReglasInmobiliarias()
+}
+
+export async function getParametrosCalculo(): Promise<ParametroCalculoRow[]> {
+  return stockRepository.getParametrosCalculo()
 }
 
 /** Genera y persiste el siguiente número correlativo de cotización */

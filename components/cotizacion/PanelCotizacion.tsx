@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useTransition } from 'react'
-import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction } from '@/app/actions/stock'
+import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, getReglasInmobiliarias } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -15,7 +15,7 @@ import { formatCLP, formatUF } from '@/lib/data/uf-format'
 import {
   CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS,
   DESCUENTO_ADICIONAL_OPTIONS, BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
-  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase, getLtvMaxPct, getTipoCalculoBono,
+  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase, getReglaInmobiliaria,
 } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'
@@ -140,7 +140,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
     setErrorMsg(null)
 
     startTransition(async () => {
-      const valorUF = await getUFdelDia()
+      const [valorUF, reglas] = await Promise.all([getUFdelDia(), getReglasInmobiliarias()])
+      const regla = getReglaInmobiliaria(unidad.alianza, reglas)
 
       const input: InputCotizacion = {
         precioListaDepto:          unidad.precioLista,
@@ -160,8 +161,9 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         cuotasPieN,
         arriendosMensualesCLP:     parsed,
         plusvaliaAnual:            plusvalia / 100,
-        ltvMaxPct:                 getLtvMaxPct(unidad.alianza),
-        tipoCalculoBono:           getTipoCalculoBono(unidad.alianza),
+        ltvMaxPct:                 regla.ltvMaxPct,
+        tipoCalculoBono:           regla.tipoCalculoBono,
+        pieConjuntosPct:           regla.pieConjuntosPct,
       }
       setResultado(calcularCotizacion(input))
       setShowDoc(false)

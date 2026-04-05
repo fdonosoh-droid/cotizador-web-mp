@@ -11,6 +11,8 @@ import type {
   CondicionComercialRow,
   ProyectoRow,
   UnidadCotizable,
+  ReglaInmobiliariaRow,
+  ParametroCalculoRow,
 } from './types'
 
 // ---------- helpers ----------------------------------------------------------
@@ -133,12 +135,46 @@ function loadUF(): { fecha: Date; valor: number }[] {
     .filter((r) => r.valor > 0)
 }
 
+function loadReglasInmobiliarias(): ReglaInmobiliariaRow[] {
+  const wb = getWorkbook()
+  const ws = wb.Sheets['REGLAS_INMOBILIARIAS']
+  if (!ws) return []
+  const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null })
+  const tiposValidos = ['maestra', 'precio-lista-depto', 'precio-lista-total'] as const
+  return raw
+    .map((r) => ({
+      alianza:            parseStr(r['ALIANZA']),
+      tipoCalculoBono:    parseStr(r['TIPO_CALCULO_BONO']) as ReglaInmobiliariaRow['tipoCalculoBono'],
+      ltvMaxPct:          parseNum(r['LTV_MAX_PCT'])       ?? 1.0,
+      pieConjuntosPct:    parseNum(r['PIE_CONJUNTOS_PCT']) ?? 0.20,
+      descripcionBonoPie: parseStr(r['DESCRIPCION_BONO_PIE']),
+    }))
+    .filter((r) => r.alianza && tiposValidos.includes(r.tipoCalculoBono))
+}
+
+function loadParametrosCalculo(): ParametroCalculoRow[] {
+  const wb = getWorkbook()
+  const ws = wb.Sheets['PARAMETROS_CALCULO']
+  if (!ws) return []
+  const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null })
+  return raw
+    .map((r) => ({
+      parametro:   parseStr(r['PARAMETRO']),
+      valor:       r['VALOR'] as string | number,
+      tipo:        parseStr(r['TIPO']),
+      descripcion: parseStr(r['DESCRIPCION']),
+    }))
+    .filter((r) => r.parametro)
+}
+
 // ---------- cached data -------------------------------------------------------
 
 let _stock: StockRow[] | null = null
 let _condiciones: CondicionComercialRow[] | null = null
 let _proyectos: ProyectoRow[] | null = null
 let _uf: { fecha: Date; valor: number }[] | null = null
+let _reglas: ReglaInmobiliariaRow[] | null = null
+let _parametros: ParametroCalculoRow[] | null = null
 
 function stock(): StockRow[] {
   if (!_stock) _stock = loadStock()
@@ -155,6 +191,14 @@ function proyectos(): ProyectoRow[] {
 function uf(): { fecha: Date; valor: number }[] {
   if (!_uf) _uf = loadUF()
   return _uf
+}
+function reglas(): ReglaInmobiliariaRow[] {
+  if (!_reglas) _reglas = loadReglasInmobiliarias()
+  return _reglas
+}
+function parametros(): ParametroCalculoRow[] {
+  if (!_parametros) _parametros = loadParametrosCalculo()
+  return _parametros
 }
 
 // ---------- distinct helper --------------------------------------------------
@@ -305,6 +349,14 @@ export class ExcelAdapter implements IStockRepository {
     }
 
     return resultado
+  }
+
+  async getReglasInmobiliarias(): Promise<ReglaInmobiliariaRow[]> {
+    return reglas()
+  }
+
+  async getParametrosCalculo(): Promise<ParametroCalculoRow[]> {
+    return parametros()
   }
 
   async getUFdelDia(): Promise<number> {

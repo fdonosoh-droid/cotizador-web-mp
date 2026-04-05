@@ -9,7 +9,7 @@
 
 import { getDb } from '@/lib/db/client'
 import type { IStockRepository } from './repository'
-import type { ProyectoRow, UnidadCotizable } from './types'
+import type { ProyectoRow, UnidadCotizable, ReglaInmobiliariaRow, ParametroCalculoRow } from './types'
 
 // ── Tipo auxiliar: fila cruda de v_stock_cotizable ────────
 interface StockRow_PG {
@@ -214,5 +214,18 @@ export class PgAdapter implements IStockRepository {
       LIMIT  1
     `
     return rows.length > 0 ? Number(rows[0].valor_uf) : 0
+  }
+
+  // ── Reglas inmobiliarias (TODO: migrar a tabla PG) ────
+  async getReglasInmobiliarias(): Promise<ReglaInmobiliariaRow[]> {
+    // Pendiente: implementar tabla reglas_inmobiliarias en PG
+    // Por ahora retorna vacío → cotizadorConfig usa fallback hardcoded
+    return []
+  }
+
+  // ── Parámetros de cálculo (TODO: migrar a tabla PG) ──
+  async getParametrosCalculo(): Promise<ParametroCalculoRow[]> {
+    // Pendiente: implementar tabla parametros_calculo en PG
+    return []
   }
 }

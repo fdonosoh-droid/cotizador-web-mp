@@ -68,11 +68,6 @@ export const PIE_CREDITO_DIRECTO_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.3
 /** LTV máximo para inmobiliarias con regla especial (80% de tasación) */
 export const LTV_MAESTRA = 0.80
 
-/** Retorna el LTV máximo para una alianza dada (1.0 = sin límite especial) */
-export function getLtvMaxPct(alianza: string): number {
-  return alianza.toLowerCase().includes('maestra') ? LTV_MAESTRA : 1.0
-}
-
 /**
  * Tipo de cálculo del bono pie por inmobiliaria:
  *  'maestra'            — D35 Excel + LTV 80%
@@ -81,12 +76,56 @@ export function getLtvMaxPct(alianza: string): number {
  */
 export type TipoCalculoBono = 'maestra' | 'precio-lista-depto' | 'precio-lista-total'
 
-/** Retorna el tipo de cálculo de bono pie según la alianza */
+import type { ReglaInmobiliariaRow, ParametroCalculoRow } from '@/lib/data/types'
+
+/**
+ * Retorna LTV y tipoCalculoBono para una alianza usando las reglas cargadas desde Excel.
+ * Si no se encuentran reglas (o la alianza no está en la tabla), usa fallback hardcoded.
+ */
+export function getReglaInmobiliaria(
+  alianza: string,
+  reglas: ReglaInmobiliariaRow[],
+): { tipoCalculoBono: TipoCalculoBono; ltvMaxPct: number; pieConjuntosPct: number } {
+  const norm = alianza.toLowerCase()
+  const regla = reglas.find((r) => norm.includes(r.alianza.toLowerCase()))
+  if (regla) {
+    return {
+      tipoCalculoBono: regla.tipoCalculoBono,
+      ltvMaxPct:       regla.ltvMaxPct,
+      pieConjuntosPct: regla.pieConjuntosPct,
+    }
+  }
+  // Fallback hardcoded (por si la hoja Excel no cargó)
+  if (norm.includes('maestra'))  return { tipoCalculoBono: 'maestra',            ltvMaxPct: 0.80, pieConjuntosPct: 0.20 }
+  if (norm.includes('urmeneta')) return { tipoCalculoBono: 'precio-lista-total', ltvMaxPct: 1.00, pieConjuntosPct: 0.20 }
+  return                                { tipoCalculoBono: 'precio-lista-depto', ltvMaxPct: 1.00, pieConjuntosPct: 0.20 }
+}
+
+/** Extrae un parámetro numérico de la lista cargada desde Excel. */
+export function getParamNum(
+  parametros: ParametroCalculoRow[],
+  nombre: string,
+  fallback: number,
+): number {
+  const row = parametros.find((p) => p.parametro === nombre)
+  if (!row) return fallback
+  const n = typeof row.valor === 'number' ? row.valor : parseFloat(String(row.valor))
+  return isFinite(n) ? n : fallback
+}
+
+// ── Funciones de compatibilidad (usadas mientras no hay reglas cargadas) ──────
+/** @deprecated Usar getReglaInmobiliaria() con reglas desde Excel */
+export function getLtvMaxPct(alianza: string): number {
+  const norm = alianza.toLowerCase()
+  return norm.includes('maestra') ? LTV_MAESTRA : 1.0
+}
+
+/** @deprecated Usar getReglaInmobiliaria() con reglas desde Excel */
 export function getTipoCalculoBono(alianza: string): TipoCalculoBono {
   const norm = alianza.toLowerCase()
   if (norm.includes('maestra'))  return 'maestra'
   if (norm.includes('urmeneta')) return 'precio-lista-total'
-  return 'precio-lista-depto'   // INGEVEC y resto de inmobiliarias
+  return 'precio-lista-depto'
 }
 
 /** Combina opciones estándar con el valor base (si no está en la lista) */

@@ -3,7 +3,7 @@
 // Implementaciones: ExcelAdapter (dev) | PgAdapter (prod)
 // ============================================================
 
-import type { ProyectoRow, UnidadCotizable } from './types'
+import type { ProyectoRow, UnidadCotizable, ReglaInmobiliariaRow, ParametroCalculoRow } from './types'
 
 export interface IStockRepository {
   /** Paso 1 de la cascada: comunas disponibles */
@@ -37,4 +37,10 @@ export interface IStockRepository {
 
   /** Valor UF del día (o el último disponible si hoy no está en la BD) */
   getUFdelDia(): Promise<number>
+
+  /** Reglas de cálculo por inmobiliaria (hoja REGLAS_INMOBILIARIAS) */
+  getReglasInmobiliarias(): Promise<ReglaInmobiliariaRow[]>
+
+  /** Parámetros del motor de cálculo (hoja PARAMETROS_CALCULO) */
+  getParametrosCalculo(): Promise<ParametroCalculoRow[]>
 }

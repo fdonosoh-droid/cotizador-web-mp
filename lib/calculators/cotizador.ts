@@ -46,6 +46,9 @@ export interface InputCotizacion {
    *  'precio-lista-total' — bonoPie = precioListaTotal × bono% (URMENETA)
    */
   tipoCalculoBono: 'maestra' | 'precio-lista-depto' | 'precio-lista-total'
+
+  /** % de pie aplicado a bienes conjuntos (default 0.20 = 20%) */
+  pieConjuntosPct?: number
 }
 
 /** Resultado de un escenario CAE */
@@ -163,7 +166,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
 
   // ── C. Pie ────────────────────────────────────────────────────────────
   // Bienes conjuntos (estac/bodega) siempre pagan 20% de pie independientemente del pie del depto
-  const PIE_CONJUNTOS_PCT             = 0.20
+  const PIE_CONJUNTOS_PCT             = input.pieConjuntosPct ?? 0.20
   const pieTotalDeptoUF               = Math.round(precioDescDepto * piePct * 100) / 100
   const pieTotalConjuntosUF           = Math.round(precioListaOtros * PIE_CONJUNTOS_PCT * 100) / 100
   const pieTotalUF                    = pieTotalDeptoUF + pieTotalConjuntosUF  // E40 revisado

@@ -74,3 +74,20 @@ export interface UFRow {
   fecha: Date
   valor: number
 }
+
+/** Fila de REGLAS_INMOBILIARIAS — reglas de cálculo por alianza */
+export interface ReglaInmobiliariaRow {
+  alianza:           string   // nombre de la inmobiliaria (case-insensitive match)
+  tipoCalculoBono:   'maestra' | 'precio-lista-depto' | 'precio-lista-total'
+  ltvMaxPct:         number   // decimal: 0.80 = 80%, 1.00 = sin límite
+  pieConjuntosPct:   number   // decimal: 0.20 = 20% fijo para bienes conjuntos
+  descripcionBonoPie: string
+}
+
+/** Fila de PARAMETROS_CALCULO — constantes configurables del motor */
+export interface ParametroCalculoRow {
+  parametro:   string
+  valor:       string | number
+  tipo:        'number' | 'decimal' | 'formula' | string
+  descripcion: string
+}

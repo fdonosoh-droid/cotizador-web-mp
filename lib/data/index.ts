@@ -35,4 +35,6 @@ export type {
   ProyectoRow,
   UnidadCotizable,
   UFRow,
+  ReglaInmobiliariaRow,
+  ParametroCalculoRow,
 } from './types'
