@@ -361,6 +361,7 @@ export default function CascadeSelector({ onSelectionChange }: Props) {
             value={sel.unidad?.numeroUnidad?.toString() ?? ''}
             options={unidadesFiltradas
               .filter(u => u.numeroUnidad !== null)
+              .sort((a, b) => (a.numeroUnidad ?? 0) - (b.numeroUnidad ?? 0))
               .map(u => ({
                 value: u.numeroUnidad!.toString(),
                 label: `${u.numeroUnidad} — ${u.programa} · P${u.pisoProducto ?? '?'}${u.superficieTotal ? ` · ${Number(u.superficieTotal).toFixed(2)}m²` : ''}`,
@@ -468,7 +469,10 @@ export default function CascadeSelector({ onSelectionChange }: Props) {
 // ── helpers ───────────────────────────────────────────────────
 
 function distinct(arr: string[]): string[] {
-  return [...new Set(arr)].filter(Boolean).sort()
+  return [...new Set(arr)].filter(Boolean).sort((a, b) => {
+    const na = parseFloat(a), nb = parseFloat(b)
+    return isFinite(na) && isFinite(nb) ? na - nb : a.localeCompare(b)
+  })
 }
 
 interface SelectFieldProps {
