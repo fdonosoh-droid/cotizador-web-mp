@@ -174,6 +174,9 @@ export default function CascadeSelector({ onSelectionChange }: Props) {
     startTransition(async () => {
       const data = await getUnidades(nemotecnico)
       setUnidades(data)
+      if (data.some(u => u.tipoUnidad === 'Departamento')) {
+        setFiltros(prev => ({ ...prev, tipoUnidad: 'Departamento' }))
+      }
     })
   }
 
