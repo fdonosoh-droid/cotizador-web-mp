@@ -177,7 +177,7 @@ export default function CotizadorShell() {
 function StepIndicator({ current }: { current: Step }) {
   const steps: { id: Step; label: string }[] = [
     { id: 'select', label: '1. Unidad' },
-    { id: 'broker', label: '2. Corredor' },
+    { id: 'broker', label: '2. Cliente' },
     { id: 'quote',  label: '3. Cotización' },
   ]
   const order: Record<Step, number> = { select: 0, broker: 1, quote: 2 }
