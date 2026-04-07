@@ -167,16 +167,14 @@ export default function CascadeSelector({ onSelectionChange }: Props) {
   function handleProyecto(nemotecnico: string) {
     const proyecto = proyectos.find((p) => p.nemotecnico === nemotecnico) ?? null
     const next = { ...sel, proyecto, unidad: null, unidadesAdicionales: [] }
-    setSel(next); setFiltros(FILTROS_EMPTY); setShowFiltros(false); setShowAgregar(false); setAdicionalSelecto('')
+    const filtrosIniciales = { ...FILTROS_EMPTY, tipoUnidad: 'Departamento' }
+    setSel(next); setFiltros(filtrosIniciales); setShowFiltros(false); setShowAgregar(false); setAdicionalSelecto('')
     setUnidades([])
     onSelectionChange(next)
     if (!nemotecnico) return
     startTransition(async () => {
       const data = await getUnidades(nemotecnico)
       setUnidades(data)
-      if (data.some(u => u.tipoUnidad === 'Departamento')) {
-        setFiltros(prev => ({ ...prev, tipoUnidad: 'Departamento' }))
-      }
     })
   }
 
@@ -344,7 +342,7 @@ export default function CascadeSelector({ onSelectionChange }: Props) {
                 <div className="flex items-end">
                   <button
                     type="button"
-                    onClick={() => { setFiltros(FILTROS_EMPTY); setSel(prev => ({ ...prev, unidad: null, unidadesAdicionales: [] })); onSelectionChange({ ...sel, unidad: null, unidadesAdicionales: [] }) }}
+                    onClick={() => { setFiltros({ ...FILTROS_EMPTY, tipoUnidad: 'Departamento' }); setSel(prev => ({ ...prev, unidad: null, unidadesAdicionales: [] })); onSelectionChange({ ...sel, unidad: null, unidadesAdicionales: [] }) }}
                     className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-white"
                   >
                     Limpiar filtros
