@@ -46,7 +46,7 @@ export default function CotizadorShell() {
                                                             className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
                                                           >
                                                           ← Nueva Cotización
-                                            './cotizacion/PanelCotizacion'
+                           </button>
                                 </button>
                       </button>
               </div>
@@ -93,7 +93,7 @@ export default function CotizadorShell() {
                                                       className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                                                     >
                                                     Continuar →
-                                    './cotizacion/PanelCotizacion'
+                   </button>
                       </button>
                                 )}
                       </p>
@@ -105,7 +105,7 @@ export default function CotizadorShell() {
                                   {step === 'quote' && (
                                       <button onClick={() => setStep('broker')} className="text-xs text-blue-600 hover:underline">
                                                         Editar
-                                      './cotizacion/PanelCotizacion'
+                     </button>
                                               )}
                                 </button>
                                 <div className="mt-4">
@@ -115,7 +115,7 @@ export default function CotizadorShell() {
                                                         <div className="mt-3">
                                                                             <button onClick={() => setStep('select')} className="text-sm text-gray-500 hover:text-gray-700 hover:underline">
                                                                                                   ← Volver a selección de unidad
-                                                                            './cotizacion/PanelCotizacion'
+                                                           </button>
                                                         </button>
                                       </select>
                                     ) : broker ? (
