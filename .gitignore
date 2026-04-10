@@ -15,5 +15,5 @@ Thumbs.db
 .cotizaciones-historial.json
 
 # Datos de stock — contienen información comercial sensible
-INPUT_FILES.xlsx
+# INPUT_FILES.xlsx — habilitado para deploy (repo privado)
 MEJORAS\ Y\ CORRECCIONES*.docx
