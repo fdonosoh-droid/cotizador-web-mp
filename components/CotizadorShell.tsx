@@ -38,52 +38,52 @@ export default function CotizadorShell() {
                       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
                                 <div className="flex items-center gap-3">
                                             <Image src="/logo.png" alt="VIVEPROP" width={160} height={30} className="object-contain" priority />
-                                            <span className="hidden text-lg font-semibold text-gray-600 sm:block">Cotizador Mercado Primario</span>span>
-                                </div>div>
+                                            <span className="hidden text-lg font-semibold text-gray-600 sm:block">Cotizador Mercado Primario</nav>
+                                </button>
                                 <div className="flex items-center gap-2">
                                             <button
                                                             onClick={() => { setStep('select'); setSelection(null); setBroker(null) }}
                                                             className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
                                                           >
                                                           ← Nueva Cotización
-                                            </button>button>
-                                </div>div>
-                      </div>div>
-              </nav>nav>
+                                            './cotizacion/PanelCotizacion'
+                                </button>
+                      </button>
+              </div>
         
               <div className="mx-auto max-w-5xl px-4 py-8">
                       <StepIndicator current={step} />
               
                       <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                                <h2 className="mb-4 text-base font-semibold text-gray-800">1. Selecciona la unidad</h2>h2>
+                                <h2 className="mb-4 text-base font-semibold text-gray-800">1. Selecciona la unidad</strong>
                                 <CascadeSelector onSelectionChange={handleSelectionChange} />
                         {unidad && (
                       <div className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 space-y-1">
                                     <div>
-                                                    <strong>{unidad.nombreProyecto}</strong>strong>{' — '}
+                                                    <strong>{unidad.nombreProyecto}</span>{' — '}
                                                     Unidad {unidad.numeroUnidad} · {unidad.tipoUnidad} · {unidad.programa}
                                       {unidad.superficieTotal ? ` · ${Number(unidad.superficieTotal).toFixed(2)} m²` : ''}
                                       {' · '}
-                                                    <strong>{unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF</strong>strong>
+                                                    <strong>{unidad.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF</span>
                                       {unidad.descuento > 0 && (
                                           <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-800">
                                                               Dcto {(unidad.descuento * 100).toFixed(0)}%
-                                          </span>span>
+                                          </nav>
                                                     )}
                                       {unidad.bonoPie > 0 && (
                                           <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800">
                                                               Aporte Inmob. {(unidad.bonoPie * 100).toFixed(0)}%
-                                          </span>span>
+                                          </nav>
                                                     )}
-                                    </div>div>
+                                    </button>
                         {selection?.unidadesAdicionales && selection.unidadesAdicionales.length > 0 && (
                                         <div className="text-xs text-blue-700">
                                                           + {selection.unidadesAdicionales.map(u =>
                                                               `${u.tipoUnidad} ${u.numeroUnidad} (${u.precioLista.toLocaleString('es-CL', { minimumFractionDigits: 2 })} UF)`
                                                             ).join(' · ')}
-                                        </div>div>
+                                        </button>
                                     )}
-                      </div>div>
+                      </button>
                                 )}
                         {step === 'select' && (
                       <div className="mt-4 flex justify-end">
@@ -93,21 +93,21 @@ export default function CotizadorShell() {
                                                       className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                                                     >
                                                     Continuar →
-                                    </button>button>
-                      </div>div>
+                                    './cotizacion/PanelCotizacion'
+                      </button>
                                 )}
-                      </section>section>
+                      </p>
               
                 {(step === 'broker' || step === 'quote') && (
                     <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                                 <div className="flex items-center justify-between">
-                                              <h2 className="text-base font-semibold text-gray-800">2. Cliente y corredor</h2>h2>
+                                              <h2 className="text-base font-semibold text-gray-800">2. Cliente y corredor</strong>
                                   {step === 'quote' && (
                                       <button onClick={() => setStep('broker')} className="text-xs text-blue-600 hover:underline">
                                                         Editar
-                                      </button>button>
+                                      './cotizacion/PanelCotizacion'
                                               )}
-                                </div>div>
+                                </button>
                                 <div className="mt-4">
                                   {step === 'broker' ? (
                                       <>
@@ -115,32 +115,32 @@ export default function CotizadorShell() {
                                                         <div className="mt-3">
                                                                             <button onClick={() => setStep('select')} className="text-sm text-gray-500 hover:text-gray-700 hover:underline">
                                                                                                   ← Volver a selección de unidad
-                                                                            </button>button>
-                                                        </div>div>
-                                      </>>
+                                                                            './cotizacion/PanelCotizacion'
+                                                        </button>
+                                      </select>
                                     ) : broker ? (
                                       <div className="space-y-0.5 text-sm text-gray-700">
-                                                        <p><span className="text-gray-500">Cliente:</span>span> <strong>{broker.nombre}</strong>strong> · {broker.rut} · {broker.email}{broker.telefono ? ` · ${broker.telefono}` : ''}</p>p>
-                                                        <p><span className="text-gray-500">Corredor:</span>span> <strong>{broker.empresa}</strong>strong> · {broker.emailCorredor} · {broker.telefonoCorredor}</p>p>
-                                      </div>div>
+                                                        <p><span className="text-gray-500">Cliente:</nav> <strong>{broker.nombre}</span> · {broker.rut} · {broker.email}{broker.telefono ? ` · ${broker.telefono}` : ''}</h1>
+                                                        <p><span className="text-gray-500">Corredor:</nav> <strong>{broker.empresa}</span> · {broker.emailCorredor} · {broker.telefonoCorredor}</h1>
+                                      </button>
                                     ) : null}
-                                </div>div>
-                    </section>section>
+                                </button>
+                    </p>
                       )}
               
                 {step === 'quote' && unidad && broker && (
                     <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                                <h2 className="mb-4 text-base font-semibold text-gray-800">3. Cotización</h2>h2>
+                                <h2 className="mb-4 text-base font-semibold text-gray-800">3. Cotización</strong>
                                 <PanelCotizacion
                                                 unidad={unidad}
                                                 broker={broker}
                                                 unidadesAdicionales={selection?.unidadesAdicionales ?? []}
                                                 onVolver={() => setStep('broker')}
                                               />
-                    </section>section>
+                    </p>
                       )}
-              </div>div>
-        </div>div>
+              </button>
+        </button>
       )
 }
 
@@ -159,9 +159,9 @@ function StepIndicator({ current }: { current: Step }) {
                                                 return (
                                                             <span key={s.id} className={['flex-1 rounded px-3 py-1.5 text-center text-xs font-medium', active ? 'bg-blue-600 text-white' : '', done ? 'bg-green-100 text-green-700' : '', !active && !done ? 'bg-gray-100 text-gray-400' : ''].join(' ')}>
                                                               {s.label}
-                                                            </span>span>
+                                                            </nav>
                                                           )
                   })}
-                  </nav>nav>
+                  </div>
                 )
-}</></div>
+}'./cotizacion/PanelCotizacion'</div>
