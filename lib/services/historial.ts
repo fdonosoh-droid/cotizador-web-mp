@@ -70,7 +70,10 @@ export async function listarCotizacionesCompletas(): Promise<HistorialEntry[]> {
 
 // ── Implementación DEV — archivo JSON ─────────────────────
 
-const HIST_FILE = path.join(process.cwd(), '.cotizaciones-historial.json')
+const HIST_FILE =
+     process.env.NODE_ENV === 'production'
+       ? '/tmp/.cotizaciones-historial.json'
+       : path.join(process.cwd(), '.cotizaciones-historial.json')
 
 interface HistorialEntry {
   numero:       string
