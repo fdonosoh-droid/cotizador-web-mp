@@ -243,10 +243,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Pie Construcción
-            {unidad.piePeriodoConstruccion === 0
-              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
-            }
           </span>
           <div className="rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed">
             {unidad.piePeriodoConstruccion === 0 ? '0%' : `${(unidad.piePeriodoConstruccion * 100).toFixed(0)}%`}
@@ -278,10 +274,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
             Crédito Directo
-            {unidad.pieCreditoDirecto === 0
-              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
-            }
           </span>
           <div className="rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed">
             {unidad.pieCreditoDirecto === 0 ? '0%' : `${(unidad.pieCreditoDirecto * 100).toFixed(0)}%`}
