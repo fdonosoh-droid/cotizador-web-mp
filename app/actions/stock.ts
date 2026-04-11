@@ -9,6 +9,7 @@ import type { ProyectoRow, UnidadCotizable, ReglaInmobiliariaRow, ParametroCalcu
 import { siguienteNumeroCotizacion } from '@/lib/utils/correlativo'
 import {
   guardarCotizacion,
+  guardarYActualizarExcel,
   listarCotizaciones,
   type GuardarCotizacionInput,
   type CotizacionResumen,
@@ -72,6 +73,13 @@ export async function guardarCotizacionAction(
   input: GuardarCotizacionInput,
 ): Promise<void> {
   await guardarCotizacion(input)
+}
+
+/** Guarda cotización Y sobreescribe Historial_cotizaciones.xlsx en disco */
+export async function guardarCotizacionYExcelAction(
+  input: GuardarCotizacionInput,
+): Promise<void> {
+  await guardarYActualizarExcel(input)
 }
 
 /** Devuelve el historial de cotizaciones (dev: JSON, prod: PostgreSQL) */

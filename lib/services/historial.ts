@@ -39,6 +39,7 @@ export interface CotizacionResumen {
     numeroUnidad: number | null
     tipoUnidad:   string
     broker:       string
+    corredor:     string
     valorVentaUF: number
     creditoHipUF: number
     piePct:       number
@@ -83,6 +84,7 @@ interface HistorialEntry {
     numeroUnidad: number | null
     tipoUnidad:   string
     broker:       string
+    corredor:     string
     valorVentaUF: number
     creditoHipUF: number
     piePct:       number
@@ -119,6 +121,7 @@ function _guardarJSON(input: GuardarCotizacionInput): void {
         numeroUnidad: input.unidad.numeroUnidad,
         tipoUnidad:   input.unidad.tipoUnidad,
         broker:       input.broker.nombre,
+        corredor:     input.broker.empresa ?? '',
         valorVentaUF: input.resultado.valorVentaUF,
         creditoHipUF: input.resultado.creditoHipFinalUF,
         piePct:       input.piePct,
@@ -144,10 +147,52 @@ function _listarJSON(): CotizacionResumen[] {
           numeroUnidad: e.numeroUnidad,
           tipoUnidad:   e.tipoUnidad,
           broker:       e.broker,
+          corredor:     e.corredor ?? '',
           valorVentaUF: e.valorVentaUF,
           creditoHipUF: e.creditoHipUF,
           piePct:       e.piePct,
     }))
+}
+
+// ── Ruta del xlsx en disco ───────────────────────────────────
+const XLSX_PATH =
+    process.env.NODE_ENV === 'production'
+    ? '/tmp/Historial_cotizaciones.xlsx'
+    : path.join(process.cwd(), 'Historial_cotizaciones.xlsx')
+
+/**
+ * Guarda la cotización en el JSON y sobreescribe el xlsx en disco
+ * con el historial completo actualizado. Para usar desde Imprimir y Descargar PDF.
+ */
+export async function guardarYActualizarExcel(input: GuardarCotizacionInput): Promise<void> {
+    await guardarCotizacion(input)
+
+    const todas = _leerJSON()
+    const XLSX  = await import('xlsx')
+
+    const filas = todas.map((e) => ({
+          'N° Cotización':   e.numero,
+          'Fecha':           e.fechaDisplay,
+          'Proyecto':        e.proyecto,
+          'Comuna':          e.comuna,
+          'N° Unidad':       e.numeroUnidad ?? '',
+          'Tipo Unidad':     e.tipoUnidad,
+          'Broker/Cliente':  e.broker,
+          'Valor Venta UF':  Math.round(e.valorVentaUF * 100) / 100,
+          'Crédito Hip. UF': Math.round(e.creditoHipUF * 100) / 100,
+          'Pie %':           Number((e.piePct * 100).toFixed(0)),
+          'Corredor':        e.corredor ?? '',
+    }))
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(filas)
+    ws['!cols'] = [
+          { wch: 18 }, { wch: 22 }, { wch: 30 }, { wch: 16 },
+          { wch: 10 }, { wch: 14 }, { wch: 25 }, { wch: 15 },
+          { wch: 15 }, { wch: 7  }, { wch: 25 },
+    ]
+    XLSX.utils.book_append_sheet(wb, ws, 'Historial')
+    XLSX.writeFile(wb, XLSX_PATH)
 }
 
 // ── Implementación PROD — PostgreSQL ────────────────────────
@@ -288,6 +333,7 @@ async function _listarPG(): Promise<CotizacionResumen[]> {
         numeroUnidad: r.numero_unidad,
         tipoUnidad:   r.tipo_unidad,
         broker:       r.broker_nombre,
+        corredor:     '',   // no disponible en esquema PG actual
         valorVentaUF: Number(r.precio_venta_uf),
         creditoHipUF: Number(r.ch_final_uf),
         piePct:       Number(r.pie_pct),

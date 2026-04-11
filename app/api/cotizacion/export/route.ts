@@ -14,25 +14,26 @@ export async function GET() {
     const wb   = XLSX.utils.book_new()
 
     const data = rows.map((r) => ({
-      'N° Cotización':  r.numero,
-      'Fecha':          r.fecha,
-      'Proyecto':       r.proyecto,
-      'Comuna':         r.comuna,
-      'N° Unidad':      r.numeroUnidad ?? '',
-      'Tipo Unidad':    r.tipoUnidad,
-      'Broker/Cliente': r.broker,
-      'Valor Venta UF': r.valorVentaUF,
-      'Crédito Hip. UF':r.creditoHipUF,
-      'Pie %':          Number((r.piePct * 100).toFixed(0)),
+      'N° Cotización':   r.numero,
+      'Fecha':           r.fecha,
+      'Proyecto':        r.proyecto,
+      'Comuna':          r.comuna,
+      'N° Unidad':       r.numeroUnidad ?? '',
+      'Tipo Unidad':     r.tipoUnidad,
+      'Broker/Cliente':  r.broker,
+      'Valor Venta UF':  r.valorVentaUF,
+      'Crédito Hip. UF': r.creditoHipUF,
+      'Pie %':           Number((r.piePct * 100).toFixed(0)),
+      'Corredor':        r.corredor ?? '',
     }))
 
     const ws = XLSX.utils.json_to_sheet(data)
 
     // Anchos de columna
     ws['!cols'] = [
-      { wch: 18 }, { wch: 14 }, { wch: 30 }, { wch: 16 },
+      { wch: 18 }, { wch: 22 }, { wch: 30 }, { wch: 16 },
       { wch: 10 }, { wch: 14 }, { wch: 25 }, { wch: 15 },
-      { wch: 15 }, { wch: 8  },
+      { wch: 15 }, { wch: 7  }, { wch: 25 },
     ]
 
     XLSX.utils.book_append_sheet(wb, ws, 'Historial')

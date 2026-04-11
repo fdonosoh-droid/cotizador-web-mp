@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useTransition } from 'react'
-import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, getReglasInmobiliarias } from '@/app/actions/stock'
+import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, guardarCotizacionYExcelAction, getReglasInmobiliarias } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -61,16 +61,30 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [numeroCot, setNumeroCot] = useState('')
   const [fechaCot,  setFechaCot]  = useState('')
 
-  // Email
-  const [showEmailForm,  setShowEmailForm]  = useState(false)
-  const [emailCliente,   setEmailCliente]   = useState('')
-  const [emailStatus,    setEmailStatus]    = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
-  const [emailError,     setEmailError]     = useState<string | null>(null)
+
+  // Payload común para guardar en historial (se reutiliza en Imprimir y Descargar PDF)
+  function _historialPayload() {
+    return {
+      numero:             numeroCot,
+      fecha:              fechaCot,
+      broker,
+      unidad,
+      unidadesAdicionales,
+      resultado:          resultado!,
+      piePct,
+      plazoAnios:         plazo,
+      tasasCAE,
+      plusvaliaAnual:     plusvalia / 100,
+    }
+  }
 
   async function handleDescargarPDF() {
     if (!resultado) return
     setPdfLoading(true)
     try {
+      // Guardar en historial y actualizar xlsx en disco (fire-and-forget)
+      guardarCotizacionYExcelAction(_historialPayload()).catch((e) => console.error('[historial-xlsx]', e))
+
       const res = await fetch('/api/cotizacion/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,37 +110,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
       console.error(e)
     } finally {
       setPdfLoading(false)
-    }
-  }
-
-  async function handleEnviarEmail() {
-    if (!resultado) return
-    setEmailStatus('sending')
-    setEmailError(null)
-    try {
-      const res = await fetch('/api/cotizacion/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          numero:           numeroCot,
-          fecha:            fechaCot,
-          broker,
-          unidad,
-          unidadesAdicionales,
-          resultado,
-          plusvaliaAnual:   plusvalia,
-          emailCliente:     emailCliente.trim() || undefined,
-        }),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`)
-      }
-      setEmailStatus('ok')
-      setShowEmailForm(false)
-    } catch (e) {
-      setEmailStatus('error')
-      setEmailError(e instanceof Error ? e.message : 'Error al enviar')
     }
   }
 
@@ -462,7 +445,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         {showDoc && (
           <>
             <button
-              onClick={() => window.print()}
+              onClick={() => {
+                guardarCotizacionYExcelAction(_historialPayload()).catch((e) => console.error('[historial-xlsx]', e))
+                window.print()
+              }}
               className="rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700"
             >
               🖨 Imprimir
@@ -474,55 +460,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             >
               {pdfLoading ? 'Generando PDF…' : '⬇ Descargar PDF'}
             </button>
-            <button
-              onClick={() => {
-                setShowEmailForm((v) => !v)
-                setEmailStatus('idle')
-                setEmailError(null)
-              }}
-              className="rounded-md border border-teal-600 px-6 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
-            >
-              ✉ Enviar por Email
-            </button>
           </>
         )}
       </div>
 
-      {/* ── Formulario envío email ───────────────────── */}
-      {showDoc && showEmailForm && (
-        <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 flex-1 min-w-[200px]">
-            <span className="text-xs font-medium text-teal-800">
-              Email del cliente <span className="font-normal text-teal-600">(opcional)</span>
-            </span>
-            <input
-              type="email"
-              value={emailCliente}
-              onChange={(e) => setEmailCliente(e.target.value)}
-              placeholder="cliente@email.com"
-              className="rounded-md border border-teal-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-            />
-          </label>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-teal-700">
-              Siempre se envía a: <strong>{broker.email}</strong>
-            </span>
-            <button
-              onClick={handleEnviarEmail}
-              disabled={emailStatus === 'sending'}
-              className="rounded-md bg-teal-600 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-50"
-            >
-              {emailStatus === 'sending' ? 'Enviando…' : 'Enviar'}
-            </button>
-          </div>
-          {emailStatus === 'ok' && (
-            <p className="w-full text-sm font-medium text-teal-700">✓ Email enviado correctamente</p>
-          )}
-          {emailStatus === 'error' && (
-            <p className="w-full text-sm text-red-600">{emailError}</p>
-          )}
-        </div>
-      )}
 
       {/* ── Resultado resumido ────────────────────────── */}
       {resultado && !showDoc && <ResultadoPanel r={resultado} unidad={unidad} unidadesAdicionales={unidadesAdicionales} />}
