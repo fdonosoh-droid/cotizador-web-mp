@@ -160,11 +160,12 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {/* A1 — Descuento */}
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
             Descuento (%)
             {unidad.descuento > 0 && (
               <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.descuento * 100).toFixed(0)}%</span>
             )}
+            <InfoTooltip text="El descuento fijo es el que se ve en texto azul. Si selecciona algún % del menú desplegable, este corresponde a descuento adicional sobre el base, que debe ser verificado y aprobado por Viveprop." />
           </span>
           <select
             value={descuentoAdicional}
@@ -180,12 +181,13 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
         {/* A2 — Bono Pie */}
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
             Aporte Inmobiliaria (%)
             {unidad.bonoPie === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
               : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
             }
+            <InfoTooltip text="El Aporte Inmobiliaria fijo es el que se ve en texto azul. Si selecciona algún % del menú desplegable, este corresponde a Aporte Inmobiliaria adicional sobre el base, que debe ser verificado y aprobado por Viveprop." />
           </span>
           <select
             value={bonoPiePct}
@@ -583,6 +585,23 @@ function EscenarioCard({ esc }: { esc: EscenarioCAE }) {
         <DT label="ROI anual"     value={`${(esc.roiAnual * 100).toFixed(1)}%`} />
       </dl>
     </div>
+  )
+}
+
+// ── InfoTooltip ───────────────────────────────────────────
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group inline-flex items-center">
+      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold cursor-pointer select-none leading-none">
+        !
+      </span>
+      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50
+        w-64 rounded-md bg-gray-800 text-white text-xs leading-relaxed px-3 py-2 shadow-lg
+        opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        {text}
+        <span className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-gray-800" />
+      </span>
+    </span>
   )
 }
 
