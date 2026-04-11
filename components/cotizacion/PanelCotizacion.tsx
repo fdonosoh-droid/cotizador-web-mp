@@ -157,7 +157,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
     <div className="space-y-4">
 
       {/* ── Fila A: Dcto. · Aporte Inmob. · % Pie · Cuotas Pie ── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-[1fr_1fr_110px_155px]">
         {/* A1 — Descuento */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
@@ -181,7 +181,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
         {/* A2 — Bono Pie */}
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+          <span className="text-sm font-medium text-gray-700 flex items-center gap-1 whitespace-nowrap">
             Aporte Inmobiliaria (%)
             {unidad.bonoPie === 0
               ? <span className="ml-1 text-xs text-red-400">no aplica</span>
