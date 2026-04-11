@@ -386,6 +386,12 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
                 plazoAnios:     plazo,
                 tasasCAE,
                 plusvaliaAnual: plusvalia / 100,
+              }).then(() => {
+                // Tras guardar en JSON, escribir xlsx en disco vía API route
+                fetch('/api/cotizacion/salvar-excel', { method: 'POST' })
+                  .then((r) => r.json())
+                  .then((d) => console.log('[xlsx] actualizado, registros:', d.registros))
+                  .catch((e) => console.error('[xlsx] error:', e))
               }).catch((e) => console.error('[historial]', e))
             }}
             className="rounded-md border border-blue-600 px-6 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
