@@ -47,11 +47,11 @@ export const CONSTANTES = {
   PLUSVALIA_DEFAULT:    0.02,
 } as const
 
-/** Opciones de Descuento Adicional (decimal). Se suman al descuento base de la condición comercial */
-export const DESCUENTO_ADICIONAL_OPTIONS = [0, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.07, 0.10]
+/** Opciones de ajuste de Descuento (decimal, 0%–3%). Se suman al descuento base de la condición comercial */
+export const DESCUENTO_ADICIONAL_OPTIONS = [0, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03]
 
-/** Opciones de Bono Pie (decimal). Se combinan con el valor base de la condición comercial */
-export const BONO_PIE_OPTIONS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+/** Opciones de ajuste de Bono Pie (decimal, 0%–3%). Se suman al bono base de la condición comercial */
+export const BONO_PIE_OPTIONS = [0, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03]
 
 /** Opciones de Cuotas Pie (número de cuotas) */
 export const CUOTAS_PIE_OPTIONS = [1, 12, 24, 36, 48, 60, 72, 84]

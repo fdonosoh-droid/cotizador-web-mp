@@ -38,14 +38,14 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
     unidad.bonoPie > 0 ? Math.max(0, 0.20 - unidad.bonoPie) : DEFAULTS.pie
   )
   const [upfrontPct,          setUpfrontPct]          = useState(DEFAULTS.upfront * 100)  // en %, default 2%
-  const [descuentoAdicional,  setDescuentoAdicional]  = useState(Math.round(unidad.descuento * 10000) / 100)  // en % — default = condiciones comerciales
+  const [descuentoAdicional,  setDescuentoAdicional]  = useState(0)  // delta en % sobre la base — default 0
   const [plazo,               setPlazo]               = useState(DEFAULTS.plazo)
   const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
   const [arriendos,           setArriendos]           = useState<[string, string, string]>(['', '', ''])
   const [plusvalia,           setPlusvalia]           = useState(2)
 
   // Condiciones comerciales editables (inicializadas desde la unidad seleccionada)
-  const [bonoPiePct,          setBonoPiePct]          = useState(unidad.bonoPie)
+  const [bonoPiePct,          setBonoPiePct]          = useState(0)  // delta decimal sobre la base — default 0
   const [cuotasPieN,          setCuotasPieN]          = useState(unidad.cuotasPie || 60)
   const [pieConstruccionPct,  setPieConstruccionPct]  = useState(unidad.piePeriodoConstruccion)
   const [cuotonPct,           setCuotonPct]           = useState(unidad.cuoton)
@@ -146,8 +146,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
       const input: InputCotizacion = {
         precioListaDepto:          unidad.precioLista,
         descuentoPct:              0,
-        descuentoAdicionalPct:     descuentoAdicional / 100,  // contiene el descuento total seleccionado
-        bonoPiePct,
+        descuentoAdicionalPct:     unidad.descuento + descuentoAdicional / 100,  // base + delta seleccionado
+        bonoPiePct:                unidad.bonoPie + bonoPiePct,  // base + delta seleccionado
         reservaCLP:                unidad.reserva,
         preciosConjuntos:          unidadesAdicionales.map((u) => u.precioLista),
         piePct,
@@ -178,7 +178,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         {/* A1 — Descuento */}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">
-            Descuento adicional (%)
+            Descuento (%)
             {unidad.descuento > 0 && (
               <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.descuento * 100).toFixed(0)}%</span>
             )}
@@ -188,7 +188,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             onChange={(e) => { setResultado(null); setDescuentoAdicional(parseFloat(e.target.value)) }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            {withBase(unidad.descuento, DESCUENTO_ADICIONAL_OPTIONS).map((v) => {
+            {DESCUENTO_ADICIONAL_OPTIONS.map((v) => {
               const pct = Math.round(v * 10000) / 100
               return <option key={pct} value={pct}>{Number.isInteger(pct) ? pct.toFixed(0) : pct.toFixed(1)}%</option>
             })}
@@ -210,9 +210,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             onChange={(e) => { setResultado(null); setBonoPiePct(parseFloat(e.target.value)) }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
           >
-            {withBase(unidad.bonoPie, BONO_PIE_OPTIONS).map((v) => (
-              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
-            ))}
+            {BONO_PIE_OPTIONS.map((v) => {
+              const pct = Math.round(v * 10000) / 100
+              return <option key={v} value={v}>{Number.isInteger(pct) ? pct.toFixed(0) : pct.toFixed(1)}%</option>
+            })}
           </select>
         </label>
 
