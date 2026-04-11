@@ -136,6 +136,9 @@ function _guardarJSON(input: GuardarCotizacionInput): void {
 
   entries.unshift(entry)   // más recientes primero
   fs.writeFileSync(HIST_FILE, JSON.stringify(entries, null, 2), 'utf8')
+
+  // Actualizar xlsx en disco inmediatamente después de guardar en JSON
+  _escribirExcel(entries)
 }
 
 function _listarJSON(): CotizacionResumen[] {
@@ -159,6 +162,48 @@ const XLSX_PATH =
     process.env.NODE_ENV === 'production'
     ? '/tmp/Historial_cotizaciones.xlsx'
     : path.join(process.cwd(), 'Historial_cotizaciones.xlsx')
+
+/** Escribe el historial completo al xlsx en disco (síncrono, require evita problemas con dynamic import) */
+function _escribirExcel(entries: HistorialEntry[]): void {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const XLSX = require('xlsx') as typeof import('xlsx')
+
+    const filas = entries.map((e) => {
+      const d   = new Date(e.fechaISO)
+      const dia = String(d.getDate()).padStart(2, '0')
+      const mes = String(d.getMonth() + 1).padStart(2, '0')
+      const ani = d.getFullYear()
+      return {
+        'N° Cotización':   e.numero,
+        'Fecha':           `${dia}-${mes}-${ani}`,
+        'Proyecto':        e.proyecto,
+        'Comuna':          e.comuna,
+        'N° Unidad':       e.numeroUnidad ?? '',
+        'Tipo Unidad':     e.tipoUnidad,
+        'Broker/Cliente':  e.broker,
+        'Valor Venta UF':  Math.round(e.valorVentaUF * 100) / 100,
+        'Crédito Hip. UF': Math.round(e.creditoHipUF * 100) / 100,
+        'Pie %':           Number((e.piePct * 100).toFixed(0)),
+        'Corredor':        e.corredor ?? '',
+      }
+    })
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(filas)
+    ws['!cols'] = [
+      { wch: 18 }, { wch: 14 }, { wch: 30 }, { wch: 16 },
+      { wch: 10 }, { wch: 14 }, { wch: 25 }, { wch: 15 },
+      { wch: 15 }, { wch: 7  }, { wch: 25 },
+    ]
+    XLSX.utils.book_append_sheet(wb, ws, 'Historial')
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+    fs.writeFileSync(XLSX_PATH, buf)
+    console.log('[historial-xlsx] Actualizado:', XLSX_PATH, `(${entries.length} registros)`)
+  } catch (err) {
+    console.error('[historial-xlsx] Error al escribir xlsx:', err)
+  }
+}
 
 /**
  * Guarda la cotización en el JSON y sobreescribe el xlsx en disco

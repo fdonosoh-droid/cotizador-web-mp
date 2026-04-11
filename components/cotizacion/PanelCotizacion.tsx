@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useTransition } from 'react'
-import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, guardarCotizacionYExcelAction, getReglasInmobiliarias } from '@/app/actions/stock'
+import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, getReglasInmobiliarias } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -62,29 +62,10 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [fechaCot,  setFechaCot]  = useState('')
 
 
-  // Payload común para guardar en historial (se reutiliza en Imprimir y Descargar PDF)
-  function _historialPayload() {
-    return {
-      numero:             numeroCot,
-      fecha:              fechaCot,
-      broker,
-      unidad,
-      unidadesAdicionales,
-      resultado:          resultado!,
-      piePct,
-      plazoAnios:         plazo,
-      tasasCAE,
-      plusvaliaAnual:     plusvalia / 100,
-    }
-  }
-
   async function handleDescargarPDF() {
     if (!resultado) return
     setPdfLoading(true)
     try {
-      // Guardar en historial y actualizar xlsx en disco antes de descargar
-      await guardarCotizacionYExcelAction(_historialPayload())
-
       const res = await fetch('/api/cotizacion/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
