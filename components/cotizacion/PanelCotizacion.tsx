@@ -66,6 +66,30 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
     if (!resultado) return
     setPdfLoading(true)
     try {
+      // 1. Guardar fila en Historial_cotizaciones.xlsx (append)
+      const now = new Date()
+      const dia = String(now.getDate()).padStart(2, '0')
+      const mes = String(now.getMonth() + 1).padStart(2, '0')
+      const ani = now.getFullYear()
+      await fetch('/api/cotizacion/salvar-excel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numero:       numeroCot,
+          fecha:        `${dia}-${mes}-${ani}`,
+          proyecto:     unidad.nombreProyecto,
+          comuna:       unidad.comuna,
+          numeroUnidad: unidad.numeroUnidad,
+          tipoUnidad:   unidad.tipoUnidad,
+          broker:       broker.nombre,
+          valorVentaUF: resultado.valorVentaUF,
+          creditoHipUF: resultado.creditoHipFinalUF,
+          piePct:       piePct,
+          corredor:     broker.empresa ?? '',
+        }),
+      })
+
+      // 2. Generar y descargar PDF
       const res = await fetch('/api/cotizacion/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -386,12 +410,6 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
                 plazoAnios:     plazo,
                 tasasCAE,
                 plusvaliaAnual: plusvalia / 100,
-              }).then(() => {
-                // Tras guardar en JSON, escribir xlsx en disco vía API route
-                fetch('/api/cotizacion/salvar-excel', { method: 'POST' })
-                  .then((r) => r.json())
-                  .then((d) => console.log('[xlsx] actualizado, registros:', d.registros))
-                  .catch((e) => console.error('[xlsx] error:', e))
               }).catch((e) => console.error('[historial]', e))
             }}
             className="rounded-md border border-blue-600 px-6 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"

@@ -1,79 +1,102 @@
 // ============================================================
 // API Route — POST /api/cotizacion/salvar-excel
-// Lee el historial JSON y escribe Historial_cotizaciones.xlsx en disco
+// Recibe datos de la cotización y los agrega al xlsx en disco
+// usando exceljs (append a primera fila vacía)
 // ============================================================
-import { NextResponse } from 'next/server'
-import fs   from 'fs'
-import path from 'path'
+import { NextRequest, NextResponse } from 'next/server'
+import ExcelJS from 'exceljs'
+import path    from 'path'
+import fs      from 'fs'
 
-const HIST_FILE = path.join(process.cwd(), '.cotizaciones-historial.json')
 const XLSX_PATH = path.join(process.cwd(), 'Historial_cotizaciones.xlsx')
 
-interface HistorialEntry {
+const HEADERS = [
+  'N° Cotización',
+  'Fecha',
+  'Proyecto',
+  'Comuna',
+  'N° Unidad',
+  'Tipo Unidad',
+  'Broker/Cliente',
+  'Valor Venta UF',
+  'Crédito Hip. UF',
+  'Pie %',
+  'Corredor',
+]
+
+const COL_WIDTHS = [18, 14, 30, 16, 10, 14, 25, 15, 15, 7, 25]
+
+export interface FilaHistorial {
   numero:       string
-  fechaISO:     string
-  fechaDisplay: string
+  fecha:        string   // DD-MM-YYYY
   proyecto:     string
   comuna:       string
   numeroUnidad: number | null
   tipoUnidad:   string
   broker:       string
-  corredor:     string
   valorVentaUF: number
   creditoHipUF: number
-  piePct:       number
+  piePct:       number   // decimal 0.10 = 10%
+  corredor:     string
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    // 1. Leer historial JSON
-    let entries: HistorialEntry[] = []
-    try {
-      entries = JSON.parse(fs.readFileSync(HIST_FILE, 'utf8')) as HistorialEntry[]
-    } catch {
-      entries = []
+    const fila = (await req.json()) as FilaHistorial
+    console.log('[salvar-excel] Recibido:', fila.numero, '| XLSX_PATH:', XLSX_PATH)
+
+    const wb = new ExcelJS.Workbook()
+
+    // Abrir archivo existente o crear nuevo
+    if (fs.existsSync(XLSX_PATH)) {
+      await wb.xlsx.readFile(XLSX_PATH)
     }
 
-    console.log('[salvar-excel] Entradas leídas:', entries.length, '| CWD:', process.cwd())
+    // Obtener o crear la hoja Historial
+    let ws = wb.getWorksheet('Historial')
+    if (!ws) {
+      ws = wb.addWorksheet('Historial')
+      // Crear fila de encabezados
+      ws.addRow(HEADERS)
+      const headerRow = ws.getRow(1)
+      headerRow.font      = { bold: true }
+      headerRow.alignment = { vertical: 'middle' }
+      // Anchos de columna
+      ws.columns = HEADERS.map((h, i) => ({ header: h, width: COL_WIDTHS[i] }))
+    }
 
-    // 2. Construir workbook (igual que /api/cotizacion/export que ya funciona)
-    const XLSX = await import('xlsx')
-
-    const filas = entries.map((e) => {
-      const d   = new Date(e.fechaISO)
-      const dia = String(d.getDate()).padStart(2, '0')
-      const mes = String(d.getMonth() + 1).padStart(2, '0')
-      const ani = d.getFullYear()
-      return {
-        'N° Cotización':   e.numero,
-        'Fecha':           `${dia}-${mes}-${ani}`,
-        'Proyecto':        e.proyecto,
-        'Comuna':          e.comuna,
-        'N° Unidad':       e.numeroUnidad ?? '',
-        'Tipo Unidad':     e.tipoUnidad,
-        'Broker/Cliente':  e.broker,
-        'Valor Venta UF':  Math.round(e.valorVentaUF * 100) / 100,
-        'Crédito Hip. UF': Math.round(e.creditoHipUF * 100) / 100,
-        'Pie %':           Number((e.piePct * 100).toFixed(0)),
-        'Corredor':        e.corredor ?? '',
-      }
+    // Verificar que no existe ya ese número de cotización (evitar duplicados)
+    let existe = false
+    ws.eachRow((row, rowNum) => {
+      if (rowNum > 1 && row.getCell(1).value === fila.numero) existe = true
     })
 
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(filas)
-    ws['!cols'] = [
-      { wch: 18 }, { wch: 14 }, { wch: 30 }, { wch: 16 },
-      { wch: 10 }, { wch: 14 }, { wch: 25 }, { wch: 15 },
-      { wch: 15 }, { wch: 7  }, { wch: 25 },
-    ]
-    XLSX.utils.book_append_sheet(wb, ws, 'Historial')
+    if (existe) {
+      console.log('[salvar-excel] Ya existe:', fila.numero, '— sin cambios')
+      return NextResponse.json({ ok: true, accion: 'duplicado', registros: ws.rowCount - 1 })
+    }
 
-    // 3. Escribir en disco
-    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
-    fs.writeFileSync(XLSX_PATH, buf)
+    // Agregar nueva fila
+    ws.addRow([
+      fila.numero,
+      fila.fecha,
+      fila.proyecto,
+      fila.comuna,
+      fila.numeroUnidad ?? '',
+      fila.tipoUnidad,
+      fila.broker,
+      Math.round(fila.valorVentaUF * 100) / 100,
+      Math.round(fila.creditoHipUF * 100) / 100,
+      Number((fila.piePct * 100).toFixed(0)),
+      fila.corredor,
+    ])
 
-    console.log('[salvar-excel] Archivo escrito:', XLSX_PATH, `(${entries.length} registros)`)
-    return NextResponse.json({ ok: true, registros: entries.length })
+    // Guardar
+    await wb.xlsx.writeFile(XLSX_PATH)
+    const registros = ws.rowCount - 1  // sin contar encabezado
+    console.log('[salvar-excel] Guardado OK:', XLSX_PATH, `(${registros} registros)`)
+    return NextResponse.json({ ok: true, accion: 'agregado', registros })
+
   } catch (err) {
     console.error('[salvar-excel] Error:', err)
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
