@@ -192,7 +192,11 @@ export async function guardarYActualizarExcel(input: GuardarCotizacionInput): Pr
           { wch: 15 }, { wch: 7  }, { wch: 25 },
     ]
     XLSX.utils.book_append_sheet(wb, ws, 'Historial')
-    XLSX.writeFile(wb, XLSX_PATH)
+
+    // XLSX.writeFile no funciona con dynamic import; usar write() + fs
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+    fs.writeFileSync(XLSX_PATH, buf)
+    console.log('[historial-xlsx] Archivo actualizado:', XLSX_PATH)
 }
 
 // ── Implementación PROD — PostgreSQL ────────────────────────

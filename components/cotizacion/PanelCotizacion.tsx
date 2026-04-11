@@ -82,8 +82,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
     if (!resultado) return
     setPdfLoading(true)
     try {
-      // Guardar en historial y actualizar xlsx en disco (fire-and-forget)
-      guardarCotizacionYExcelAction(_historialPayload()).catch((e) => console.error('[historial-xlsx]', e))
+      // Guardar en historial y actualizar xlsx en disco antes de descargar
+      await guardarCotizacionYExcelAction(_historialPayload())
 
       const res = await fetch('/api/cotizacion/pdf', {
         method: 'POST',
@@ -423,24 +423,13 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         )}
 
         {showDoc && (
-          <>
-            <button
-              onClick={() => {
-                guardarCotizacionYExcelAction(_historialPayload()).catch((e) => console.error('[historial-xlsx]', e))
-                window.print()
-              }}
-              className="rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700"
-            >
-              🖨 Imprimir
-            </button>
-            <button
-              onClick={handleDescargarPDF}
-              disabled={pdfLoading}
-              className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {pdfLoading ? 'Generando PDF…' : '⬇ Descargar PDF'}
-            </button>
-          </>
+          <button
+            onClick={handleDescargarPDF}
+            disabled={pdfLoading}
+            className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {pdfLoading ? 'Guardando y generando PDF…' : '⬇ Descargar PDF'}
+          </button>
         )}
       </div>
 
