@@ -170,9 +170,15 @@ export async function guardarYActualizarExcel(input: GuardarCotizacionInput): Pr
     const todas = _leerJSON()
     const XLSX  = await import('xlsx')
 
-    const filas = todas.map((e) => ({
+    const filas = todas.map((e) => {
+          const d   = new Date(e.fechaISO)
+          const dia = String(d.getDate()).padStart(2, '0')
+          const mes = String(d.getMonth() + 1).padStart(2, '0')
+          const ani = d.getFullYear()
+          const fechaDDMMYYYY = `${dia}-${mes}-${ani}`
+          return {
           'N° Cotización':   e.numero,
-          'Fecha':           e.fechaDisplay,
+          'Fecha':           fechaDDMMYYYY,
           'Proyecto':        e.proyecto,
           'Comuna':          e.comuna,
           'N° Unidad':       e.numeroUnidad ?? '',
@@ -182,7 +188,8 @@ export async function guardarYActualizarExcel(input: GuardarCotizacionInput): Pr
           'Crédito Hip. UF': Math.round(e.creditoHipUF * 100) / 100,
           'Pie %':           Number((e.piePct * 100).toFixed(0)),
           'Corredor':        e.corredor ?? '',
-    }))
+          }
+    })
 
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(filas)
