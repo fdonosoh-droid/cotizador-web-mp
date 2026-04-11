@@ -14,8 +14,8 @@ import {
 import { formatCLP, formatUF } from '@/lib/data/uf-format'
 import {
   CAE_OPTIONS, PIE_OPTIONS, PLAZO_OPTIONS, DEFAULTS,
-  DESCUENTO_ADICIONAL_OPTIONS, BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS, PIE_CONSTRUCCION_OPTIONS,
-  CUOTON_OPTIONS, PIE_CREDITO_DIRECTO_OPTIONS, withBase, getReglaInmobiliaria,
+  DESCUENTO_ADICIONAL_OPTIONS, BONO_PIE_OPTIONS, CUOTAS_PIE_OPTIONS,
+  CUOTON_OPTIONS, withBase, getReglaInmobiliaria,
 } from '@/lib/config/cotizadorConfig'
 import type { UnidadCotizable } from '@/lib/data'
 import type { BrokerData } from '@/components/broker/BrokerForm'
@@ -248,16 +248,9 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
               : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.piePeriodoConstruccion * 100).toFixed(0)}%</span>
             }
           </span>
-          <select
-            value={pieConstruccionPct}
-            disabled={unidad.piePeriodoConstruccion === 0}
-            onChange={(e) => { setResultado(null); setPieConstruccionPct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
-          >
-            {withBase(unidad.piePeriodoConstruccion, PIE_CONSTRUCCION_OPTIONS).map((v) => (
-              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
-            ))}
-          </select>
+          <div className="rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed">
+            {unidad.piePeriodoConstruccion === 0 ? '0%' : `${(unidad.piePeriodoConstruccion * 100).toFixed(0)}%`}
+          </div>
         </label>
 
         {/* B2 — Cuotón */}
@@ -290,16 +283,9 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
               : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.pieCreditoDirecto * 100).toFixed(0)}%</span>
             }
           </span>
-          <select
-            value={pieCreditoDirectoPct}
-            disabled={unidad.pieCreditoDirecto === 0}
-            onChange={(e) => { setResultado(null); setPieCreditoDirectoPct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
-          >
-            {withBase(unidad.pieCreditoDirecto, PIE_CREDITO_DIRECTO_OPTIONS).map((v) => (
-              <option key={v} value={v}>{(v * 100).toFixed(0)}%</option>
-            ))}
-          </select>
+          <div className="rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed">
+            {unidad.pieCreditoDirecto === 0 ? '0%' : `${(unidad.pieCreditoDirecto * 100).toFixed(0)}%`}
+          </div>
         </label>
       </div>
 
