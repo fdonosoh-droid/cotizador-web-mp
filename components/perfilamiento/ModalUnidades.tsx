@@ -82,9 +82,6 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
     (comunaSel.size === 0 || comunaSel.has(u.comuna))
   )
 
-  const precioVenta = (u: UnidadCotizable) =>
-    Math.round(u.precioLista * (1 - u.descuento) * 100) / 100
-
   const adicSeleccionadas = adicionales.filter((_, i) => adicSelecSet.has(i))
 
   const handleConfirmar = () => {
@@ -148,8 +145,7 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
               <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1">
                 {filtradas.map((u, i) => {
                   const sel = seleccionada === u
-                  const pv  = precioVenta(u)
-                  const clp = ufDelDia > 0 ? Math.round(pv * ufDelDia) : null
+                  const clp = ufDelDia > 0 ? Math.round(u.precioLista * ufDelDia) : null
                   return (
                     <button
                       key={i}
@@ -167,14 +163,10 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
                           <p className="text-xs text-gray-500">{u.comuna} · {u.tipoEntrega}</p>
                         </div>
                         <div className="text-right">
+                          <p className="text-xs text-gray-400 mb-0.5">Precio lista</p>
                           <p className="font-bold text-blue-800 text-sm">
-                            {pv.toLocaleString('es-CL', { maximumFractionDigits: 0 })} UF
+                            {u.precioLista.toLocaleString('es-CL', { maximumFractionDigits: 0 })} UF
                           </p>
-                          {u.descuento > 0 && (
-                            <p className="text-xs text-gray-400 line-through">
-                              {u.precioLista.toLocaleString('es-CL', { maximumFractionDigits: 0 })} UF
-                            </p>
-                          )}
                           {clp && <p className="text-xs text-gray-400">${clp.toLocaleString('es-CL')}</p>}
                         </div>
                       </div>
@@ -216,7 +208,6 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
                     {adicionales.map((a, i) => {
                       const checked = adicSelecSet.has(i)
-                      const pv = precioVenta(a)
                       return (
                         <label
                           key={i}
@@ -242,7 +233,7 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
                               )}
                             </div>
                             <span className="text-sm font-semibold text-blue-800">
-                              {pv.toLocaleString('es-CL', { maximumFractionDigits: 0 })} UF
+                              {a.precioLista.toLocaleString('es-CL', { maximumFractionDigits: 0 })} UF
                             </span>
                           </div>
                         </label>
