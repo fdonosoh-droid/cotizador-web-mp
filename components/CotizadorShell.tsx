@@ -46,15 +46,14 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
     setUnidadesOpen(true)
   }
 
-  function handleUnidadSeleccionada(unidad: UnidadCotizable) {
-    // Construimos una CascadeSelection mínima con la unidad elegida
+  function handleUnidadSeleccionada(unidad: UnidadCotizable, adicionales: UnidadCotizable[]) {
     const sel: CascadeSelection = {
       comuna:              unidad.comuna,
       entrega:             unidad.tipoEntrega,
       inmobiliaria:        unidad.alianza,
       proyecto:            { alianza: unidad.alianza, nombreProyecto: unidad.nombreProyecto, nemotecnico: unidad.nemotecnico, comuna: unidad.comuna, direccion: unidad.direccion ?? '', tipoEntrega: unidad.tipoEntrega, periodoEntrega: unidad.periodoEntrega ?? '' },
       unidad,
-      unidadesAdicionales: [],
+      unidadesAdicionales: adicionales,
     }
     setSelection(sel)
     setUnidadesOpen(false)
@@ -75,7 +74,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPerfilOpen(true)}
-              className="rounded-md border border-purple-600 bg-white px-4 py-2 text-sm font-medium text-purple-700 shadow-sm hover:bg-purple-50 whitespace-nowrap"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 whitespace-nowrap"
             >
               Perfilar comprador
             </button>

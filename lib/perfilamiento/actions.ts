@@ -8,6 +8,15 @@ import type { UnidadCotizable } from '@/lib/data'
  * esté entre minUF y maxUF, con 10% de tolerancia.
  * Devuelve UnidadCotizable completo para poder pasar directamente al cotizador.
  */
+/** Retorna bodegas y estacionamientos Disponibles de un proyecto dado */
+export async function getAdicionales(nemotecnico: string): Promise<UnidadCotizable[]> {
+  const todas = await stockRepository.getUnidades(nemotecnico)
+  return todas.filter(
+    u => (u.tipoUnidad === 'Bodega' || u.tipoUnidad === 'Estacionamiento') &&
+         u.estadoStock === 'Disponible'
+  )
+}
+
 export async function buscarUnidadesPorRango(
   minUF: number,
   maxUF: number,
