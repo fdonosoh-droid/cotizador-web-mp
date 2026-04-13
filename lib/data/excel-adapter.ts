@@ -374,4 +374,29 @@ export class ExcelAdapter implements IStockRepository {
     // Fallback: último valor disponible
     return rows[rows.length - 1].valor
   }
+
+  async getAllUnidadesPorRango(minUF: number, maxUF: number): Promise<UnidadCotizable[]> {
+    const stockRows = stock().filter(
+      (s) => s.estadoStock === 'Disponible' && s.precioLista >= minUF && s.precioLista <= maxUF,
+    )
+    const condMap = new Map<string, CondicionComercialRow>()
+    for (const c of condiciones()) {
+      const key = `${c.nemotecnico}|${c.tipoUnidad}|${c.programa}`
+      condMap.set(key, c)
+    }
+    return stockRows.map((s) => {
+      const key = `${s.nemotecnico}|${s.tipoUnidad}|${s.programa}`
+      const cond = condMap.get(key)
+      return {
+        ...s,
+        reserva:                cond?.reserva               ?? 0,
+        descuento:              cond?.descuento              ?? 0,
+        bonoPie:                cond?.bonoPie                ?? 0,
+        cuotasPie:              cond?.cuotasPie              ?? 0,
+        piePeriodoConstruccion: cond?.piePeriodoConstruccion ?? 0,
+        cuoton:                 cond?.cuoton                 ?? 0,
+        pieCreditoDirecto:      cond?.pieCreditoDirecto      ?? 0,
+      }
+    })
+  }
 }

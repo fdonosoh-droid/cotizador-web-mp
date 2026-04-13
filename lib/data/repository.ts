@@ -3,7 +3,7 @@
 // Implementaciones: ExcelAdapter (dev) | PgAdapter (prod)
 // ============================================================
 
-import type { ProyectoRow, UnidadCotizable, ReglaInmobiliariaRow, ParametroCalculoRow } from './types'
+import type { ProyectoRow, UnidadCotizable, ReglaInmobiliariaRow, ParametroCalculoRow } from './types' // eslint-disable-line @typescript-eslint/no-unused-vars
 
 export interface IStockRepository {
   /** Paso 1 de la cascada: comunas disponibles */
@@ -43,4 +43,10 @@ export interface IStockRepository {
 
   /** Parámetros del motor de cálculo (hoja PARAMETROS_CALCULO) */
   getParametrosCalculo(): Promise<ParametroCalculoRow[]>
+
+  /**
+   * Todas las unidades Disponibles cuyo precio lista esté entre minUF y maxUF (inclusive).
+   * Usado por el perfilamiento para pre-filtrar unidades según capacidad del comprador.
+   */
+  getAllUnidadesPorRango(minUF: number, maxUF: number): Promise<UnidadCotizable[]>
 }

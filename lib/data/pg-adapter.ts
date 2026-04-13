@@ -228,4 +228,42 @@ export class PgAdapter implements IStockRepository {
     // Pendiente: implementar tabla parametros_calculo en PG
     return []
   }
+
+  async getAllUnidadesPorRango(minUF: number, maxUF: number): Promise<UnidadCotizable[]> {
+    const sql = getDb()
+    const rows = await sql<import('./types').UnidadCotizable[]>`
+      SELECT
+        p.alianza,          u.nemotecnico,       p.nombre_proyecto AS "nombreProyecto",
+        p.tipo_entrega   AS "tipoEntrega",        p.periodo_entrega AS "periodoEntrega",
+        p.direccion,        p.comuna,
+        u.estado_stock   AS "estadoStock",
+        u.tipo_unidad    AS "tipoUnidad",         u.programa,
+        u.piso_producto  AS "pisoProducto",       u.numero_unidad   AS "numeroUnidad",
+        u.orientacion,      u.dormitorios_num     AS "dormitoriosNum",
+        u.dormitorios_display AS "dormitoriosDisplay",
+        u.banos,            u.precio_lista        AS "precioLista",
+        u.superficie_util AS "superficieUtil",    u.superficie_total AS "superficieTotal",
+        u.superficie_terreno AS "superficieTerreno",
+        u.superficie_terraza AS "superficieTerraza",
+        u.bienes_conjuntos AS "bienesConjuntos",
+        u.dormitorios,
+        COALESCE(cc.reserva, 0)                  AS reserva,
+        COALESCE(cc.descuento, 0)                AS descuento,
+        COALESCE(cc.bono_pie, 0)                 AS "bonoPie",
+        COALESCE(cc.cuotas_pie, 0)               AS "cuotasPie",
+        COALESCE(cc.pie_periodo_construccion, 0) AS "piePeriodoConstruccion",
+        COALESCE(cc.cuoton, 0)                   AS cuoton,
+        COALESCE(cc.pie_credito_directo, 0)      AS "pieCreditoDirecto"
+      FROM   unidad u
+      JOIN   proyecto p  ON p.id_proyecto = u.id_proyecto
+      LEFT JOIN condicion_comercial cc
+             ON cc.id_proyecto = u.id_proyecto
+            AND cc.tipo_unidad = u.tipo_unidad
+            AND cc.activo      = TRUE
+      WHERE  u.estado_stock = 'Disponible'
+        AND  u.precio_lista BETWEEN ${minUF} AND ${maxUF}
+      ORDER  BY u.precio_lista ASC
+    `
+    return rows
+  }
 }

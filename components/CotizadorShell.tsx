@@ -2,20 +2,30 @@
 // ============================================================
 // COTIZADOR SHELL — orquesta la UI principal
 // Pasos: 1. Selección unidad → 2. Datos corredor → 3. Cotización
+// Perfilamiento: botón opcional que filtra unidades por capacidad
 // ============================================================
 import { useState } from 'react'
 import Image from 'next/image'
 import CascadeSelector, { type CascadeSelection } from './cascade/CascadeSelector'
 import BrokerForm, { type BrokerData } from './broker/BrokerForm'
 import PanelCotizacion from './cotizacion/PanelCotizacion'
+import PerfilamientoModal, { type RangoCapacidad } from './perfilamiento/PerfilamientoModal'
+import ModalUnidades from './perfilamiento/ModalUnidades'
+import type { UnidadCotizable } from '@/lib/data'
 
 type Step = 'select' | 'broker' | 'quote'
 
-export default function CotizadorShell() {
+export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [step, setStep]           = useState<Step>('select')
   const [selection, setSelection] = useState<CascadeSelection | null>(null)
   const [broker, setBroker]       = useState<BrokerData | null>(null)
 
+  // ── Estado perfilamiento ─────────────────────────────────
+  const [perfilOpen, setPerfilOpen]     = useState(false)
+  const [rango, setRango]               = useState<RangoCapacidad | null>(null)
+  const [unidadesOpen, setUnidadesOpen] = useState(false)
+
+  // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
     setSelection(sel)
     if (step !== 'select') setStep('select')
@@ -30,10 +40,32 @@ export default function CotizadorShell() {
     setStep('quote')
   }
 
+  // ── Handlers perfilamiento ───────────────────────────────
+  function handlePerfilConfirmar(r: RangoCapacidad) {
+    setRango(r)
+    setUnidadesOpen(true)
+  }
+
+  function handleUnidadSeleccionada(unidad: UnidadCotizable) {
+    // Construimos una CascadeSelection mínima con la unidad elegida
+    const sel: CascadeSelection = {
+      comuna:              unidad.comuna,
+      entrega:             unidad.tipoEntrega,
+      inmobiliaria:        unidad.alianza,
+      proyecto:            { alianza: unidad.alianza, nombreProyecto: unidad.nombreProyecto, nemotecnico: unidad.nemotecnico, comuna: unidad.comuna, direccion: unidad.direccion ?? '', tipoEntrega: unidad.tipoEntrega, periodoEntrega: unidad.periodoEntrega ?? '' },
+      unidad,
+      unidadesAdicionales: [],
+    }
+    setSelection(sel)
+    setUnidadesOpen(false)
+    setStep('broker')
+  }
+
   const unidad = selection?.unidad
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* ── Navegación ── */}
       <nav className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
@@ -41,6 +73,12 @@ export default function CotizadorShell() {
             <span className="hidden text-lg font-semibold text-gray-600 sm:block">Cotizador Mercado Primario</span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPerfilOpen(true)}
+              className="rounded-md border border-purple-600 bg-white px-4 py-2 text-sm font-medium text-purple-700 shadow-sm hover:bg-purple-50 whitespace-nowrap"
+            >
+              Perfilar comprador
+            </button>
             <button
               onClick={() => { setStep('select'); setSelection(null); setBroker(null) }}
               className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
@@ -54,6 +92,7 @@ export default function CotizadorShell() {
       <div className="mx-auto max-w-5xl px-4 py-8">
         <StepIndicator current={step} />
 
+        {/* ── Paso 1: Selección ── */}
         <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-gray-800">1. Selecciona la unidad</h2>
           <CascadeSelector onSelectionChange={handleSelectionChange} />
@@ -98,6 +137,7 @@ export default function CotizadorShell() {
           )}
         </section>
 
+        {/* ── Paso 2: Broker ── */}
         {(step === 'broker' || step === 'quote') && (
           <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
@@ -134,6 +174,7 @@ export default function CotizadorShell() {
           </section>
         )}
 
+        {/* ── Paso 3: Cotización ── */}
         {step === 'quote' && unidad && broker && (
           <section className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-semibold text-gray-800">3. Cotización</h2>
@@ -146,10 +187,26 @@ export default function CotizadorShell() {
           </section>
         )}
       </div>
+
+      {/* ── Modales perfilamiento ── */}
+      <PerfilamientoModal
+        open={perfilOpen}
+        onClose={() => setPerfilOpen(false)}
+        onConfirmar={handlePerfilConfirmar}
+        ufDelDia={ufDelDia}
+      />
+      <ModalUnidades
+        open={unidadesOpen}
+        rango={rango}
+        ufDelDia={ufDelDia}
+        onClose={() => setUnidadesOpen(false)}
+        onSeleccionar={handleUnidadSeleccionada}
+      />
     </div>
   )
 }
 
+// ── StepIndicator ────────────────────────────────────────────────
 function StepIndicator({ current }: { current: Step }) {
   const steps: { id: Step; label: string }[] = [
     { id: 'select', label: '1. Unidad' },
