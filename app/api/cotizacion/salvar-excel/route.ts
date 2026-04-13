@@ -1,8 +1,8 @@
 // ============================================================
 // API Route — POST /api/cotizacion/salvar-excel
 // 1. Agrega la entrada al .cotizaciones-historial.json (si no existe)
-// 2. Ejecuta scripts/update-historial-xlsx.js via child_process
-//    (evita incompatibilidades xlsx con Next.js/Turbopack)
+// 2. Intenta regenerar Historial_cotizaciones.xlsx con el script externo
+//    → Si xlsx está abierto en Excel (EBUSY) devuelve aviso, no error fatal
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { execSync }                  from 'child_process'
@@ -31,73 +31,99 @@ interface HistorialEntry {
 }
 
 export async function POST(req: NextRequest) {
+  // ── 1. Leer body ───────────────────────────────────────────
+  let body: {
+    numero:       string
+    fecha:        string
+    proyecto:     string
+    comuna:       string
+    numeroUnidad: number | null
+    tipoUnidad:   string
+    broker:       string
+    valorVentaUF: number
+    creditoHipUF: number
+    piePct:       number
+    corredor:     string
+  }
   try {
-    // ── 1. Leer body ─────────────────────────────────────────
-    const body = await req.json() as {
-      numero:       string
-      fecha:        string   // 'DD-MM-YYYY'
-      proyecto:     string
-      comuna:       string
-      numeroUnidad: number | null
-      tipoUnidad:   string
-      broker:       string
-      valorVentaUF: number
-      creditoHipUF: number
-      piePct:       number
-      corredor:     string
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Body inválido' }, { status: 400 })
+  }
+
+  const { numero, fecha } = body
+
+  // ── 2. Leer JSON actual ────────────────────────────────────
+  let entries: HistorialEntry[] = []
+  try {
+    entries = JSON.parse(fs.readFileSync(HIST_FILE, 'utf8')) as HistorialEntry[]
+  } catch {
+    entries = []
+  }
+
+  // ── 3. Agregar entrada solo si no existe ───────────────────
+  let jsonActualizado = false
+  if (!entries.some((e) => e.numero === numero)) {
+    const [dd, mm, yyyy] = fecha.split('-')
+    const fechaISO = new Date(`${yyyy}-${mm}-${dd}T12:00:00.000Z`).toISOString()
+
+    const entry: HistorialEntry = {
+      numero,
+      fechaISO,
+      fechaDisplay: fecha,
+      proyecto:     body.proyecto,
+      comuna:       body.comuna,
+      numeroUnidad: body.numeroUnidad ?? null,
+      tipoUnidad:   body.tipoUnidad,
+      broker:       body.broker,
+      corredor:     body.corredor ?? '',
+      valorVentaUF: body.valorVentaUF,
+      creditoHipUF: body.creditoHipUF,
+      piePct:       body.piePct,
     }
 
-    const { numero, fecha } = body
-
-    // ── 2. Leer JSON actual ──────────────────────────────────
-    let entries: HistorialEntry[] = []
+    entries.unshift(entry)
     try {
-      entries = JSON.parse(fs.readFileSync(HIST_FILE, 'utf8')) as HistorialEntry[]
-    } catch {
-      entries = []
-    }
-
-    // ── 3. Agregar entrada solo si no existe ─────────────────
-    if (!entries.some((e) => e.numero === numero)) {
-      // Convertir fecha 'DD-MM-YYYY' → ISO
-      const [dd, mm, yyyy] = fecha.split('-')
-      const fechaISO = new Date(`${yyyy}-${mm}-${dd}T12:00:00.000Z`).toISOString()
-
-      const entry: HistorialEntry = {
-        numero,
-        fechaISO,
-        fechaDisplay: fecha,
-        proyecto:     body.proyecto,
-        comuna:       body.comuna,
-        numeroUnidad: body.numeroUnidad ?? null,
-        tipoUnidad:   body.tipoUnidad,
-        broker:       body.broker,
-        corredor:     body.corredor ?? '',
-        valorVentaUF: body.valorVentaUF,
-        creditoHipUF: body.creditoHipUF,
-        piePct:       body.piePct,
-      }
-
-      entries.unshift(entry)   // más recientes primero
       fs.writeFileSync(HIST_FILE, JSON.stringify(entries, null, 2), 'utf8')
-      console.log('[salvar-excel] Entrada agregada al JSON:', numero)
-    } else {
-      console.log('[salvar-excel] Entrada ya existía en JSON:', numero)
+      jsonActualizado = true
+      console.log('[salvar-excel] Entrada guardada en JSON:', numero, '— total:', entries.length)
+    } catch (jsonErr) {
+      console.error('[salvar-excel] Error escribiendo JSON:', jsonErr)
+      return NextResponse.json(
+        { ok: false, error: 'No se pudo guardar en historial JSON' },
+        { status: 500 },
+      )
     }
+  } else {
+    console.log('[salvar-excel] Entrada ya existía:', numero)
+  }
 
-    // ── 4. Regenerar xlsx con el script externo ───────────────
-    console.log('[salvar-excel] Ejecutando script:', SCRIPT)
+  // ── 4. Regenerar xlsx (no fatal si falla) ──────────────────
+  let xlsxOk    = false
+  let xlsxError = ''
+  try {
     const output = execSync(`node "${SCRIPT}"`, {
       cwd:      ROOT,
       encoding: 'utf8',
       timeout:  15000,
     })
-    console.log('[salvar-excel] Script output:', output.trim())
-
-    return NextResponse.json({ ok: true, entries: entries.length })
+    console.log('[salvar-excel] xlsx actualizado:', output.trim())
+    xlsxOk = true
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[salvar-excel] Error:', msg)
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+    if (msg.includes('EBUSY')) {
+      xlsxError = 'El archivo Historial_cotizaciones.xlsx está abierto en Excel. Ciérralo para actualizar el archivo.'
+    } else {
+      xlsxError = msg
+    }
+    console.error('[salvar-excel] xlsx error (no fatal):', xlsxError)
   }
+
+  return NextResponse.json({
+    ok:             true,
+    jsonActualizado,
+    xlsxOk,
+    xlsxError:      xlsxOk ? null : xlsxError,
+    totalEntradas:  entries.length,
+  })
 }

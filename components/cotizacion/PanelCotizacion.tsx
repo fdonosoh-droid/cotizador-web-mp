@@ -55,6 +55,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [resultado,  setResultado]  = useState<ResultadoCotizacion | null>(null)
   const [showDoc,    setShowDoc]    = useState(false)
   const [errorMsg,        setErrorMsg]        = useState<string | null>(null)
+  const [xlsxWarning,     setXlsxWarning]     = useState<string | null>(null)
   const [pdfLoading,      setPdfLoading]      = useState(false)
 
   // Número de cotización (generado al crear el documento)
@@ -65,13 +66,14 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   async function handleDescargarPDF() {
     if (!resultado) return
     setPdfLoading(true)
+    setXlsxWarning(null)
     try {
-      // 1. Guardar fila en Historial_cotizaciones.xlsx (append)
+      // 1. Guardar en JSON + regenerar xlsx
       const now = new Date()
       const dia = String(now.getDate()).padStart(2, '0')
       const mes = String(now.getMonth() + 1).padStart(2, '0')
       const ani = now.getFullYear()
-      await fetch('/api/cotizacion/salvar-excel', {
+      const salvarRes = await fetch('/api/cotizacion/salvar-excel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -88,6 +90,14 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           corredor:     broker.empresa ?? '',
         }),
       })
+      if (salvarRes.ok) {
+        const salvarData = await salvarRes.json() as { xlsxOk: boolean; xlsxError?: string }
+        if (!salvarData.xlsxOk && salvarData.xlsxError) {
+          setXlsxWarning(salvarData.xlsxError)
+        }
+      } else {
+        console.error('[salvar-excel] Error HTTP:', salvarRes.status)
+      }
 
       // 2. Generar y descargar PDF
       const res = await fetch('/api/cotizacion/pdf', {
@@ -437,6 +447,13 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           </button>
         )}
       </div>
+
+      {/* Aviso xlsx bloqueado */}
+      {xlsxWarning && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-1">
+          ⚠ {xlsxWarning}
+        </p>
+      )}
 
 
       {/* ── Resultado resumido ────────────────────────── */}
