@@ -32,6 +32,8 @@ const filas = entries.map((e) => {
   const dia = String(d.getDate()).padStart(2, '0')
   const mes = String(d.getMonth() + 1).padStart(2, '0')
   const ani = d.getFullYear()
+  // corredor: campo propio → fallback a pdfPayload.broker.empresa (entradas antiguas)
+  const corredor = e.corredor || (e.pdfPayload && e.pdfPayload.broker && e.pdfPayload.broker.empresa) || ''
   return {
     'N° Cotización':   e.numero,
     'Fecha':           `${dia}-${mes}-${ani}`,
@@ -43,7 +45,7 @@ const filas = entries.map((e) => {
     'Valor Venta UF':  Math.round((e.valorVentaUF  || 0) * 100) / 100,
     'Crédito Hip. UF': Math.round((e.creditoHipUF  || 0) * 100) / 100,
     'Pie %':           Number(((e.piePct || 0) * 100).toFixed(0)),
-    'Corredor':        e.corredor      || '',
+    'Corredor':        corredor,
   }
 })
 
@@ -72,6 +74,10 @@ try {
   XLSX.writeFile(wb, XLSX_PATH)
   console.log('[xlsx-script] Archivo escrito:', XLSX_PATH, `(${filas.length} registros)`)
 } catch (e) {
-  console.error('[xlsx-script] Error escribiendo:', e.message)
+  if (e.code === 'EBUSY') {
+    console.error('[xlsx-script] ERROR: El archivo está abierto en Excel. Ciérralo antes de continuar.')
+  } else {
+    console.error('[xlsx-script] Error escribiendo:', e.message)
+  }
   process.exit(1)
 }
