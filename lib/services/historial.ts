@@ -137,8 +137,8 @@ function _guardarJSON(input: GuardarCotizacionInput): void {
   entries.unshift(entry)   // más recientes primero
   fs.writeFileSync(HIST_FILE, JSON.stringify(entries, null, 2), 'utf8')
 
-  // Actualizar xlsx en disco inmediatamente después de guardar en JSON
-  _escribirExcel(entries)
+  // Regenerar CSV inmediatamente después de guardar en JSON
+  _escribirCSV(entries)
 }
 
 function _listarJSON(): CotizacionResumen[] {
@@ -157,98 +157,65 @@ function _listarJSON(): CotizacionResumen[] {
     }))
 }
 
-// ── Ruta del xlsx en disco ───────────────────────────────────
-const XLSX_PATH =
+// ── Ruta del CSV en disco ────────────────────────────────────
+const CSV_PATH =
     process.env.NODE_ENV === 'production'
-    ? '/tmp/Historial_cotizaciones.xlsx'
-    : path.join(process.cwd(), 'Historial_cotizaciones.xlsx')
+    ? '/tmp/Historial_cotizaciones.csv'
+    : path.join(process.cwd(), 'Historial_cotizaciones.csv')
 
-/** Escribe el historial completo al xlsx en disco (síncrono, require evita problemas con dynamic import) */
-function _escribirExcel(entries: HistorialEntry[]): void {
+/** Genera CSV UTF-8 con BOM y lo escribe en disco */
+function _escribirCSV(entries: HistorialEntry[]): void {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const XLSX = require('xlsx') as typeof import('xlsx')
+    const escape = (v: string | number | null | undefined): string => {
+      const s = v === null || v === undefined ? '' : String(v)
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s
+    }
+
+    const headers = [
+      'N° Cotización', 'Fecha', 'Proyecto', 'Comuna',
+      'N° Unidad', 'Tipo Unidad', 'Broker/Cliente',
+      'Valor Venta UF', 'Crédito Hip. UF', 'Pie %', 'Corredor',
+    ]
 
     const filas = entries.map((e) => {
       const d   = new Date(e.fechaISO)
       const dia = String(d.getDate()).padStart(2, '0')
       const mes = String(d.getMonth() + 1).padStart(2, '0')
       const ani = d.getFullYear()
-      return {
-        'N° Cotización':   e.numero,
-        'Fecha':           `${dia}-${mes}-${ani}`,
-        'Proyecto':        e.proyecto,
-        'Comuna':          e.comuna,
-        'N° Unidad':       e.numeroUnidad ?? '',
-        'Tipo Unidad':     e.tipoUnidad,
-        'Broker/Cliente':  e.broker,
-        'Valor Venta UF':  Math.round(e.valorVentaUF * 100) / 100,
-        'Crédito Hip. UF': Math.round(e.creditoHipUF * 100) / 100,
-        'Pie %':           Number((e.piePct * 100).toFixed(0)),
-        'Corredor':        e.corredor ?? '',
-      }
+      const corredor = e.corredor || e.pdfPayload?.broker?.empresa || ''
+      return [
+        e.numero,
+        `${dia}-${mes}-${ani}`,
+        e.proyecto      || '',
+        e.comuna        || '',
+        e.numeroUnidad  ?? '',
+        e.tipoUnidad    || '',
+        e.broker        || '',
+        Math.round(e.valorVentaUF * 100) / 100,
+        Math.round(e.creditoHipUF * 100) / 100,
+        Number((e.piePct * 100).toFixed(0)),
+        corredor,
+      ].map(escape).join(',')
     })
 
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(filas)
-    ws['!cols'] = [
-      { wch: 18 }, { wch: 14 }, { wch: 30 }, { wch: 16 },
-      { wch: 10 }, { wch: 14 }, { wch: 25 }, { wch: 15 },
-      { wch: 15 }, { wch: 7  }, { wch: 25 },
-    ]
-    XLSX.utils.book_append_sheet(wb, ws, 'Historial')
-    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
-    fs.writeFileSync(XLSX_PATH, buf)
-    console.log('[historial-xlsx] Actualizado:', XLSX_PATH, `(${entries.length} registros)`)
+    const BOM = '\uFEFF'
+    const csv = BOM + [headers.join(','), ...filas].join('\r\n')
+    fs.writeFileSync(CSV_PATH, csv, 'utf8')
+    console.log('[historial-csv] Actualizado:', CSV_PATH, `(${entries.length} registros)`)
   } catch (err) {
-    console.error('[historial-xlsx] Error al escribir xlsx:', err)
+    console.error('[historial-csv] Error al escribir CSV:', err)
   }
 }
 
 /**
- * Guarda la cotización en el JSON y sobreescribe el xlsx en disco
- * con el historial completo actualizado. Para usar desde Imprimir y Descargar PDF.
+ * Guarda la cotización en el JSON y regenera el CSV.
+ * Alias mantenido por compatibilidad.
  */
 export async function guardarYActualizarExcel(input: GuardarCotizacionInput): Promise<void> {
     await guardarCotizacion(input)
-
-    const todas = _leerJSON()
-    const XLSX  = await import('xlsx')
-
-    const filas = todas.map((e) => {
-          const d   = new Date(e.fechaISO)
-          const dia = String(d.getDate()).padStart(2, '0')
-          const mes = String(d.getMonth() + 1).padStart(2, '0')
-          const ani = d.getFullYear()
-          const fechaDDMMYYYY = `${dia}-${mes}-${ani}`
-          return {
-          'N° Cotización':   e.numero,
-          'Fecha':           fechaDDMMYYYY,
-          'Proyecto':        e.proyecto,
-          'Comuna':          e.comuna,
-          'N° Unidad':       e.numeroUnidad ?? '',
-          'Tipo Unidad':     e.tipoUnidad,
-          'Broker/Cliente':  e.broker,
-          'Valor Venta UF':  Math.round(e.valorVentaUF * 100) / 100,
-          'Crédito Hip. UF': Math.round(e.creditoHipUF * 100) / 100,
-          'Pie %':           Number((e.piePct * 100).toFixed(0)),
-          'Corredor':        e.corredor ?? '',
-          }
-    })
-
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(filas)
-    ws['!cols'] = [
-          { wch: 18 }, { wch: 22 }, { wch: 30 }, { wch: 16 },
-          { wch: 10 }, { wch: 14 }, { wch: 25 }, { wch: 15 },
-          { wch: 15 }, { wch: 7  }, { wch: 25 },
-    ]
-    XLSX.utils.book_append_sheet(wb, ws, 'Historial')
-
-    // XLSX.writeFile no funciona con dynamic import; usar write() + fs
-    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
-    fs.writeFileSync(XLSX_PATH, buf)
-    console.log('[historial-xlsx] Archivo actualizado:', XLSX_PATH)
+    // _guardarJSON ya llama a _escribirCSV internamente
 }
 
 // ── Implementación PROD — PostgreSQL ────────────────────────
