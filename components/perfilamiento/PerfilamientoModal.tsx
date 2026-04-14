@@ -31,7 +31,7 @@ interface Props {
   open: boolean
   onClose: () => void
   /** Callback que recibe el rango, el id del perfilamiento y los datos básicos del cliente */
-  onConfirmar: (rango: RangoCapacidad, perfilamientoId: string, datosCliente: { nombre: string; rut: string }) => void
+  onConfirmar: (rango: RangoCapacidad, perfilamientoId: string, datosCliente: { nombre: string; rut: string; email: string; telefono: string }) => void
   /** Valor UF del día (inyectado desde el cotizador) */
   ufDelDia: number
 }
@@ -106,7 +106,7 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
       creditoMaxCLP:   eval_.creditoMaximoCombinado ?? eval_.creditoMaximo,
       dividendoMaxCLP: eval_.dividendoMaximoCombinado ?? eval_.dividendoMaximo,
       resultado:       eval_.resultado,
-    }, perfilamientoId, { nombre: form.nombre, rut: form.rut })
+    }, perfilamientoId, { nombre: form.nombre, rut: form.rut, email: form.email, telefono: form.telefono })
     handleClose()
   }
 
@@ -190,6 +190,12 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
         </Field>
         <Field label="RUT">
           <Input value={data.rut} onChange={e => onChange({ rut: e.target.value })} placeholder="12.345.678-9" />
+        </Field>
+        <Field label="Email">
+          <Input type="email" value={data.email} onChange={e => onChange({ email: e.target.value })} placeholder="cliente@ejemplo.cl" />
+        </Field>
+        <Field label="Teléfono">
+          <Input type="tel" value={data.telefono} onChange={e => onChange({ telefono: e.target.value })} placeholder="+56 9 1234 5678" />
         </Field>
       </div>
       <div className="grid sm:grid-cols-3 gap-3">

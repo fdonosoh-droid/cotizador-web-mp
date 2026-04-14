@@ -27,14 +27,16 @@ interface Props {
   onSubmit:        (data: BrokerData) => void
   disabled?:       boolean
   /** Datos pre-rellenados cuando viene del flujo de perfilamiento */
-  initialCliente?: { nombre: string; rut: string }
+  initialCliente?: { nombre: string; rut: string; email?: string; telefono?: string }
 }
 
 export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props) {
   const rutFormateado = initialCliente?.rut ? formatRut(initialCliente.rut) : ''
   const [values, setValues] = useState<BrokerData>({
-    nombre: initialCliente?.nombre ?? '', rut: initialCliente?.rut ?? '',
-    email: '', telefono: '',
+    nombre:   initialCliente?.nombre   ?? '',
+    rut:      initialCliente?.rut      ?? '',
+    email:    initialCliente?.email    ?? '',
+    telefono: initialCliente?.telefono ?? '',
     empresa: '', emailCorredor: '', telefonoCorredor: '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof BrokerData, string>>>({})

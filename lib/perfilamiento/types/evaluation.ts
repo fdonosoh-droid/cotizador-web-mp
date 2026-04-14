@@ -4,6 +4,8 @@ export interface FormData {
   // Personal
   nombre: string;
   rut: string;
+  email: string;
+  telefono: string;
   edad: number | '';
   estadoCivil: string;
   dependientes: number | '';
@@ -49,7 +51,7 @@ export interface FormData {
 }
 
 export const initialFormData: FormData = {
-  nombre: '', rut: '', edad: '', estadoCivil: 'soltero', dependientes: '',
+  nombre: '', rut: '', email: '', telefono: '', edad: '', estadoCivil: 'soltero', dependientes: '',
   tipoContrato: 'dependiente', antiguedadMeses: '',
   rentaLiquida: '', ingresosVariables: '', otrosIngresos: '',
   cuotasCreditos: '', pagoTarjetas: '', pensiones: '', otrasObligaciones: '',

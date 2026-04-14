@@ -28,7 +28,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [unidadesOpen, setUnidadesOpen]           = useState(false)
   const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
   const [perfilamientoId, setPerfilamientoId]     = useState<string>('')
-  const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string } | null>(null)
+  const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string; email: string; telefono: string } | null>(null)
 
   // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
@@ -46,7 +46,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   }
 
   // ── Handlers perfilamiento ───────────────────────────────
-  function handlePerfilConfirmar(r: RangoCapacidad, id: string, dc: { nombre: string; rut: string }) {
+  function handlePerfilConfirmar(r: RangoCapacidad, id: string, dc: { nombre: string; rut: string; email: string; telefono: string }) {
     setRango(r)
     setPerfilamientoId(id)
     setDatosCliente(dc)
