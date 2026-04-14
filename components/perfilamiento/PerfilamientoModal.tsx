@@ -79,9 +79,11 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
     if (!eval_) return
     const porPie = eval_.propiedadMaxPorPieCombinada ?? eval_.propiedadMaxPorPie
     const porLtv = eval_.propiedadMaxPorLtvCombinada ?? eval_.propiedadMaxPorLtv
+    const minUF = Math.min(porPie / ufDelDia, porLtv / ufDelDia)
+    const maxUF = Math.min(Math.max(porPie / ufDelDia, porLtv / ufDelDia), minUF * 1.15)
     onConfirmar({
-      minUF:          Math.min(porPie / ufDelDia, porLtv / ufDelDia),
-      maxUF:          Math.max(porPie / ufDelDia, porLtv / ufDelDia),
+      minUF,
+      maxUF,
       creditoMaxCLP:  eval_.creditoMaximoCombinado ?? eval_.creditoMaximo,
       dividendoMaxCLP: eval_.dividendoMaximoCombinado ?? eval_.dividendoMaximo,
       resultado:      eval_.resultado,
@@ -422,7 +424,7 @@ function ResultadoEval({
   const porPie = eval_.propiedadMaxPorPieCombinada ?? eval_.propiedadMaxPorPie
   const porLtv = eval_.propiedadMaxPorLtvCombinada ?? eval_.propiedadMaxPorLtv
   const minCLP = Math.min(porPie, porLtv)
-  const maxCLP = Math.max(porPie, porLtv)
+  const maxCLP = Math.min(Math.max(porPie, porLtv), minCLP * 1.15)
   const minUF  = ufDelDia > 0 ? minCLP / ufDelDia : 0
   const maxUF  = ufDelDia > 0 ? maxCLP / ufDelDia : 0
 
