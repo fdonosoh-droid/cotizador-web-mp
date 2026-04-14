@@ -24,17 +24,21 @@ const brokerSchema = z.object({
 export type BrokerData = z.infer<typeof brokerSchema>
 
 interface Props {
-  onSubmit: (data: BrokerData) => void
-  disabled?: boolean
+  onSubmit:        (data: BrokerData) => void
+  disabled?:       boolean
+  /** Datos pre-rellenados cuando viene del flujo de perfilamiento */
+  initialCliente?: { nombre: string; rut: string }
 }
 
-export default function BrokerForm({ onSubmit, disabled }: Props) {
+export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props) {
+  const rutFormateado = initialCliente?.rut ? formatRut(initialCliente.rut) : ''
   const [values, setValues] = useState<BrokerData>({
-    nombre: '', rut: '', email: '', telefono: '',
+    nombre: initialCliente?.nombre ?? '', rut: initialCliente?.rut ?? '',
+    email: '', telefono: '',
     empresa: '', emailCorredor: '', telefonoCorredor: '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof BrokerData, string>>>({})
-  const [rutDisplay, setRutDisplay] = useState('')
+  const [rutDisplay, setRutDisplay] = useState(rutFormateado)
 
   function handleChange(field: keyof BrokerData, value: string) {
     setValues((v) => ({ ...v, [field]: value }))

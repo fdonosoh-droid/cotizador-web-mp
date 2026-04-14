@@ -28,6 +28,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [unidadesOpen, setUnidadesOpen]           = useState(false)
   const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
   const [perfilamientoId, setPerfilamientoId]     = useState<string>('')
+  const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string } | null>(null)
 
   // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
@@ -45,9 +46,10 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   }
 
   // ── Handlers perfilamiento ───────────────────────────────
-  function handlePerfilConfirmar(r: RangoCapacidad, id: string) {
+  function handlePerfilConfirmar(r: RangoCapacidad, id: string, dc: { nombre: string; rut: string }) {
     setRango(r)
     setPerfilamientoId(id)
+    setDatosCliente(dc)
     setUnidadesOpen(true)
   }
 
@@ -102,7 +104,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
               Historial
             </Link>
             <button
-              onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false); setPerfilamientoId('') }}
+              onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false); setPerfilamientoId(''); setDatosCliente(null) }}
               className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
             >
               ← Nueva Cotización
@@ -187,7 +189,11 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
             <div className="mt-4">
               {step === 'broker' ? (
                 <>
-                  <BrokerForm onSubmit={handleBrokerSubmit} />
+                  <BrokerForm
+                    key={datosCliente ? `${datosCliente.nombre}::${datosCliente.rut}` : 'empty'}
+                    onSubmit={handleBrokerSubmit}
+                    initialCliente={datosCliente ?? undefined}
+                  />
                   <div className="mt-3">
                     <button
                       onClick={() => setStep('select')}
