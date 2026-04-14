@@ -28,8 +28,9 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
   const [seleccionada, setSeleccionada]     = useState<UnidadCotizable | null>(null)
 
   // Multi-select filtros
-  const [progSel,   setProgSel]   = useState<Set<string>>(new Set())
-  const [comunaSel, setComunaSel] = useState<Set<string>>(new Set())
+  const [progSel,     setProgSel]     = useState<Set<string>>(new Set())
+  const [comunaSel,   setComunaSel]   = useState<Set<string>>(new Set())
+  const [entregaSel,  setEntregaSel]  = useState<Set<string>>(new Set())
 
   // Adicionales
   const [adicionales,    setAdicionales]    = useState<UnidadCotizable[]>([])
@@ -43,6 +44,7 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
     setSeleccionada(null)
     setProgSel(new Set())
     setComunaSel(new Set())
+    setEntregaSel(new Set())
     setAdicionales([])
     setAdicSelecSet(new Set())
     buscarUnidadesPorRango(rango.minUF, rango.maxUF)
@@ -78,8 +80,9 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
   const comunas   = Array.from(new Set(unidades.map(u => u.comuna))).sort()
 
   const filtradas = unidades.filter(u =>
-    (progSel.size   === 0 || progSel.has(u.programa)) &&
-    (comunaSel.size === 0 || comunaSel.has(u.comuna))
+    (progSel.size    === 0 || progSel.has(u.programa))    &&
+    (comunaSel.size  === 0 || comunaSel.has(u.comuna))    &&
+    (entregaSel.size === 0 || entregaSel.has(u.tipoEntrega))
   )
 
   const adicSeleccionadas = adicionales.filter((_, i) => adicSelecSet.has(i))
@@ -132,6 +135,13 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
                 selected={comunaSel}
                 onToggle={v => setComunaSel(s => toggleSet(s, v))}
                 onClear={() => setComunaSel(new Set())}
+              />
+              <MultiChips
+                label="Tipo de entrega"
+                options={['Entrega Inmediata', 'Entrega Futura']}
+                selected={entregaSel}
+                onToggle={v => setEntregaSel(s => toggleSet(s, v))}
+                onClear={() => setEntregaSel(new Set())}
               />
               <p className="text-xs text-gray-400 text-right">{filtradas.length} unidades</p>
             </div>
