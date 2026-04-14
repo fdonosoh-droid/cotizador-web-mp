@@ -101,6 +101,8 @@ export function evaluar(data: FormData, params: EvalParams = defaultParams, ufDa
   const propiedadMaxPorPie = params.pieMinimoPorcentaje > 0 ? pieDisp / params.pieMinimoPorcentaje : 0;
   const propiedadMaxPorLtv = params.ltvMaximo > 0 ? creditoMaximo / params.ltvMaximo : 0;
   const propiedadMaxFinal = Math.min(propiedadMaxPorPie, propiedadMaxPorLtv);
+  // Capacidad total: pie ingresado + crédito máximo (90% financiamiento hipotecario)
+  const propiedadMaxCapacidad = pieDisp + creditoMaximo;
 
   const dividendoRentaRatio = ingresoEvaluable > 0 ? dividendoMaximo / ingresoEvaluable : 1;
   const cargaTotalRentaRatio = ingresoEvaluable > 0 ? (cargaSinHipotecario + dividendoMaximo) / ingresoEvaluable : 1;
@@ -132,6 +134,7 @@ export function evaluar(data: FormData, params: EvalParams = defaultParams, ufDa
       propiedadMaxPorPieCombinada: propMaxPieComb,
       propiedadMaxPorLtvCombinada: propMaxLtvComb,
       propiedadMaxFinalCombinada: propMaxComb,
+      propiedadMaxCapacidadCombinada: pieComb + credMaxComb,
     };
   }
 
@@ -189,7 +192,7 @@ export function evaluar(data: FormData, params: EvalParams = defaultParams, ufDa
     resultado, razones,
     ingresoEvaluable, cargaSinHipotecario, rciSinHipotecario,
     dividendoMaximo, dividendoRentaRatio, cargaTotalRentaRatio,
-    creditoMaximo, propiedadMaxPorPie, propiedadMaxPorLtv, propiedadMaxFinal,
+    creditoMaximo, propiedadMaxPorPie, propiedadMaxPorLtv, propiedadMaxFinal, propiedadMaxCapacidad,
     ...combinado,
     ufUsada: uf,
     params,

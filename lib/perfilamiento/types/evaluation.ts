@@ -105,6 +105,8 @@ export interface EvaluationOutput {
   propiedadMaxPorPie: number;
   propiedadMaxPorLtv: number;
   propiedadMaxFinal: number;
+  /** pie + crédito máximo: capacidad total de compra */
+  propiedadMaxCapacidad: number;
 
   // Combinado (if complementario)
   ingresoEvaluableCombinado?: number;
@@ -115,6 +117,8 @@ export interface EvaluationOutput {
   propiedadMaxPorPieCombinada?: number;
   propiedadMaxPorLtvCombinada?: number;
   propiedadMaxFinalCombinada?: number;
+  /** pie total (ambos) + crédito combinado */
+  propiedadMaxCapacidadCombinada?: number;
 
   ufUsada: UFData;
   params: EvalParams;
