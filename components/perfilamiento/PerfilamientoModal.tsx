@@ -77,7 +77,7 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
 
   const handleConfirmar = () => {
     if (!eval_) return
-    const capacidadCLP = eval_.propiedadMaxCapacidadCombinada ?? eval_.propiedadMaxCapacidad
+    const capacidadCLP = (eval_.propiedadMaxCapacidadCombinada ?? eval_.propiedadMaxCapacidad) * 1.10
     const minUF = ufDelDia > 0 ? capacidadCLP / ufDelDia : 0
     const maxUF = minUF * 1.15
     onConfirmar({
@@ -420,7 +420,7 @@ function ResultadoEval({
   onConfirmar: () => void
   onVolver: () => void
 }) {
-  const capacidadCLP = eval_.propiedadMaxCapacidadCombinada ?? eval_.propiedadMaxCapacidad
+  const capacidadCLP = (eval_.propiedadMaxCapacidadCombinada ?? eval_.propiedadMaxCapacidad) * 1.10
   const minCLP = capacidadCLP
   const maxCLP = capacidadCLP * 1.15
   const minUF  = ufDelDia > 0 ? minCLP / ufDelDia : 0
