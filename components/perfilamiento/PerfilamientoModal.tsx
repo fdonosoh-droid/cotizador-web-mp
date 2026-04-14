@@ -4,9 +4,10 @@ import React, { useState } from 'react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
-import { Button }   from '@/components/ui/button'
-import { Input }    from '@/components/ui/input'
-import { Label }    from '@/components/ui/label'
+import { Button }         from '@/components/ui/button'
+import { Input }          from '@/components/ui/input'
+import { Label }          from '@/components/ui/label'
+import { CurrencyInput }  from '@/components/ui/currency-input'
 import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -122,9 +123,9 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
             {/* Contenido del paso */}
             <div className="min-h-[320px]">
               {paso === 0 && <StepPersonal       data={form} onChange={onChange} handleNum={handleNum} />}
-              {paso === 1 && <StepIncome         data={form} handleNum={handleNum} />}
+              {paso === 1 && <StepIncome         data={form} onChange={onChange} handleNum={handleNum} />}
               {paso === 2 && <StepDebts          data={form} onChange={onChange} handleNum={handleNum} />}
-              {paso === 3 && <StepSavings        data={form} handleNum={handleNum} />}
+              {paso === 3 && <StepSavings        data={form} onChange={onChange} handleNum={handleNum} />}
               {paso === 4 && <StepComplementary  data={form} onChange={onChange} handleNum={handleNum} />}
               {paso === 5 && <StepSummary        data={form} />}
             </div>
@@ -209,18 +210,18 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
 }
 
 // ── Paso 2: Ingresos ─────────────────────────────────────────────
-function StepIncome({ data, handleNum }: Pick<StepProps, 'data' | 'handleNum'>) {
+function StepIncome({ data, onChange }: Pick<StepProps, 'data' | 'onChange' | 'handleNum'>) {
   return (
     <div className="space-y-4">
       <SectionTitle>Ingresos mensuales (CLP)</SectionTitle>
       <Field label="Renta líquida mensual" hint="Sueldo líquido después de descuentos.">
-        <Input type="number" min={0} value={data.rentaLiquida} onChange={handleNum('rentaLiquida')} placeholder="1.500.000" />
+        <CurrencyInput value={data.rentaLiquida} onChange={v => onChange({ rentaLiquida: v } as Partial<FormData>)} placeholder="1500000" />
       </Field>
       <Field label="Ingresos variables (promedio)" hint="Comisiones, bonos. Se considera 50%.">
-        <Input type="number" min={0} value={data.ingresosVariables} onChange={handleNum('ingresosVariables')} placeholder="200.000" />
+        <CurrencyInput value={data.ingresosVariables} onChange={v => onChange({ ingresosVariables: v } as Partial<FormData>)} placeholder="200000" />
       </Field>
       <Field label="Otros ingresos" hint="Arriendos, pensiones, rentas de capital.">
-        <Input type="number" min={0} value={data.otrosIngresos} onChange={handleNum('otrosIngresos')} placeholder="0" />
+        <CurrencyInput value={data.otrosIngresos} onChange={v => onChange({ otrosIngresos: v } as Partial<FormData>)} placeholder="0" />
       </Field>
     </div>
   )
@@ -233,16 +234,16 @@ function StepDebts({ data, onChange, handleNum }: StepProps) {
       <SectionTitle>Deudas y obligaciones mensuales (CLP)</SectionTitle>
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Cuotas de créditos" hint="Consumo, automotriz, etc.">
-          <Input type="number" min={0} value={data.cuotasCreditos} onChange={handleNum('cuotasCreditos')} placeholder="0" />
+          <CurrencyInput value={data.cuotasCreditos} onChange={v => onChange({ cuotasCreditos: v } as Partial<FormData>)} placeholder="0" />
         </Field>
         <Field label="Pago tarjetas de crédito" hint="Pago mínimo o cuota pactada.">
-          <Input type="number" min={0} value={data.pagoTarjetas} onChange={handleNum('pagoTarjetas')} placeholder="0" />
+          <CurrencyInput value={data.pagoTarjetas} onChange={v => onChange({ pagoTarjetas: v } as Partial<FormData>)} placeholder="0" />
         </Field>
         <Field label="Pensiones alimenticias">
-          <Input type="number" min={0} value={data.pensiones} onChange={handleNum('pensiones')} placeholder="0" />
+          <CurrencyInput value={data.pensiones} onChange={v => onChange({ pensiones: v } as Partial<FormData>)} placeholder="0" />
         </Field>
         <Field label="Otras obligaciones">
-          <Input type="number" min={0} value={data.otrasObligaciones} onChange={handleNum('otrasObligaciones')} placeholder="0" />
+          <CurrencyInput value={data.otrasObligaciones} onChange={v => onChange({ otrasObligaciones: v } as Partial<FormData>)} placeholder="0" />
         </Field>
       </div>
       <div className="pt-3 border-t space-y-2">
@@ -268,13 +269,13 @@ function StepDebts({ data, onChange, handleNum }: StepProps) {
 }
 
 // ── Paso 4: Ahorro ───────────────────────────────────────────────
-function StepSavings({ data, handleNum }: Pick<StepProps, 'data' | 'handleNum'>) {
+function StepSavings({ data, onChange }: Pick<StepProps, 'data' | 'onChange' | 'handleNum'>) {
   return (
     <div className="space-y-4">
       <SectionTitle>Ahorro / Pie disponible</SectionTitle>
       <p className="text-sm text-gray-500">Monto total disponible para el pie de la propiedad, en CLP.</p>
       <Field label="Pie disponible (CLP)" hint="Ahorros, subsidios u otros fondos para el pie.">
-        <Input type="number" min={0} value={data.pieDisponible} onChange={handleNum('pieDisponible')} placeholder="15.000.000" />
+        <CurrencyInput value={data.pieDisponible} onChange={v => onChange({ pieDisponible: v } as Partial<FormData>)} placeholder="15000000" />
       </Field>
     </div>
   )
@@ -320,33 +321,33 @@ function StepComplementary({ data, onChange, handleNum }: StepProps) {
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide pt-2">Ingresos del co-solicitante</p>
           <div className="grid sm:grid-cols-3 gap-3">
             <Field label="Renta líquida">
-              <Input type="number" min={0} value={data.comp_rentaLiquida} onChange={handleNum('comp_rentaLiquida')} placeholder="0" />
+              <CurrencyInput value={data.comp_rentaLiquida} onChange={v => onChange({ comp_rentaLiquida: v } as Partial<FormData>)} placeholder="0" />
             </Field>
             <Field label="Variables">
-              <Input type="number" min={0} value={data.comp_ingresosVariables} onChange={handleNum('comp_ingresosVariables')} placeholder="0" />
+              <CurrencyInput value={data.comp_ingresosVariables} onChange={v => onChange({ comp_ingresosVariables: v } as Partial<FormData>)} placeholder="0" />
             </Field>
             <Field label="Otros">
-              <Input type="number" min={0} value={data.comp_otrosIngresos} onChange={handleNum('comp_otrosIngresos')} placeholder="0" />
+              <CurrencyInput value={data.comp_otrosIngresos} onChange={v => onChange({ comp_otrosIngresos: v } as Partial<FormData>)} placeholder="0" />
             </Field>
           </div>
 
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide pt-2">Deudas del co-solicitante</p>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Cuotas créditos">
-              <Input type="number" min={0} value={data.comp_cuotasCreditos} onChange={handleNum('comp_cuotasCreditos')} placeholder="0" />
+              <CurrencyInput value={data.comp_cuotasCreditos} onChange={v => onChange({ comp_cuotasCreditos: v } as Partial<FormData>)} placeholder="0" />
             </Field>
             <Field label="Pago tarjetas">
-              <Input type="number" min={0} value={data.comp_pagoTarjetas} onChange={handleNum('comp_pagoTarjetas')} placeholder="0" />
+              <CurrencyInput value={data.comp_pagoTarjetas} onChange={v => onChange({ comp_pagoTarjetas: v } as Partial<FormData>)} placeholder="0" />
             </Field>
             <Field label="Pensiones">
-              <Input type="number" min={0} value={data.comp_pensiones} onChange={handleNum('comp_pensiones')} placeholder="0" />
+              <CurrencyInput value={data.comp_pensiones} onChange={v => onChange({ comp_pensiones: v } as Partial<FormData>)} placeholder="0" />
             </Field>
             <Field label="Otras oblig.">
-              <Input type="number" min={0} value={data.comp_otrasObligaciones} onChange={handleNum('comp_otrasObligaciones')} placeholder="0" />
+              <CurrencyInput value={data.comp_otrasObligaciones} onChange={v => onChange({ comp_otrasObligaciones: v } as Partial<FormData>)} placeholder="0" />
             </Field>
           </div>
           <Field label="Pie adicional del co-solicitante (CLP)">
-            <Input type="number" min={0} value={data.comp_pieDisponible} onChange={handleNum('comp_pieDisponible')} placeholder="0" />
+            <CurrencyInput value={data.comp_pieDisponible} onChange={v => onChange({ comp_pieDisponible: v } as Partial<FormData>)} placeholder="0" />
           </Field>
         </div>
       )}
