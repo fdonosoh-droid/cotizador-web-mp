@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-05<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->520c7a8<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->ordena Piso y N Unidad en forma ascendente numerica<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-14<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->557ba8f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->fix: limitar rango optimista a máximo +15% sobre rango conservador<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Motor de cálculo validado · Mejoras post-lanzamiento M1–M20 aplicadas<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M29 aplicadas<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -23,6 +23,7 @@
 | 5 | Simulación hipotecaria y flujo | 5.1 → 5.3 | ✅ COMPLETADO — PMT 3 escenarios CAE, flujo mensual en cotizador.ts · amortización detallada pendiente |
 | 6 | Evaluación de inversión a 5 años | 6.1 → 6.4 | ✅ COMPLETADO — plusvalía, ROI, cap rate en cotizador.ts · factor LTV 0.67 pendiente confirmación |
 | 7 | Output, PDF y cotización final | 7.1 → 7.4 | ✅ COMPLETADO — 7.1 HTML ✅ · 7.2 PDF ✅ · 7.3 Email ✅ · 7.4 Historial ✅ |
+| 8 | Módulo Perfilamiento de comprador | P1 → P4 | ✅ COMPLETADO — Motor evaluación · Modal 6 pasos · Búsqueda por rango · Integración CotizadorShell |
 
 ---
 
@@ -674,6 +675,78 @@
 - `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: texto del pie de página reemplazado por versión más cordial y comercial
 - "Cotización generada el..." → "Cotización emitida el..."
 
+### 2026-04-14 — MEJORAS Y CORRECCIONES 14042026
+
+#### M29 — Rango optimista perfilamiento limitado a +15% sobre conservador (2026-04-14)
+- `PerfilamientoModal.tsx`: `ResultadoEval` y `handleConfirmar` limitan `maxCLP`/`maxUF` a `min * 1.15`
+- Evita diferencias desproporcionadas entre rango conservador y optimista en la pantalla de resultado y en la búsqueda de unidades
+
+#### M28 — Formato $xx.xxx.xxx en campos CLP del perfilamiento (2026-04-14)
+- `components/ui/currency-input.tsx`: nuevo componente `CurrencyInput` (type="text" + inputMode="numeric"); formatea al perder foco, muestra número limpio al enfocar; auto-selecciona contenido
+- `PerfilamientoModal.tsx`: reemplaza todos los `<Input type="number">` de montos CLP por `<CurrencyInput>` en StepIncome, StepDebts, StepSavings, StepComplementary
+
+#### M27 — Panel de unidades adicionales en paso 1 al venir de perfilamiento (2026-04-14)
+- `CotizadorShell.tsx`: cuando `fromPerfilamiento === true`, muestra `<UnidadesAdicionalesPanel>` debajo del resumen de unidad seleccionada
+- `UnidadesAdicionalesPanel.tsx`: nuevo componente que replica la funcionalidad de adicionales del CascadeSelector; carga vía `getAdicionales(nemotecnico)`, permite agregar/quitar estacionamientos y bodegas
+- `handleAdicionalesToPerfilamiento()`: actualiza `selection.unidadesAdicionales` sin romper el resto de la selección
+
+#### M26 — Mejoras UX ModalUnidades (2026-04-13 → 2026-04-14)
+- **Filtros multi-select:** Programa, Comuna y Tipo de entrega usan `Set<string>`; 0 seleccionados = mostrar todos; chips con toggle visual
+- **Tipo de entrega:** opciones fijas `['Entrega Inmediata', 'Entrega Futura']`
+- **Precio lista:** elimina precio tachado/precio con descuento; muestra únicamente `precioLista` con label "Precio lista"
+- **Unidades adicionales en modal:** al seleccionar una unidad principal, carga bodegas/estacionamientos disponibles vía `getAdicionales()`; selección múltiple con Checkbox; se pasan como array a `onSeleccionar`
+- **Botón "Perfilar comprador":** estilo `bg-blue-600 text-white` (mismo color que recuadro de unidad)
+
+### 2026-04-13 — MÓDULO PERFILAMIENTO DE COMPRADOR
+
+> Nuevo módulo completo agregado sobre el sistema base. Permite evaluar la capacidad financiera del comprador y pre-filtrar unidades por rango de precio resultante.
+
+#### P1 — Motor de evaluación financiera (2026-04-13)
+- `lib/perfilamiento/types/evaluation.ts`: tipos `FormData`, `EvalParams`, `EvaluationOutput`, `UFData`, `ResultadoEvaluacion`, `initialFormData`
+- `lib/perfilamiento/types/property-evaluation.ts`: tipos `PropertyFormData`, `PropertyEvalOutput`
+- `lib/perfilamiento/evaluation-engine.ts`: función `evaluar(data, params, ufData?)` — calcula renta efectiva, capacidad de deuda, crédito máximo, dividendo máximo, propiedad máxima por pie y por LTV; incluye co-solicitante; resultado: `apto | apto_con_condiciones | no_apto`
+- `lib/perfilamiento/property-engine.ts`: función `evaluarPropiedad(data, uf, params)`
+- `lib/perfilamiento/evaluation-engine.ts`: `defaultParams` exportado; formatters `formatCLP`, `formatUF`
+
+#### P2 — PerfilamientoModal — formulario 6 pasos (2026-04-13)
+- `components/perfilamiento/PerfilamientoModal.tsx`: modal Dialog con 6 pasos secuenciales + pantalla de resultado
+  - Paso 1 — Personal: nombre, RUT, edad, estado civil, dependientes, tipo contrato, antigüedad
+  - Paso 2 — Ingresos: renta líquida, variables (50%), otros
+  - Paso 3 — Deudas: cuotas créditos, tarjetas, pensiones, otras; checkbox morosidad
+  - Paso 4 — Ahorro / Pie: pie disponible CLP
+  - Paso 5 — Co-solicitante (opcional): mismos campos de ingresos, deudas y pie
+  - Paso 6 — Resumen: revisión antes de evaluar
+  - Resultado: badge apto/apto_con_condiciones/no_apto · razones · rango conservador y optimista (UF + CLP) · dividendo y crédito máximo · botón "Buscar unidades en este rango"
+- `RangoCapacidad` exportado: `{ minUF, maxUF, creditoMaxCLP, dividendoMaxCLP, resultado }`
+
+#### P3 — Server action y búsqueda por rango (2026-04-13)
+- `lib/perfilamiento/actions.ts` (`'use server'`): `buscarUnidadesPorRango(minUF, maxUF)` — filtra Disponibles, tipo Departamento/Casa, con tolerancia ±10%; `getAdicionales(nemotecnico)` — devuelve Bodega/Estacionamiento Disponibles de un proyecto
+- `lib/data/repository.ts`: `getAllUnidadesPorRango(minUF, maxUF)` agregado a interfaz `IStockRepository`
+- `lib/data/excel-adapter.ts` + `pg-adapter.ts`: implementación del nuevo método
+
+#### P4 — Integración en CotizadorShell (2026-04-13)
+- `CotizadorShell.tsx`: prop `ufDelDia: number`; estado `fromPerfilamiento`; botón "Perfilar comprador" en navbar; `handleUnidadSeleccionada()` construye `CascadeSelection` completo desde `UnidadCotizable`; `ModalUnidades` y `PerfilamientoModal` orquestados
+- `app/page.tsx`: convertida a async; obtiene `ufDelDia` desde `stockRepository.getUFdelDia()` e inyecta a `CotizadorShell`
+- Flujo: PerfilamientoModal → RangoCapacidad → ModalUnidades (filtros + selección) → CotizadorShell paso 1 (con UnidadesAdicionalesPanel) → pasos 2–3 normales
+
+### 2026-04-10 — MEJORAS Y CORRECCIONES 10042026
+
+#### M25 — Reorganización del repositorio (2026-04-13)
+- Archivos Excel e inputs movidos a `Archivos/`
+- Documentos Markdown movidos a `Documentos/`
+
+#### M24 — Historial: guardar al imprimir / descargar PDF (2026-04-10)
+- `PanelCotizacion.tsx`: acción "Ver Documento" y "Descargar PDF" llaman a `guardarCotizacionAction()` como fire-and-forget antes de ejecutar su acción principal
+- `app/api/cotizacion/salvar-excel/route.ts`: nueva API `POST /api/cotizacion/salvar-excel` que agrega la cotización al archivo `Historial_cotizaciones.xlsx` en prod y dev
+
+#### M23 — Fixes al llenado de historial Excel (2026-04-10)
+- Serie de correcciones a `salvar-excel`: compatibilidad prod/dev, paths `/tmp` en Vercel, escritura síncrona (`XLSX.write()` + `fs.writeFileSync()`)
+- Migración temporal a CSV para evitar bloqueos de archivo; revertida a xlsx con API route separada
+
+#### M21 — Bloqueo de edición % Pie Construcción y % Crédito Directo (2026-04-10)
+- `PanelCotizacion.tsx`: campos "% Pie en Construcción" y "% Crédito Directo" cambiados a `disabled` — son fijos por condición comercial, no editables por el corredor
+- Eliminada visualización de textos de valores base para estos campos
+
 ### 2026-04-05 — MEJORAS Y CORRECCIONES 05042026
 
 #### M15 — Migración a parámetros dinámicos desde Excel (2026-04-05)
@@ -805,6 +878,21 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-04-14 | 557ba8f | main | M29: limitar rango optimista a máximo +15% sobre conservador |
+| 2026-04-14 | 430d8f5 | main | M28: formato $xx.xxx.xxx en campos CLP del perfilamiento (CurrencyInput) |
+| 2026-04-14 | 393de4b | main | M27: panel de unidades adicionales en paso 1 al venir de perfilamiento |
+| 2026-04-14 | cdc7a4a | main | M26: ModalUnidades — filtro Tipo de entrega (Inmediata / Futura) |
+| 2026-04-13 | f8414ac | main | M26: ModalUnidades — precio lista sin tachado ni descuento |
+| 2026-04-13 | d96fbc5 | main | M26: ModalUnidades — multi-select filtros, unidades adicionales, botón perfilar azul |
+| 2026-04-13 | 30bca0b | main | P4: integración perfilador completa en CotizadorShell |
+| 2026-04-13 | 31ad15c | main | P1–P3: motor evaluación + PerfilamientoModal + buscarUnidadesPorRango + ModalUnidades |
+| 2026-04-13 | 6208ee1 | main | M25: reorganiza proyecto — xlsx a Archivos/, docs a Documentos/ |
+| 2026-04-13 | ca5ecd9 | main | fix: cotizaciones históricas |
+| 2026-04-13 | c24da7a | main | fix: reemplazar xlsx por CSV en historial (sin dependencias, sin bloqueos) |
+| 2026-04-10 | 9f1fedb | main | M24: salvar-excel — soporte prod/dev, paths /tmp en Vercel |
+| 2026-04-10 | 695fc39 | main | M21: elimina visualización de textos base en Pie Construcción y Crédito Directo |
+| 2026-04-10 | d7a1056 | main | M21: bloqueo edición % pie construcción y % crédito directo |
+| 2026-04-10 | 0e2b602 | main | M24: guardar historial al imprimir/descargar PDF |
 | 2026-04-05 | 520c7a8 | main | M20: ordena Piso y N Unidad en forma ascendente numerica |
 | 2026-04-05 | d04deab | main | M19: agrega boton Nueva Cotizacion en navbar al llegar al paso 3 |
 | 2026-04-05 | a46b549 | main | M18: actualiza texto disclaimer pie de cotizacion |
