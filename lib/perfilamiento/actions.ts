@@ -2,6 +2,51 @@
 
 import { stockRepository } from '@/lib/data'
 import type { UnidadCotizable } from '@/lib/data'
+import {
+  guardarPerfilamiento,
+  vincularCotizacion,
+  listarPerfilamientos,
+  listarPerfilamientosCompletos,
+  type PerfilamientoEntry,
+  type PerfilamientoResumen,
+} from '@/lib/perfilamiento/historial-perfilamiento'
+
+export type { PerfilamientoResumen }
+
+// ── Actions de perfilamiento ─────────────────────────────────────
+
+/**
+ * Guarda un perfilamiento y retorna el id asignado.
+ */
+export async function guardarPerfilamientoAction(
+  data: Omit<PerfilamientoEntry, 'id' | 'fecha' | 'fechaDisplay'>
+): Promise<string> {
+  return guardarPerfilamiento(data)
+}
+
+/**
+ * Vincula un perfilamiento existente con el número de cotización generado.
+ */
+export async function vincularCotizacionAction(
+  id: string,
+  numeroCotizacion: string
+): Promise<void> {
+  vincularCotizacion(id, numeroCotizacion)
+}
+
+/**
+ * Lista todos los perfilamientos (resumen, más recientes primero).
+ */
+export async function listarPerfilamientosAction(): Promise<PerfilamientoResumen[]> {
+  return listarPerfilamientos()
+}
+
+/**
+ * Lista todos los perfilamientos completos (para exportación).
+ */
+export async function listarPerfilamientosCompletosAction(): Promise<PerfilamientoEntry[]> {
+  return listarPerfilamientosCompletos()
+}
 
 /**
  * Busca unidades Disponibles (solo Departamento/Casa) cuyo precio lista

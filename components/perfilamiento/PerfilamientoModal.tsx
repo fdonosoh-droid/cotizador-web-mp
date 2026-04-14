@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { evaluar, defaultParams, formatCLP, formatUF } from '@/lib/perfilamiento/evaluation-engine'
 import { type FormData, initialFormData, type EvaluationOutput } from '@/lib/perfilamiento/types/evaluation'
+import { guardarPerfilamientoAction } from '@/lib/perfilamiento/actions'
 import { cn } from '@/lib/utils/cn'
 
 // ── Tipos ────────────────────────────────────────────────────────
@@ -29,8 +30,8 @@ export interface RangoCapacidad {
 interface Props {
   open: boolean
   onClose: () => void
-  /** Callback que recibe el rango de capacidad para pre-filtrar unidades */
-  onConfirmar: (rango: RangoCapacidad) => void
+  /** Callback que recibe el rango de capacidad y el id del perfilamiento guardado */
+  onConfirmar: (rango: RangoCapacidad, perfilamientoId: string) => void
   /** Valor UF del día (inyectado desde el cotizador) */
   ufDelDia: number
 }
@@ -75,18 +76,37 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
   }
   const anterior = () => setPaso(p => Math.max(0, p - 1))
 
-  const handleConfirmar = () => {
+  const handleConfirmar = async () => {
     if (!eval_) return
     const capacidadCLP = (eval_.propiedadMaxCapacidadCombinada ?? eval_.propiedadMaxCapacidad) * 1.10
     const minUF = ufDelDia > 0 ? capacidadCLP / ufDelDia : 0
     const maxUF = minUF * 1.15
+
+    // Guardar perfilamiento en historial (fire-and-forget con id retornado)
+    const perfilamientoId = await guardarPerfilamientoAction({
+      nombre:               form.nombre,
+      rut:                  form.rut,
+      resultado:            eval_.resultado,
+      razones:              eval_.razones,
+      ingresoEvaluable:     eval_.ingresoEvaluable,
+      dividendoMaximo:      eval_.dividendoMaximoCombinado ?? eval_.dividendoMaximo,
+      creditoMaximo:        eval_.creditoMaximoCombinado ?? eval_.creditoMaximo,
+      pieDisponible:        num(form.pieDisponible) + (form.tieneComplementario ? num(form.comp_pieDisponible) : 0),
+      rangoConservadorUF:   minUF,
+      rangoOptimistaUF:     maxUF,
+      tieneComplementario:  form.tieneComplementario,
+      comp_nombre:          form.tieneComplementario ? form.comp_nombre : undefined,
+      dividendoMaximoCombinado: form.tieneComplementario ? eval_.dividendoMaximoCombinado : undefined,
+      creditoMaximoCombinado:   form.tieneComplementario ? eval_.creditoMaximoCombinado   : undefined,
+    }).catch(() => '')   // si falla el guardado, continúa igual
+
     onConfirmar({
       minUF,
       maxUF,
       creditoMaxCLP:   eval_.creditoMaximoCombinado ?? eval_.creditoMaximo,
       dividendoMaxCLP: eval_.dividendoMaximoCombinado ?? eval_.dividendoMaximo,
       resultado:       eval_.resultado,
-    })
+    }, perfilamientoId)
     handleClose()
   }
 

@@ -6,6 +6,7 @@
 // ============================================================
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import CascadeSelector, { type CascadeSelection } from './cascade/CascadeSelector'
 import BrokerForm, { type BrokerData } from './broker/BrokerForm'
 import PanelCotizacion from './cotizacion/PanelCotizacion'
@@ -22,10 +23,11 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [broker, setBroker]       = useState<BrokerData | null>(null)
 
   // ── Estado perfilamiento ─────────────────────────────────
-  const [perfilOpen, setPerfilOpen]         = useState(false)
-  const [rango, setRango]                   = useState<RangoCapacidad | null>(null)
-  const [unidadesOpen, setUnidadesOpen]     = useState(false)
+  const [perfilOpen, setPerfilOpen]               = useState(false)
+  const [rango, setRango]                         = useState<RangoCapacidad | null>(null)
+  const [unidadesOpen, setUnidadesOpen]           = useState(false)
   const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
+  const [perfilamientoId, setPerfilamientoId]     = useState<string>('')
 
   // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
@@ -43,8 +45,9 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   }
 
   // ── Handlers perfilamiento ───────────────────────────────
-  function handlePerfilConfirmar(r: RangoCapacidad) {
+  function handlePerfilConfirmar(r: RangoCapacidad, id: string) {
     setRango(r)
+    setPerfilamientoId(id)
     setUnidadesOpen(true)
   }
 
@@ -86,8 +89,20 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
             >
               Perfilar comprador
             </button>
+            <Link
+              href="/perfilamientos"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 whitespace-nowrap"
+            >
+              Perfilamientos
+            </Link>
+            <Link
+              href="/historial"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 whitespace-nowrap"
+            >
+              Historial
+            </Link>
             <button
-              onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false) }}
+              onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false); setPerfilamientoId('') }}
               className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
             >
               ← Nueva Cotización

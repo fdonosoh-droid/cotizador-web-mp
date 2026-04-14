@@ -13,6 +13,13 @@ Thumbs.db
 # Estado local dev (no versionar)
 .cotizaciones-seq.json
 .cotizaciones-historial.json
+.perfilamientos-historial.json
+Historial_cotizaciones.csv
+Historial_perfilamientos.csv
+
+# Archivos de datos operacionales (generados, no código)
+Archivos/Historial_cotizaciones*.xlsx
+Archivos/cotizacion-*.xlsx
 
 # Datos de stock — contienen información comercial sensible
 # INPUT_FILES.xlsx — habilitado para deploy (repo privado)
