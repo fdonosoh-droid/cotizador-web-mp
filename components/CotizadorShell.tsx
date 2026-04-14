@@ -11,6 +11,7 @@ import BrokerForm, { type BrokerData } from './broker/BrokerForm'
 import PanelCotizacion from './cotizacion/PanelCotizacion'
 import PerfilamientoModal, { type RangoCapacidad } from './perfilamiento/PerfilamientoModal'
 import ModalUnidades from './perfilamiento/ModalUnidades'
+import UnidadesAdicionalesPanel from './perfilamiento/UnidadesAdicionalesPanel'
 import type { UnidadCotizable } from '@/lib/data'
 
 type Step = 'select' | 'broker' | 'quote'
@@ -21,9 +22,10 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [broker, setBroker]       = useState<BrokerData | null>(null)
 
   // ── Estado perfilamiento ─────────────────────────────────
-  const [perfilOpen, setPerfilOpen]     = useState(false)
-  const [rango, setRango]               = useState<RangoCapacidad | null>(null)
-  const [unidadesOpen, setUnidadesOpen] = useState(false)
+  const [perfilOpen, setPerfilOpen]         = useState(false)
+  const [rango, setRango]                   = useState<RangoCapacidad | null>(null)
+  const [unidadesOpen, setUnidadesOpen]     = useState(false)
+  const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
 
   // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
@@ -56,8 +58,14 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
       unidadesAdicionales: adicionales,
     }
     setSelection(sel)
+    setFromPerfilamiento(true)
     setUnidadesOpen(false)
-    setStep('broker')
+    setStep('select')   // vuelve a select para mostrar el panel de adicionales
+  }
+
+  function handleAdicionalesToPerfilamiento(adicionales: UnidadCotizable[]) {
+    if (!selection) return
+    setSelection({ ...selection, unidadesAdicionales: adicionales })
   }
 
   const unidad = selection?.unidad
@@ -79,7 +87,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
               Perfilar comprador
             </button>
             <button
-              onClick={() => { setStep('select'); setSelection(null); setBroker(null) }}
+              onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false) }}
               className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
             >
               ← Nueva Cotización
@@ -123,6 +131,17 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
               )}
             </div>
           )}
+          {/* Panel adicionales — solo en flujo perfilamiento */}
+          {fromPerfilamiento && unidad && (
+            <div className="mt-4">
+              <UnidadesAdicionalesPanel
+                nemotecnico={unidad.nemotecnico}
+                unidadesAdicionales={selection?.unidadesAdicionales ?? []}
+                onChange={handleAdicionalesToPerfilamiento}
+              />
+            </div>
+          )}
+
           {step === 'select' && (
             <div className="mt-4 flex justify-end">
               <button
