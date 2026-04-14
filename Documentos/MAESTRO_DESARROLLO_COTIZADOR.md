@@ -4,9 +4,9 @@
 | Campo | Valor |
 |---|---|
 | **Última actualización** | <!-- LAST_UPDATED -->2026-04-14<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->557ba8f<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->fix: limitar rango optimista a máximo +15% sobre rango conservador<!-- /COMMIT_MSG --> |
+| **Último commit** | <!-- COMMIT_HASH -->036ef99<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->fix: rango conservador = (pie + crédito máx) × 1.10<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M29 aplicadas<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M31 aplicadas<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -677,6 +677,18 @@
 
 ### 2026-04-14 — MEJORAS Y CORRECCIONES 14042026
 
+#### M31 — Rango conservador = (pie + crédito máx) × 1.10 (2026-04-14)
+- `PerfilamientoModal.tsx`: `handleConfirmar` y `ResultadoEval` multiplican la capacidad base por 1.10 antes de calcular los rangos
+- Fórmula definitiva:
+  - `conservador = (pieDisponible + creditoMaximo) × 1.10`
+  - `optimista   = conservador × 1.15`
+
+#### M30 — Rango de búsqueda = pie ingresado + crédito máximo (financiamiento 90%) (2026-04-14)
+- Reemplaza la fórmula `min(propiedadMaxPorPie, propiedadMaxPorLtv)` por `pieDisponible + creditoMaximo`
+- `evaluation-engine.ts`: nuevo campo `propiedadMaxCapacidad = pieDisp + creditoMaximo`; campo combinado `propiedadMaxCapacidadCombinada = pieComb + credMaxComb`
+- `evaluation.ts` (tipos): `propiedadMaxCapacidad: number` y `propiedadMaxCapacidadCombinada?: number` añadidos a `EvaluationOutput`
+- `PerfilamientoModal.tsx`: display y `handleConfirmar` usan el nuevo campo
+
 #### M29 — Rango optimista perfilamiento limitado a +15% sobre conservador (2026-04-14)
 - `PerfilamientoModal.tsx`: `ResultadoEval` y `handleConfirmar` limitan `maxCLP`/`maxUF` a `min * 1.15`
 - Evita diferencias desproporcionadas entre rango conservador y optimista en la pantalla de resultado y en la búsqueda de unidades
@@ -878,6 +890,8 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-04-14 | 036ef99 | main | M31: rango conservador = (pie + crédito máx) × 1.10 |
+| 2026-04-14 | 8906589 | main | M30: rango búsqueda = pie + crédito máx (financiamiento 90%) |
 | 2026-04-14 | 557ba8f | main | M29: limitar rango optimista a máximo +15% sobre conservador |
 | 2026-04-14 | 430d8f5 | main | M28: formato $xx.xxx.xxx en campos CLP del perfilamiento (CurrencyInput) |
 | 2026-04-14 | 393de4b | main | M27: panel de unidades adicionales en paso 1 al venir de perfilamiento |

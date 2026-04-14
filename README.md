@@ -153,12 +153,14 @@ El motor de evaluación (`lib/perfilamiento/evaluation-engine.ts`) calcula:
 
 - **Renta efectiva** = líquida + 50% variables + otros (solicitante + co-solicitante)
 - **Deuda total** = cuotas + tarjetas + pensiones + otras obligaciones
-- **Dividendo máximo** = renta efectiva × 25% − deuda total
-- **Crédito máximo** = PMT inverso (dividendo máximo, CAE 5%, 30 años)
-- **Propiedad máxima por pie** = pie disponible / piePct (20%)
-- **Propiedad máxima por LTV** = crédito máximo / (1 − piePct)
-- **Rango** = conservador: min(pie, LTV) · optimista: min(max(pie, LTV), conservador × 1.15)
+- **Dividendo máximo** = min(renta × 30%, renta × 50% − deuda)
+- **Crédito máximo** = PMT inverso (dividendo máximo, 4.5% anual, 20 años)
+- **Capacidad de compra** = pie disponible + crédito máximo
+- **Rango conservador** = capacidad × 1.10
+- **Rango optimista** = conservador × 1.15
 - **Resultado**: `apto` / `apto_con_condiciones` / `no_apto`
+
+Con co-solicitante se usan los valores combinados (ingresos, deudas y pie sumados).
 
 ---
 
