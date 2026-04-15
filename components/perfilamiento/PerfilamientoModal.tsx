@@ -31,7 +31,7 @@ interface Props {
   open: boolean
   onClose: () => void
   /** Callback que recibe el rango, el id del perfilamiento y los datos básicos del cliente */
-  onConfirmar: (rango: RangoCapacidad, perfilamientoId: string, datosCliente: { nombre: string; rut: string; email: string; telefono: string }) => void
+  onConfirmar: (rango: RangoCapacidad, perfilamientoId: string, datosCliente: { nombre: string; rut: string; email: string; telefono: string; objetivoCompra?: string }) => void
   /** Valor UF del día (inyectado desde el cotizador) */
   ufDelDia: number
 }
@@ -126,7 +126,7 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
       creditoMaxCLP:   eval_.creditoMaximoCombinado ?? eval_.creditoMaximo,
       dividendoMaxCLP: eval_.dividendoMaximoCombinado ?? eval_.dividendoMaximo,
       resultado:       eval_.resultado,
-    }, perfilamientoId, { nombre: form.nombre, rut: form.rut, email: form.email, telefono: form.telefono })
+    }, perfilamientoId, { nombre: form.nombre, rut: form.rut, email: form.email, telefono: form.telefono, objetivoCompra: form.objetivoCompra || undefined })
     handleClose()
   }
 

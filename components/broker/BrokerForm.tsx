@@ -15,6 +15,7 @@ const brokerSchema = z.object({
   rut:             z.string().refine(validateRut, 'RUT inválido'),
   email:           z.string().email('Email inválido'),
   telefono:        z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono inválido').optional().or(z.literal('')),
+  objetivoCompra:  z.enum(['residencial', 'inversion']).optional(),
   // ── Datos del corredor (quien cotiza) ──
   empresa:         z.string().min(2, 'Ingresa el nombre del corredor'),
   emailCorredor:   z.string().email('Email del corredor inválido'),
@@ -27,16 +28,17 @@ interface Props {
   onSubmit:        (data: BrokerData) => void
   disabled?:       boolean
   /** Datos pre-rellenados cuando viene del flujo de perfilamiento */
-  initialCliente?: { nombre: string; rut: string; email?: string; telefono?: string }
+  initialCliente?: { nombre: string; rut: string; email?: string; telefono?: string; objetivoCompra?: string }
 }
 
 export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props) {
   const rutFormateado = initialCliente?.rut ? formatRut(initialCliente.rut) : ''
   const [values, setValues] = useState<BrokerData>({
-    nombre:   initialCliente?.nombre   ?? '',
-    rut:      initialCliente?.rut      ?? '',
-    email:    initialCliente?.email    ?? '',
-    telefono: initialCliente?.telefono ?? '',
+    nombre:          initialCliente?.nombre          ?? '',
+    rut:             initialCliente?.rut             ?? '',
+    email:           initialCliente?.email           ?? '',
+    telefono:        initialCliente?.telefono        ?? '',
+    objetivoCompra:  (initialCliente?.objetivoCompra as BrokerData['objetivoCompra']) ?? undefined,
     empresa: '', emailCorredor: '', telefonoCorredor: '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof BrokerData, string>>>({})
@@ -128,6 +130,19 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
             placeholder="+56 9 1234 5678"
             className={inputClass(!!errors.telefono)}
           />
+        </FormField>
+
+        <FormField label="Objetivo de compra">
+          <select
+            value={values.objetivoCompra ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, objetivoCompra: (e.target.value || undefined) as BrokerData['objetivoCompra'] }))}
+            disabled={disabled}
+            className={inputClass(false)}
+          >
+            <option value="">Selecciona objetivo</option>
+            <option value="residencial">Residencial</option>
+            <option value="inversion">Inversión</option>
+          </select>
         </FormField>
       </div>
 

@@ -29,7 +29,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [unidadesOpen, setUnidadesOpen]           = useState(false)
   const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
   const [perfilamientoId, setPerfilamientoId]     = useState<string>('')
-  const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string; email: string; telefono: string } | null>(null)
+  const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string; email: string; telefono: string; objetivoCompra?: string } | null>(null)
 
   // ── Reset completo ───────────────────────────────────────
   function resetCotizacion() {
@@ -61,7 +61,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   }
 
   // ── Handlers perfilamiento ───────────────────────────────
-  function handlePerfilConfirmar(r: RangoCapacidad, id: string, dc: { nombre: string; rut: string; email: string; telefono: string }) {
+  function handlePerfilConfirmar(r: RangoCapacidad, id: string, dc: { nombre: string; rut: string; email: string; telefono: string; objetivoCompra?: string }) {
     setRango(r)
     setPerfilamientoId(id)
     setDatosCliente(dc)
