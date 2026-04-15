@@ -96,8 +96,8 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
       <nav className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="VIVEPROP" width={160} height={30} className="object-contain" priority />
-            <span className="hidden text-lg font-semibold text-gray-600 sm:block">Cotizador Mercado Primario</span>
+            <Image src="/icon.png" alt="VIVEPROP" width={36} height={36} className="object-contain" priority />
+            <span className="text-lg font-semibold text-gray-600">Cotizador Mercado Primario</span>
           </div>
           <div className="flex items-center gap-2">
             <button
