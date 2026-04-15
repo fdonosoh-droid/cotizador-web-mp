@@ -8,10 +8,7 @@ import {
   listarPerfilamientos,
   listarPerfilamientosCompletos,
   type PerfilamientoEntry,
-  type PerfilamientoResumen,
 } from '@/lib/perfilamiento/historial-perfilamiento'
-
-export type { PerfilamientoResumen }
 
 // ── Actions de perfilamiento ─────────────────────────────────────
 

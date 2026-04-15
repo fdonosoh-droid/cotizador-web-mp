@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { listarPerfilamientosAction, type PerfilamientoResumen } from '@/lib/perfilamiento/actions'
+import { listarPerfilamientosAction } from '@/lib/perfilamiento/actions'
+import type { PerfilamientoResumen } from '@/lib/perfilamiento/historial-perfilamiento'
 import { cn } from '@/lib/utils/cn'
 
 const BADGE: Record<PerfilamientoResumen['resultado'], { label: string; cls: string }> = {
