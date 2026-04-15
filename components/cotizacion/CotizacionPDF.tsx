@@ -81,6 +81,7 @@ export function CotizacionPDF({
   numero, fecha, broker, unidad, unidadesAdicionales = [], resultado: r, plusvaliaAnual, logoBase64,
 }: CotizacionPDFProps) {
   const uf = r.valorUF
+  const esResidencial = broker.objetivoCompra === 'residencial'
 
   return (
     <Document title={`Cotización ${numero} — ${unidad.nombreProyecto}`} author="VIVEPROP">
@@ -248,28 +249,32 @@ export function CotizacionPDF({
           <TR highlight bold cols={['Crédito Hipotecario', `${formatUF(r.creditoHipFinalUF)} UF`, pct(r.creditoHipFinalUF/r.tasacionUF), formatCLP(r.creditoHipFinalCLP)]} widths={['50%','17%','13%','20%']} />
         </View>
 
-        {/* ESCENARIOS CAE */}
-        <View style={s.section}>
-          <Text style={s.sTitle}>Crédito Hipotecario — Escenarios CAE</Text>
-          <THead cols={['Concepto', ...r.escenarios.map(e => `CAE ${(e.cae*100).toFixed(1)}%`)]} widths={['40%','20%','20%','20%']} />
-          <ERow label="Cuota mensual ($)"          vals={r.escenarios.map(e => formatCLP(e.cuotaMensualCLP))} shade />
-          <ERow label="Cuota mensual (UF)"         vals={r.escenarios.map(e => `${formatUF(e.cuotaMensualUF)} UF`)} />
-          <ERow label="Arriendo est. mensual ($)"  vals={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
-          <ERow label="Flujo mensual ($)"          vals={r.escenarios.map(e => formatCLP(e.flujoMensualCLP))} flujoColors={r.escenarios.map(e => e.flujoMensualCLP >= 0)} />
-          <ERow label="Flujo acumulado 5 años ($)" vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
-        </View>
+        {/* ESCENARIOS CAE (solo inversión) */}
+        {!esResidencial && (
+          <View style={s.section}>
+            <Text style={s.sTitle}>Crédito Hipotecario — Escenarios CAE</Text>
+            <THead cols={['Concepto', ...r.escenarios.map(e => `CAE ${(e.cae*100).toFixed(1)}%`)]} widths={['40%','20%','20%','20%']} />
+            <ERow label="Cuota mensual ($)"          vals={r.escenarios.map(e => formatCLP(e.cuotaMensualCLP))} shade />
+            <ERow label="Cuota mensual (UF)"         vals={r.escenarios.map(e => `${formatUF(e.cuotaMensualUF)} UF`)} />
+            <ERow label="Arriendo est. mensual ($)"  vals={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
+            <ERow label="Flujo mensual ($)"          vals={r.escenarios.map(e => formatCLP(e.flujoMensualCLP))} flujoColors={r.escenarios.map(e => e.flujoMensualCLP >= 0)} />
+            <ERow label="Flujo acumulado 5 años ($)" vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
+          </View>
+        )}
 
-        {/* EVALUACIÓN 5 AÑOS */}
-        <View style={s.section}>
-          <Text style={s.sTitle}>Evaluación a 5 Años (plusvalía {plusvaliaAnual}% anual)</Text>
-          <THead cols={['Concepto', ...r.escenarios.map(e => `CAE ${(e.cae*100).toFixed(1)}%`)]} widths={['40%','20%','20%','20%']} />
-          <ERow label="Precio de venta año 5 ($)"  vals={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
-          <ERow label="Pie pagado ($)"              vals={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
-          <ERow label="Flujo acumulado ($)"  vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
-          <ERow label="Cap Rate anual"      vals={r.escenarios.map((e) => pct(e.capRate))} />
-          <ERow label="ROI s/pie 5 años"   vals={r.escenarios.map(e => `${(e.roi5Anios*100).toFixed(1)}%`)} bold />
-          <ERow label="ROI anual compuesto"         vals={r.escenarios.map(e => `${(e.roiAnual*100).toFixed(1)}%`)} shade bold />
-        </View>
+        {/* EVALUACIÓN 5 AÑOS (solo inversión) */}
+        {!esResidencial && (
+          <View style={s.section}>
+            <Text style={s.sTitle}>Evaluación a 5 Años (plusvalía {plusvaliaAnual}% anual)</Text>
+            <THead cols={['Concepto', ...r.escenarios.map(e => `CAE ${(e.cae*100).toFixed(1)}%`)]} widths={['40%','20%','20%','20%']} />
+            <ERow label="Precio de venta año 5 ($)"  vals={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
+            <ERow label="Pie pagado ($)"              vals={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
+            <ERow label="Flujo acumulado ($)"  vals={r.escenarios.map(e => formatCLP(e.flujoAcumuladoCLP))} shade />
+            <ERow label="Cap Rate anual"      vals={r.escenarios.map((e) => pct(e.capRate))} />
+            <ERow label="ROI s/pie 5 años"   vals={r.escenarios.map(e => `${(e.roi5Anios*100).toFixed(1)}%`)} bold />
+            <ERow label="ROI anual compuesto"         vals={r.escenarios.map(e => `${(e.roiAnual*100).toFixed(1)}%`)} shade bold />
+          </View>
+        )}
 
         {/* DISCLAIMER */}
         <View style={s.footer} fixed>

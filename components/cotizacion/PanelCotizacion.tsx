@@ -128,12 +128,19 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
     }
   }
 
+  const esResidencial = broker.objetivoCompra === 'residencial'
+
   function handleCotizar() {
-    const parsed = arriendos.map((a) => parseInt(a.replace(/\D/g, ''), 10)) as [number, number, number]
-    const invalid = parsed.findIndex((v) => !v || v <= 0)
-    if (invalid >= 0) {
-      setErrorMsg(`Ingresa el arriendo estimado del Escenario ${invalid + 1}`)
-      return
+    let parsed: [number, number, number]
+    if (esResidencial) {
+      parsed = [0, 0, 0]
+    } else {
+      parsed = arriendos.map((a) => parseInt(a.replace(/\D/g, ''), 10)) as [number, number, number]
+      const invalid = parsed.findIndex((v) => !v || v <= 0)
+      if (invalid >= 0) {
+        setErrorMsg(`Ingresa el arriendo estimado del Escenario ${invalid + 1}`)
+        return
+      }
     }
     setErrorMsg(null)
 
@@ -268,7 +275,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         </label>
       </div>
 
-      {/* ── Fila C: Plusvalía · Upfront · Plazo ── */}
+      {/* ── Fila C: Plusvalía · Upfront · Plazo (Plazo solo inversión) ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* C1 — Plusvalía */}
         <label className="flex flex-col gap-1">
@@ -292,71 +299,76 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           />
         </label>
 
-        {/* C3 — Plazo */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Plazo</span>
-          <select
-            value={plazo}
-            onChange={(e) => { setResultado(null); setPlazo(parseInt(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            {PLAZO_OPTIONS.map((o) => (
-              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
-            ))}
-          </select>
-        </label>
-
-      </div>
-
-      {/* ── Fila D: Escenarios CAE ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {(['Escenario 1', 'Escenario 2', 'Escenario 3'] as const).map((label, i) => (
-          <label key={i} className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">{label} CAE</span>
+        {/* C3 — Plazo (solo inversión) */}
+        {!esResidencial && (
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">Plazo</span>
             <select
-              value={tasasCAE[i]}
-              onChange={(e) => {
-                setResultado(null)
-                const next = [...tasasCAE] as [number, number, number]
-                next[i] = parseFloat(e.target.value)
-                setTasasCAE(next)
-              }}
+              value={plazo}
+              onChange={(e) => { setResultado(null); setPlazo(parseInt(e.target.value)) }}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              {CAE_OPTIONS.map((o) => (
+              {PLAZO_OPTIONS.map((o) => (
                 <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
               ))}
             </select>
           </label>
-        ))}
+        )}
       </div>
 
-      {/* ── Fila E: Arriendo estimado por escenario ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {([0, 1, 2] as const).map((i) => (
-          <label key={i} className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">
-              Arriendo est. Esc. {i + 1} ($/mes)
-            </span>
-            <input
-              type="text"
-              value={arriendos[i]}
-              onChange={(e) => {
-                setResultado(null)
-                setErrorMsg(null)
-                const raw = e.target.value.replace(/\D/g, '')
-                const next = [...arriendos] as [string, string, string]
-                next[i] = raw ? parseInt(raw).toLocaleString('es-CL') : ''
-                setArriendos(next)
-              }}
-              placeholder="ej: 450.000"
-              className={`rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
-                errorMsg && !arriendos[i] ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-              }`}
-            />
-          </label>
-        ))}
-      </div>
+      {/* ── Fila D: Escenarios CAE (solo inversión) ── */}
+      {!esResidencial && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {(['Escenario 1', 'Escenario 2', 'Escenario 3'] as const).map((label, i) => (
+            <label key={i} className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-700">{label} CAE</span>
+              <select
+                value={tasasCAE[i]}
+                onChange={(e) => {
+                  setResultado(null)
+                  const next = [...tasasCAE] as [number, number, number]
+                  next[i] = parseFloat(e.target.value)
+                  setTasasCAE(next)
+                }}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {CAE_OPTIONS.map((o) => (
+                  <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      )}
+
+      {/* ── Fila E: Arriendo estimado (solo inversión) ── */}
+      {!esResidencial && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {([0, 1, 2] as const).map((i) => (
+            <label key={i} className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-700">
+                Arriendo est. Esc. {i + 1} ($/mes)
+              </span>
+              <input
+                type="text"
+                value={arriendos[i]}
+                onChange={(e) => {
+                  setResultado(null)
+                  setErrorMsg(null)
+                  const raw = e.target.value.replace(/\D/g, '')
+                  const next = [...arriendos] as [string, string, string]
+                  next[i] = raw ? parseInt(raw).toLocaleString('es-CL') : ''
+                  setArriendos(next)
+                }}
+                placeholder="ej: 450.000"
+                className={`rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
+                  errorMsg && !arriendos[i] ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
+              />
+            </label>
+          ))}
+        </div>
+      )}
       {errorMsg && <p className="text-xs text-red-600">{errorMsg}</p>}
 
       {/* Botones */}
@@ -429,7 +441,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
 
       {/* ── Resultado resumido ────────────────────────── */}
-      {resultado && !showDoc && <ResultadoPanel r={resultado} unidad={unidad} unidadesAdicionales={unidadesAdicionales} />}
+      {resultado && !showDoc && <ResultadoPanel r={resultado} unidad={unidad} unidadesAdicionales={unidadesAdicionales} esResidencial={esResidencial} />}
 
       {/* ── Documento de cotización ──────────────────── */}
       {resultado && showDoc && (
@@ -451,10 +463,11 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
 
 // ── Sub-componente resultado ──────────────────────────────
 
-function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
+function ResultadoPanel({ r, unidad, unidadesAdicionales = [], esResidencial = false }: {
   r: ResultadoCotizacion
   unidad: UnidadCotizable
   unidadesAdicionales?: UnidadCotizable[]
+  esResidencial?: boolean
 }) {
   return (
     <div className="space-y-6 rounded-lg border border-blue-100 bg-blue-50 p-5">
@@ -507,21 +520,25 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [] }: {
         <Row label="Crédito Hipotecario"  uf={r.creditoHipFinalUF} clp={r.creditoHipFinalCLP} bold />
       </Section>
 
-      {/* Escenarios CAE */}
-      <div>
-        <h4 className="mb-3 text-sm font-semibold text-gray-800">Escenarios CAE</h4>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {r.escenarios.map((esc) => (
-            <EscenarioCard key={esc.cae} esc={esc} />
-          ))}
+      {/* Escenarios CAE (solo inversión) */}
+      {!esResidencial && (
+        <div>
+          <h4 className="mb-3 text-sm font-semibold text-gray-800">Escenarios CAE</h4>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {r.escenarios.map((esc) => (
+              <EscenarioCard key={esc.cae} esc={esc} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Evaluación 5 años */}
-      <Section title="Evaluación a 5 años">
-        <Row label={`Plusvalía (${(r.plusvaliaAcumulada * 100).toFixed(1)}%)`} clp={r.precioVentaAnio5CLP} />
-        <Row label="Pie pagado (inversión)" clp={r.piePagadoCLP} />
-      </Section>
+      {/* Evaluación 5 años (solo inversión) */}
+      {!esResidencial && (
+        <Section title="Evaluación a 5 años">
+          <Row label={`Plusvalía (${(r.plusvaliaAcumulada * 100).toFixed(1)}%)`} clp={r.precioVentaAnio5CLP} />
+          <Row label="Pie pagado (inversión)" clp={r.piePagadoCLP} />
+        </Section>
+      )}
     </div>
   )
 }

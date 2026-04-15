@@ -25,6 +25,7 @@ export default function CotizacionTemplate({
 }: CotizacionTemplateProps) {
   const r = resultado
   const uf = r.valorUF
+  const esResidencial = broker.objetivoCompra === 'residencial'
 
   return (
     <div id="cotizacion-doc" className="cotizacion-doc bg-white text-gray-900 font-sans text-sm leading-snug">
@@ -236,51 +237,55 @@ export default function CotizacionTemplate({
         </table>
       </section>
 
-      {/* ── ESCENARIOS CAE ─────────────────────────────────── */}
-      <section className="cotizacion-section mb-5">
-        <SectionTitle>Crédito Hipotecario — {r.escenarios[0].cae > 0 ? `${r.escenarios[0].cuotaMensualCLP > 0 ? r.escenarios.length : ''}` : ''} Escenarios CAE · Plazo {resultado.escenarios[0] ? `calculado` : ''}</SectionTitle>
-        <table className="cotizacion-table w-full text-sm">
-          <thead>
-            <tr className="bg-blue-700 text-white">
-              <th className="text-left px-3 py-1.5">Concepto</th>
-              {r.escenarios.map((e) => (
-                <th key={e.cae} className="text-right px-3 py-1.5">CAE {(e.cae * 100).toFixed(1)}%</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <ERow label="Cuota mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.cuotaMensualCLP))} shade />
-            <ERow label="Cuota mensual (UF)" valores={r.escenarios.map((e) => `${formatUF(e.cuotaMensualUF)} UF`)} />
-            <ERow label={`Arriendo est. mensual ($)`} valores={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
-            <ERow label="Flujo mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoMensualCLP))}
-              colorFn={(i) => r.escenarios[i].flujoMensualCLP >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'} />
-            <ERow label="Flujo acumulado 5 años ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
-          </tbody>
-        </table>
-      </section>
+      {/* ── ESCENARIOS CAE (solo inversión) ────────────────── */}
+      {!esResidencial && (
+        <section className="cotizacion-section mb-5">
+          <SectionTitle>Crédito Hipotecario — {r.escenarios[0].cae > 0 ? `${r.escenarios[0].cuotaMensualCLP > 0 ? r.escenarios.length : ''}` : ''} Escenarios CAE · Plazo {resultado.escenarios[0] ? `calculado` : ''}</SectionTitle>
+          <table className="cotizacion-table w-full text-sm">
+            <thead>
+              <tr className="bg-blue-700 text-white">
+                <th className="text-left px-3 py-1.5">Concepto</th>
+                {r.escenarios.map((e) => (
+                  <th key={e.cae} className="text-right px-3 py-1.5">CAE {(e.cae * 100).toFixed(1)}%</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <ERow label="Cuota mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.cuotaMensualCLP))} shade />
+              <ERow label="Cuota mensual (UF)" valores={r.escenarios.map((e) => `${formatUF(e.cuotaMensualUF)} UF`)} />
+              <ERow label={`Arriendo est. mensual ($)`} valores={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
+              <ERow label="Flujo mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoMensualCLP))}
+                colorFn={(i) => r.escenarios[i].flujoMensualCLP >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'} />
+              <ERow label="Flujo acumulado 5 años ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
+            </tbody>
+          </table>
+        </section>
+      )}
 
-      {/* ── EVALUACIÓN 5 AÑOS ──────────────────────────────── */}
-      <section className="cotizacion-section mb-6">
-        <SectionTitle>Evaluación a 5 Años (plusvalía {plusvaliaAnual}% anual)</SectionTitle>
-        <table className="cotizacion-table w-full text-sm">
-          <thead>
-            <tr className="bg-blue-700 text-white">
-              <th className="text-left px-3 py-1.5">Concepto</th>
-              {r.escenarios.map((e) => (
-                <th key={e.cae} className="text-right px-3 py-1.5">CAE {(e.cae * 100).toFixed(1)}%</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <ERow label="Precio de venta año 5 ($)" valores={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
-            <ERow label="Pie pagado ($)" valores={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
-            <ERow label="Flujo acumulado ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
-            <ERow label="Cap Rate anual" valores={r.escenarios.map((e) => `${(e.capRate * 100).toFixed(1)}%`)} />
-            <ERow label="ROI s/pie 5 años" valores={r.escenarios.map((e) => `${(e.roi5Anios * 100).toFixed(1)}%`)} bold />
-            <ERow label="ROI anual compuesto" valores={r.escenarios.map((e) => `${(e.roiAnual * 100).toFixed(1)}%`)} shade bold />
-          </tbody>
-        </table>
-      </section>
+      {/* ── EVALUACIÓN 5 AÑOS (solo inversión) ─────────────── */}
+      {!esResidencial && (
+        <section className="cotizacion-section mb-6">
+          <SectionTitle>Evaluación a 5 Años (plusvalía {plusvaliaAnual}% anual)</SectionTitle>
+          <table className="cotizacion-table w-full text-sm">
+            <thead>
+              <tr className="bg-blue-700 text-white">
+                <th className="text-left px-3 py-1.5">Concepto</th>
+                {r.escenarios.map((e) => (
+                  <th key={e.cae} className="text-right px-3 py-1.5">CAE {(e.cae * 100).toFixed(1)}%</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <ERow label="Precio de venta año 5 ($)" valores={r.escenarios.map(() => formatCLP(r.precioVentaAnio5CLP))} shade />
+              <ERow label="Pie pagado ($)" valores={r.escenarios.map(() => formatCLP(r.piePagadoCLP))} />
+              <ERow label="Flujo acumulado ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
+              <ERow label="Cap Rate anual" valores={r.escenarios.map((e) => `${(e.capRate * 100).toFixed(1)}%`)} />
+              <ERow label="ROI s/pie 5 años" valores={r.escenarios.map((e) => `${(e.roi5Anios * 100).toFixed(1)}%`)} bold />
+              <ERow label="ROI anual compuesto" valores={r.escenarios.map((e) => `${(e.roiAnual * 100).toFixed(1)}%`)} shade bold />
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {/* ── DISCLAIMER ─────────────────────────────────────── */}
       <footer className="cotizacion-footer border-t border-gray-300 pt-3 mt-4">
