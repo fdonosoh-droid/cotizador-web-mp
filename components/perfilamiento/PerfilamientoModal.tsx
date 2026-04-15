@@ -53,10 +53,11 @@ const num = (v: number | ''): number => (v === '' ? 0 : Number(v))
 
 // ── Componente principal ─────────────────────────────────────────
 export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDia }: Props) {
-  const [paso, setPaso]       = useState(0)
-  const [form, setForm]       = useState<FormData>(initialFormData)
-  const [eval_, setEval_]     = useState<EvaluationOutput | null>(null)
-  const [evaluado, setEvaluado] = useState(false)
+  const [paso, setPaso]           = useState(0)
+  const [form, setForm]           = useState<FormData>(initialFormData)
+  const [eval_, setEval_]         = useState<EvaluationOutput | null>(null)
+  const [evaluado, setEvaluado]   = useState(false)
+  const [camposFaltantes, setCamposFaltantes] = useState<string[]>([])
 
   const onChange = (partial: Partial<FormData>) =>
     setForm(prev => ({ ...prev, ...partial }))
@@ -65,8 +66,27 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
     (e: React.ChangeEvent<HTMLInputElement>) =>
       onChange({ [field]: e.target.value === '' ? '' : Number(e.target.value) } as Partial<FormData>)
 
+  // Validación paso 0 — Datos personales
+  const validarPaso0 = (): string[] => {
+    const f: string[] = []
+    if (!form.nombre.trim())        f.push('Nombre completo')
+    if (!form.rut.trim())           f.push('RUT')
+    if (!form.email.trim())         f.push('Email')
+    if (!form.telefono.trim())      f.push('Teléfono')
+    if (form.edad === '')           f.push('Edad')
+    if (form.dependientes === '')   f.push('Dependientes')
+    if (form.antiguedadMeses === '')  f.push('Antigüedad laboral')
+    if (!form.objetivoCompra)         f.push('Objetivo de compra')
+    return f
+  }
+
   // Avanzar / retroceder
   const siguiente = () => {
+    if (paso === 0) {
+      const faltantes = validarPaso0()
+      if (faltantes.length > 0) { setCamposFaltantes(faltantes); return }
+      setCamposFaltantes([])
+    }
     if (paso < TOTAL_PASOS - 1) { setPaso(p => p + 1); return }
     // Último paso → evaluar
     const uf = { valor: ufDelDia, fecha: new Date().toISOString(), fuente: 'cotizador' }
@@ -74,7 +94,7 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
     setEval_(resultado)
     setEvaluado(true)
   }
-  const anterior = () => setPaso(p => Math.max(0, p - 1))
+  const anterior = () => { setCamposFaltantes([]); setPaso(p => Math.max(0, p - 1)) }
 
   const handleConfirmar = async () => {
     if (!eval_) return
@@ -115,6 +135,7 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
     setForm(initialFormData)
     setEval_(null)
     setEvaluado(false)
+    setCamposFaltantes([])
     onClose()
   }
 
@@ -150,6 +171,16 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
               {paso === 4 && <StepComplementary  data={form} onChange={onChange} handleNum={handleNum} />}
               {paso === 5 && <StepSummary        data={form} />}
             </div>
+
+            {/* Error campos faltantes */}
+            {camposFaltantes.length > 0 && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                <p className="font-semibold mb-1">Completa los siguientes campos antes de continuar:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {camposFaltantes.map(c => <li key={c}>{c}</li>)}
+                </ul>
+              </div>
+            )}
 
             {/* Navegación */}
             <div className="flex justify-between pt-2 border-t">
@@ -230,6 +261,17 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
         </Field>
         <Field label="Antigüedad laboral (meses)">
           <Input type="number" min={0} value={data.antiguedadMeses} onChange={handleNum('antiguedadMeses')} placeholder="24" />
+        </Field>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Objetivo de compra">
+          <Select value={data.objetivoCompra} onValueChange={v => onChange({ objetivoCompra: v })}>
+            <SelectTrigger><SelectValue placeholder="Selecciona objetivo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="residencial">Residencial</SelectItem>
+              <SelectItem value="inversion">Inversión</SelectItem>
+            </SelectContent>
+          </Select>
         </Field>
       </div>
     </div>

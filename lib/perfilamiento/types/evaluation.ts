@@ -13,6 +13,7 @@ export interface FormData {
   // Laboral
   tipoContrato: string;
   antiguedadMeses: number | '';
+  objetivoCompra: string;
 
   // Ingresos
   rentaLiquida: number | '';
@@ -52,7 +53,7 @@ export interface FormData {
 
 export const initialFormData: FormData = {
   nombre: '', rut: '', email: '', telefono: '', edad: '', estadoCivil: 'soltero', dependientes: '',
-  tipoContrato: 'dependiente', antiguedadMeses: '',
+  tipoContrato: 'dependiente', antiguedadMeses: '', objetivoCompra: '',
   rentaLiquida: '', ingresosVariables: '', otrosIngresos: '',
   cuotasCreditos: '', pagoTarjetas: '', pensiones: '', otrasObligaciones: '',
   pieDisponible: '',
