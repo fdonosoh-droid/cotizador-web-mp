@@ -49,7 +49,7 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
     setInmobiliariaSel(new Set())
     setAdicionales([])
     setAdicSelecSet(new Set())
-    buscarUnidadesPorRango(rango.minUF, rango.maxUF)
+    buscarUnidadesPorRango(rango.maxUF)
       .then(setUnidades)
       .catch(e => setError(String(e)))
       .finally(() => setLoading(false))

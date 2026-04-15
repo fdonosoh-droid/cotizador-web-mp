@@ -63,14 +63,9 @@ export async function getAdicionales(nemotecnico: string): Promise<UnidadCotizab
 }
 
 export async function buscarUnidadesPorRango(
-  minUF: number,
   maxUF: number,
 ): Promise<UnidadCotizable[]> {
-  const tolerancia = 0.10
-  const minFiltro  = Math.max(0, minUF * (1 - tolerancia))
-  const maxFiltro  = maxUF * (1 + tolerancia)
-
-  const todas = await stockRepository.getAllUnidadesPorRango(minFiltro, maxFiltro)
+  const todas = await stockRepository.getAllUnidadesPorRango(0, maxUF)
 
   return todas
     .filter(u => u.tipoUnidad === 'Departamento' || u.tipoUnidad === 'Casa')
