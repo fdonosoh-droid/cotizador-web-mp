@@ -16,7 +16,7 @@ export interface PropertyFormData extends FormData {
 
 export const initialPropertyFormData: PropertyFormData = {
   nombre: '', rut: '', email: '', telefono: '', edad: '', estadoCivil: 'soltero', dependientes: '',
-  tipoContrato: 'dependiente', antiguedadMeses: '',
+  tipoContrato: 'dependiente', antiguedadMeses: '', objetivoCompra: '',
   rentaLiquida: '', ingresosVariables: '', otrosIngresos: '',
   cuotasCreditos: '', pagoTarjetas: '', pensiones: '', otrasObligaciones: '',
   pieDisponible: '',
