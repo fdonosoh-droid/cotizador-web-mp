@@ -21,6 +21,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [step, setStep]           = useState<Step>('select')
   const [selection, setSelection] = useState<CascadeSelection | null>(null)
   const [broker, setBroker]       = useState<BrokerData | null>(null)
+  const [cascadeKey, setCascadeKey] = useState(0)
 
   // ── Estado perfilamiento ─────────────────────────────────
   const [perfilOpen, setPerfilOpen]               = useState(false)
@@ -29,6 +30,20 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
   const [perfilamientoId, setPerfilamientoId]     = useState<string>('')
   const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string; email: string; telefono: string } | null>(null)
+
+  // ── Reset completo ───────────────────────────────────────
+  function resetCotizacion() {
+    setStep('select')
+    setSelection(null)
+    setBroker(null)
+    setFromPerfilamiento(false)
+    setPerfilamientoId('')
+    setDatosCliente(null)
+    setRango(null)
+    setPerfilOpen(false)
+    setUnidadesOpen(false)
+    setCascadeKey(k => k + 1)
+  }
 
   // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
@@ -93,7 +108,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
             </button>
             {/* Perfilamientos e Historial ocultos temporalmente */}
             <button
-              onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false); setPerfilamientoId(''); setDatosCliente(null) }}
+              onClick={resetCotizacion}
               className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
             >
               ← Nueva Cotización
@@ -108,7 +123,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
         {/* ── Paso 1: Selección ── */}
         <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-gray-800">1. Selecciona la unidad</h2>
-          <CascadeSelector onSelectionChange={handleSelectionChange} />
+          <CascadeSelector key={cascadeKey} onSelectionChange={handleSelectionChange} />
           {unidad && (
             <div className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 space-y-1">
               <div>
