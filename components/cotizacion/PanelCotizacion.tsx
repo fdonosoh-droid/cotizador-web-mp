@@ -175,46 +175,18 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-[1fr_1fr_110px_155px]">
         {/* A1 — Descuento */}
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-            Descuento (%)
-            {unidad.descuento > 0 && (
-              <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.descuento * 100).toFixed(0)}%</span>
-            )}
-            <InfoTooltip text="El descuento fijo es el que se ve en texto azul. Si selecciona algún % del menú desplegable, este corresponde a descuento adicional sobre el base, que debe ser verificado y aprobado por Viveprop." />
-          </span>
-          <select
-            value={descuentoAdicional}
-            onChange={(e) => { setResultado(null); setDescuentoAdicional(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            {DESCUENTO_ADICIONAL_OPTIONS.map((v) => {
-              const pct = Math.round(v * 10000) / 100
-              return <option key={pct} value={pct}>{Number.isInteger(pct) ? pct.toFixed(0) : pct.toFixed(1)}%</option>
-            })}
-          </select>
+          <span className="text-sm font-medium text-gray-700">Descuento (%)</span>
+          <div className="rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed">
+            {unidad.descuento > 0 ? `${(unidad.descuento * 100).toFixed(0)}%` : '0%'}
+          </div>
         </label>
 
         {/* A2 — Bono Pie */}
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700 flex items-center gap-1 whitespace-nowrap">
-            Aporte Inmobiliaria (%)
-            {unidad.bonoPie === 0
-              ? <span className="ml-1 text-xs text-red-400">no aplica</span>
-              : <span className="ml-1 text-sm font-bold text-blue-900">base {(unidad.bonoPie * 100).toFixed(0)}%</span>
-            }
-            <InfoTooltip text="El Aporte Inmobiliaria fijo es el que se ve en texto azul. Si selecciona algún % del menú desplegable, este corresponde a Aporte Inmobiliaria adicional sobre el base, que debe ser verificado y aprobado por Viveprop." />
-          </span>
-          <select
-            value={bonoPiePct}
-            disabled={unidad.bonoPie === 0}
-            onChange={(e) => { setResultado(null); setBonoPiePct(parseFloat(e.target.value)) }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
-          >
-            {BONO_PIE_OPTIONS.map((v) => {
-              const pct = Math.round(v * 10000) / 100
-              return <option key={v} value={v}>{Number.isInteger(pct) ? pct.toFixed(0) : pct.toFixed(1)}%</option>
-            })}
-          </select>
+          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Aporte Inmobiliaria (%)</span>
+          <div className="rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed">
+            {unidad.bonoPie > 0 ? `${(unidad.bonoPie * 100).toFixed(0)}%` : '0%'}
+          </div>
         </label>
 
         {/* A3 — % de Pie */}
