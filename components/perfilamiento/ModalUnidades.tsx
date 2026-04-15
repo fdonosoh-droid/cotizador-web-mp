@@ -28,9 +28,10 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
   const [seleccionada, setSeleccionada]     = useState<UnidadCotizable | null>(null)
 
   // Multi-select filtros
-  const [progSel,     setProgSel]     = useState<Set<string>>(new Set())
-  const [comunaSel,   setComunaSel]   = useState<Set<string>>(new Set())
-  const [entregaSel,  setEntregaSel]  = useState<Set<string>>(new Set())
+  const [progSel,         setProgSel]         = useState<Set<string>>(new Set())
+  const [comunaSel,       setComunaSel]       = useState<Set<string>>(new Set())
+  const [entregaSel,      setEntregaSel]      = useState<Set<string>>(new Set())
+  const [inmobiliariaSel, setInmobiliariaSel] = useState<Set<string>>(new Set())
 
   // Adicionales
   const [adicionales,    setAdicionales]    = useState<UnidadCotizable[]>([])
@@ -45,6 +46,7 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
     setProgSel(new Set())
     setComunaSel(new Set())
     setEntregaSel(new Set())
+    setInmobiliariaSel(new Set())
     setAdicionales([])
     setAdicSelecSet(new Set())
     buscarUnidadesPorRango(rango.minUF, rango.maxUF)
@@ -76,13 +78,15 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
     return s
   }
 
-  const programas = Array.from(new Set(unidades.map(u => u.programa))).sort()
-  const comunas   = Array.from(new Set(unidades.map(u => u.comuna))).sort()
+  const programas      = Array.from(new Set(unidades.map(u => u.programa))).sort()
+  const comunas        = Array.from(new Set(unidades.map(u => u.comuna))).sort()
+  const inmobiliarias  = Array.from(new Set(unidades.map(u => u.alianza))).sort()
 
   const filtradas = unidades.filter(u =>
-    (progSel.size    === 0 || progSel.has(u.programa))    &&
-    (comunaSel.size  === 0 || comunaSel.has(u.comuna))    &&
-    (entregaSel.size === 0 || entregaSel.has(u.tipoEntrega))
+    (progSel.size          === 0 || progSel.has(u.programa))         &&
+    (comunaSel.size        === 0 || comunaSel.has(u.comuna))         &&
+    (entregaSel.size       === 0 || entregaSel.has(u.tipoEntrega))   &&
+    (inmobiliariaSel.size  === 0 || inmobiliariaSel.has(u.alianza))
   )
 
   const adicSeleccionadas = adicionales.filter((_, i) => adicSelecSet.has(i))
@@ -122,6 +126,13 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
           <>
             {/* ── Filtros multi-select ── */}
             <div className="space-y-3 pb-3 border-b">
+              <MultiChips
+                label="Inmobiliaria"
+                options={inmobiliarias}
+                selected={inmobiliariaSel}
+                onToggle={v => setInmobiliariaSel(s => toggleSet(s, v))}
+                onClear={() => setInmobiliariaSel(new Set())}
+              />
               <MultiChips
                 label="Programa"
                 options={programas}
@@ -169,7 +180,7 @@ export default function ModalUnidades({ open, rango, ufDelDia, onClose, onSelecc
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-semibold text-sm text-gray-800">{u.nombreProyecto}</p>
+                          <p className="font-semibold text-sm text-gray-800">{u.alianza} · {u.nombreProyecto}</p>
                           <p className="text-xs text-gray-500">{u.comuna} · {u.tipoEntrega}</p>
                         </div>
                         <div className="text-right">

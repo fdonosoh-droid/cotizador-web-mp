@@ -91,18 +91,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
             >
               Perfilar comprador
             </button>
-            <Link
-              href="/perfilamientos"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 whitespace-nowrap"
-            >
-              Perfilamientos
-            </Link>
-            <Link
-              href="/historial"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 whitespace-nowrap"
-            >
-              Historial
-            </Link>
+            {/* Perfilamientos e Historial ocultos temporalmente */}
             <button
               onClick={() => { setStep('select'); setSelection(null); setBroker(null); setFromPerfilamiento(false); setPerfilamientoId(''); setDatosCliente(null) }}
               className="rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 whitespace-nowrap"
