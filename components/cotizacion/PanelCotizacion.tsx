@@ -446,7 +446,7 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           <button
             onClick={onRecotizar}
             className="rounded-md px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
-            style={{ backgroundColor: '#7DA5F8' }}
+            style={{ backgroundColor: '#00B050' }}
           >
             ↺ Recotizar Cliente
           </button>
