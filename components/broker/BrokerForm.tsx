@@ -14,8 +14,8 @@ const brokerSchema = z.object({
   nombre:          z.string().min(2, 'Ingresa el nombre completo del cliente'),
   rut:             z.string().refine(validateRut, 'RUT inválido'),
   email:           z.string().email('Email inválido'),
-  telefono:        z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono inválido').optional().or(z.literal('')),
-  objetivoCompra:  z.enum(['residencial', 'inversion']).optional(),
+  telefono:        z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Teléfono inválido'),
+  objetivoCompra:  z.enum(['residencial', 'inversion'], { message: 'Selecciona el objetivo de compra' }),
   // ── Datos del corredor (quien cotiza) ──
   empresa:         z.string().min(2, 'Ingresa el nombre del corredor'),
   emailCorredor:   z.string().email('Email del corredor inválido'),
@@ -121,7 +121,7 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
           />
         </FormField>
 
-        <FormField label="Teléfono" error={errors.telefono}>
+        <FormField label="Teléfono *" error={errors.telefono}>
           <input
             type="tel"
             value={values.telefono}
@@ -132,12 +132,16 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
           />
         </FormField>
 
-        <FormField label="Objetivo de compra">
+        <FormField label="Objetivo de compra *" error={errors.objetivoCompra}>
           <select
             value={values.objetivoCompra ?? ''}
-            onChange={(e) => setValues((v) => ({ ...v, objetivoCompra: (e.target.value || undefined) as BrokerData['objetivoCompra'] }))}
+            onChange={(e) => {
+              const val = e.target.value as BrokerData['objetivoCompra']
+              setValues((v) => ({ ...v, objetivoCompra: val || undefined }))
+              if (errors.objetivoCompra) setErrors((er) => ({ ...er, objetivoCompra: undefined }))
+            }}
             disabled={disabled}
-            className={inputClass(false)}
+            className={inputClass(!!errors.objetivoCompra)}
           >
             <option value="">Selecciona objetivo</option>
             <option value="residencial">Residencial</option>
