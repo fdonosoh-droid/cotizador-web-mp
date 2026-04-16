@@ -45,6 +45,15 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
     setCascadeKey(k => k + 1)
   }
 
+  // ── Recotizar mismo cliente (mantiene broker, limpia unidad) ─
+  function recotizarCliente() {
+    setStep('select')
+    setSelection(null)
+    setFromPerfilamiento(false)
+    setCascadeKey(k => k + 1)
+    // broker se mantiene para pre-rellenar el formulario
+  }
+
   // ── Handlers cotizador normal ────────────────────────────
   function handleSelectionChange(sel: CascadeSelection) {
     setSelection(sel)
@@ -194,9 +203,10 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
               {step === 'broker' ? (
                 <>
                   <BrokerForm
-                    key={datosCliente ? `${datosCliente.nombre}::${datosCliente.rut}` : 'empty'}
+                    key={broker ? `recotizar::${broker.rut}` : datosCliente ? `${datosCliente.nombre}::${datosCliente.rut}` : 'empty'}
                     onSubmit={handleBrokerSubmit}
-                    initialCliente={datosCliente ?? undefined}
+                    initialBroker={broker ?? undefined}
+                    initialCliente={!broker ? (datosCliente ?? undefined) : undefined}
                   />
                   <div className="mt-3">
                     <button
@@ -226,6 +236,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
               broker={broker}
               unidadesAdicionales={selection?.unidadesAdicionales ?? []}
               onVolver={() => setStep('broker')}
+              onRecotizar={recotizarCliente}
             />
           </section>
         )}

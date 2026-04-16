@@ -29,17 +29,22 @@ interface Props {
   disabled?:       boolean
   /** Datos pre-rellenados cuando viene del flujo de perfilamiento */
   initialCliente?: { nombre: string; rut: string; email?: string; telefono?: string; objetivoCompra?: string }
+  /** Datos completos pre-rellenados al recotizar (cliente + corredor) */
+  initialBroker?:  BrokerData
 }
 
-export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props) {
-  const rutFormateado = initialCliente?.rut ? formatRut(initialCliente.rut) : ''
+export default function BrokerForm({ onSubmit, disabled, initialCliente, initialBroker }: Props) {
+  const init = initialBroker ?? null
+  const rutFormateado = init?.rut ? formatRut(init.rut) : (initialCliente?.rut ? formatRut(initialCliente.rut) : '')
   const [values, setValues] = useState<BrokerData>({
-    nombre:          initialCliente?.nombre          ?? '',
-    rut:             initialCliente?.rut             ?? '',
-    email:           initialCliente?.email           ?? '',
-    telefono:        initialCliente?.telefono        ?? '',
-    objetivoCompra:  (initialCliente?.objetivoCompra as BrokerData['objetivoCompra']) ?? undefined,
-    empresa: '', emailCorredor: '', telefonoCorredor: '',
+    nombre:           init?.nombre           ?? initialCliente?.nombre          ?? '',
+    rut:              init?.rut              ?? initialCliente?.rut             ?? '',
+    email:            init?.email            ?? initialCliente?.email           ?? '',
+    telefono:         init?.telefono         ?? initialCliente?.telefono        ?? '',
+    objetivoCompra:   init?.objetivoCompra   ?? (initialCliente?.objetivoCompra as BrokerData['objetivoCompra']) ?? undefined,
+    empresa:          init?.empresa          ?? '',
+    emailCorredor:    init?.emailCorredor    ?? '',
+    telefonoCorredor: init?.telefonoCorredor ?? '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof BrokerData, string>>>({})
   const [rutDisplay, setRutDisplay] = useState(rutFormateado)

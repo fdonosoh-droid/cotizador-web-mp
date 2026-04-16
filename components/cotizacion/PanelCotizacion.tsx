@@ -27,9 +27,10 @@ interface Props {
   broker:               BrokerData
   unidadesAdicionales?: CascadeSelection['unidadesAdicionales']
   onVolver?:            () => void
+  onRecotizar?:         () => void
 }
 
-export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = [], onVolver }: Props) {
+export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = [], onVolver, onRecotizar }: Props) {
   const [isPending, startTransition] = useTransition()
 
   // Parámetros editables
@@ -437,6 +438,15 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             className="rounded-md border border-teal-600 px-5 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
           >
             📄 Ver Brochure
+          </button>
+        )}
+
+        {showDoc && onRecotizar && (
+          <button
+            onClick={onRecotizar}
+            className="rounded-md border border-green-600 px-5 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+          >
+            ↺ Recotizar Cliente
           </button>
         )}
       </div>
