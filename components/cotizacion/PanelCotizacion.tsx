@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useTransition } from 'react'
-import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, getReglasInmobiliarias } from '@/app/actions/stock'
+import { getUFdelDia, getNumeroCotizacion, guardarCotizacionAction, getReglasInmobiliarias, getBrochureUrl } from '@/app/actions/stock'
 import {
   calcularCotizacion,
   type InputCotizacion,
@@ -424,6 +424,19 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
             className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
           >
             {pdfLoading ? 'Guardando y generando PDF…' : '⬇ Descargar PDF'}
+          </button>
+        )}
+
+        {showDoc && (
+          <button
+            onClick={async () => {
+              const url = await getBrochureUrl(unidad.nombreProyecto)
+              if (url) window.open(url, '_blank', 'noopener,noreferrer')
+            }}
+            title="Ver brochure del proyecto"
+            className="rounded-md border border-teal-600 px-5 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+          >
+            📄 Ver Brochure
           </button>
         )}
       </div>

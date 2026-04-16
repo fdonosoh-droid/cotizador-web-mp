@@ -92,3 +92,25 @@ export async function getCotizacionPayloadAction(numero: string) {
   const { getCotizacionPayload } = await import('@/lib/services/historial')
   return getCotizacionPayload(numero)
 }
+
+/** Devuelve el link del brochure para un proyecto dado (columna LINKS de Proyectos/Proyectos.xlsx) */
+export async function getBrochureUrl(nombreProyecto: string): Promise<string | null> {
+  try {
+    const path = await import('path')
+    const fs   = await import('fs')
+    const XLSX = await import('xlsx')
+    const filePath = path.join(process.cwd(), 'Proyectos', 'Proyectos.xlsx')
+    if (!fs.existsSync(filePath)) return null
+    const wb  = XLSX.readFile(filePath)
+    const ws  = wb.Sheets[wb.SheetNames[0]]
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null })
+    const nombre = nombreProyecto.trim().toUpperCase()
+    const fila = rows.find(
+      (r) => String(r['PROYECTO'] ?? '').trim().toUpperCase() === nombre
+    )
+    const link = fila ? String(fila['LINKS'] ?? '').trim() : ''
+    return link || null
+  } catch {
+    return null
+  }
+}
