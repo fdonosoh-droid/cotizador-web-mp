@@ -93,6 +93,15 @@ export async function getCotizacionPayloadAction(numero: string) {
   return getCotizacionPayload(numero)
 }
 
+/** Normaliza nombre de proyecto: mayúsculas, sin acentos, sin sufijos entre paréntesis */
+function normalizarProyecto(nombre: string): string {
+  return nombre
+    .replace(/\s*\(.*?\)\s*/g, ' ') // elimina (MT), (PC I), etc.
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // elimina acentos
+    .toUpperCase()
+    .trim()
+}
+
 /** Devuelve el link del brochure para un proyecto dado (columna LINKS de Proyectos/Proyectos.xlsx) */
 export async function getBrochureUrl(nombreProyecto: string): Promise<string | null> {
   try {
@@ -101,12 +110,12 @@ export async function getBrochureUrl(nombreProyecto: string): Promise<string | n
     const XLSX = await import('xlsx')
     const filePath = path.join(process.cwd(), 'Proyectos', 'Proyectos.xlsx')
     if (!fs.existsSync(filePath)) return null
-    const wb  = XLSX.readFile(filePath)
-    const ws  = wb.Sheets[wb.SheetNames[0]]
+    const wb   = XLSX.readFile(filePath)
+    const ws   = wb.Sheets[wb.SheetNames[0]]
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null })
-    const nombre = nombreProyecto.trim().toUpperCase()
+    const buscado = normalizarProyecto(nombreProyecto)
     const fila = rows.find(
-      (r) => String(r['PROYECTO'] ?? '').trim().toUpperCase() === nombre
+      (r) => normalizarProyecto(String(r['PROYECTO'] ?? '')) === buscado
     )
     const link = fila ? String(fila['LINKS'] ?? '').trim() : ''
     return link || null
