@@ -435,7 +435,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
               if (url) window.open(url, '_blank', 'noopener,noreferrer')
             }}
             title="Ver brochure del proyecto"
-            className="rounded-md border border-teal-600 px-5 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+            className="rounded-md px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+            style={{ backgroundColor: '#FE5B6A' }}
           >
             📄 Ver Brochure
           </button>
@@ -444,7 +445,8 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
         {showDoc && onRecotizar && (
           <button
             onClick={onRecotizar}
-            className="rounded-md border border-green-600 px-5 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+            className="rounded-md px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+            style={{ backgroundColor: '#7DA5F8' }}
           >
             ↺ Recotizar Cliente
           </button>
