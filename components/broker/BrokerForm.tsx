@@ -66,6 +66,18 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
     }
   }
 
+  function handleTelefonoBlur(field: 'telefono' | 'telefonoCorredor') {
+    const raw = values[field]
+    if (!raw) return
+    const { formatted, error } = formatPhone(raw)
+    if (error) {
+      setErrors((e) => ({ ...e, [field]: error }))
+    } else {
+      setValues((v) => ({ ...v, [field]: formatted }))
+      if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const result = brokerSchema.safeParse(values)
@@ -126,6 +138,7 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
             type="tel"
             value={values.telefono}
             onChange={(e) => handleChange('telefono', e.target.value)}
+            onBlur={() => handleTelefonoBlur('telefono')}
             disabled={disabled}
             placeholder="+56 9 1234 5678"
             className={inputClass(!!errors.telefono)}
@@ -180,6 +193,7 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
             type="tel"
             value={values.telefonoCorredor}
             onChange={(e) => handleChange('telefonoCorredor', e.target.value)}
+            onBlur={() => handleTelefonoBlur('telefonoCorredor')}
             disabled={disabled}
             placeholder="+56 9 1234 5678"
             className={inputClass(!!errors.telefonoCorredor)}
@@ -203,6 +217,16 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente }: Props
 }
 
 // ── helpers ────────────────────────────────────────────────
+
+function formatPhone(raw: string): { formatted: string; error: string | null } {
+  const digits = raw.replace(/\D/g, '')
+  const local = digits.startsWith('56') ? digits.slice(2) : digits
+  if (local.length < 8) {
+    return { formatted: raw, error: 'Teléfono inválido: mínimo 8 dígitos' }
+  }
+  const formatted = `+56${local[0]} ${local.slice(1, 5)} ${local.slice(5, 9)}`
+  return { formatted, error: null }
+}
 
 function inputClass(hasError: boolean): string {
   return [
