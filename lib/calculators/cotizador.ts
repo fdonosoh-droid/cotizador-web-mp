@@ -150,7 +150,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
     precioListaDepto, descuentoPct, descuentoAdicionalPct, bonoPiePct, reservaCLP,
     preciosConjuntos, piePct, upfrontPct, plazoAnios, tasasCAE, valorUF,
     cuotonPct, piePeriodoConstruccionPct, pieCreditoDirectoPct, cuotasPieN,
-    arriendosMensualesCLP, plusvaliaAnual, ltvMaxPct, tipoCalculoBono,
+    arriendosMensualesCLP, plusvaliaAnual, tipoCalculoBono,
   } = input
 
   // ── A. Precios lista ──────────────────────────────────────────────────
@@ -232,7 +232,7 @@ export function calcularCotizacion(input: InputCotizacion): ResultadoCotizacion 
       ? Math.round(creditoHipBaseUF / chPct * 100) / 100             // D35
       : valorVentaUF
     bonoPieUF        = Math.round(tasacionUFfinal * bonoPiePct * 100) / 100  // D36
-    creditoHipFinalUF  = Math.round(tasacionUFfinal * ltvMaxPct * 100) / 100 // 80% LTV
+    creditoHipFinalUF  = Math.round(tasacionUFfinal * chPct * 100) / 100     // R3 = tasación × (1−pie−bono) = valorVenta × (1−pie)
     // Maestra: pie en CH = pieTotalUF (depto + conjuntos al mismo piePct, refleja valorVenta completo)
     pieCreditoHipUF    = pieTotalUF
     saldoAporteInmobUF = Math.round((tasacionUFfinal - pieCreditoHipUF - creditoHipFinalUF) * 100) / 100
