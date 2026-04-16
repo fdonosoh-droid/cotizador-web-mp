@@ -216,21 +216,21 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
     <div className="space-y-4">
       <SectionTitle>Datos personales</SectionTitle>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Nombre completo">
+        <Field label="Nombre completo *">
           <Input value={data.nombre} onChange={e => onChange({ nombre: e.target.value })} placeholder="Juan Pérez" />
         </Field>
-        <Field label="RUT">
+        <Field label="RUT *">
           <Input value={data.rut} onChange={e => onChange({ rut: e.target.value })} placeholder="12.345.678-9" />
         </Field>
-        <Field label="Email">
+        <Field label="Email *">
           <Input type="email" value={data.email} onChange={e => onChange({ email: e.target.value })} placeholder="cliente@ejemplo.cl" />
         </Field>
-        <Field label="Teléfono">
+        <Field label="Teléfono *">
           <Input type="tel" value={data.telefono} onChange={e => onChange({ telefono: e.target.value })} placeholder="+56 9 1234 5678" />
         </Field>
       </div>
       <div className="grid sm:grid-cols-3 gap-3">
-        <Field label="Edad">
+        <Field label="Edad *">
           <Input type="number" min={18} max={99} value={data.edad} onChange={handleNum('edad')} placeholder="35" />
         </Field>
         <Field label="Estado civil">
@@ -244,7 +244,7 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Dependientes">
+        <Field label="Dependientes *">
           <Input type="number" min={0} value={data.dependientes} onChange={handleNum('dependientes')} placeholder="0" />
         </Field>
       </div>
@@ -259,12 +259,12 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Antigüedad laboral (meses)">
+        <Field label="Antigüedad laboral (meses) *">
           <Input type="number" min={0} value={data.antiguedadMeses} onChange={handleNum('antiguedadMeses')} placeholder="24" />
         </Field>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Objetivo de compra">
+        <Field label="Objetivo de compra *">
           <Select value={data.objetivoCompra} onValueChange={v => onChange({ objetivoCompra: v })}>
             <SelectTrigger><SelectValue placeholder="Selecciona objetivo" /></SelectTrigger>
             <SelectContent>
