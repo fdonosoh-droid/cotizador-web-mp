@@ -237,30 +237,34 @@ export default function CotizacionTemplate({
         </table>
       </section>
 
-      {/* ── ESCENARIOS CAE (solo inversión) ────────────────── */}
-      {!esResidencial && (
-        <section className="cotizacion-section mb-5">
-          <SectionTitle>Crédito Hipotecario — {r.escenarios[0].cae > 0 ? `${r.escenarios[0].cuotaMensualCLP > 0 ? r.escenarios.length : ''}` : ''} Escenarios CAE · Plazo {resultado.escenarios[0] ? `calculado` : ''}</SectionTitle>
-          <table className="cotizacion-table w-full text-sm">
-            <thead>
-              <tr className="bg-blue-700 text-white">
-                <th className="text-left px-3 py-1.5">Concepto</th>
-                {r.escenarios.map((e) => (
-                  <th key={e.cae} className="text-right px-3 py-1.5">CAE {(e.cae * 100).toFixed(1)}%</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <ERow label="Cuota mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.cuotaMensualCLP))} shade />
-              <ERow label="Cuota mensual (UF)" valores={r.escenarios.map((e) => `${formatUF(e.cuotaMensualUF)} UF`)} />
-              <ERow label={`Arriendo est. mensual ($)`} valores={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
+      {/* ── ESCENARIOS CAE ──────────────────────────────────── */}
+      <section className="cotizacion-section mb-5">
+        <SectionTitle>Crédito Hipotecario — 3 Escenarios CAE · Plazo calculado</SectionTitle>
+        <table className="cotizacion-table w-full text-sm">
+          <thead>
+            <tr className="bg-blue-700 text-white">
+              <th className="text-left px-3 py-1.5">Concepto</th>
+              {r.escenarios.map((e) => (
+                <th key={e.cae} className="text-right px-3 py-1.5">CAE {(e.cae * 100).toFixed(1)}%</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <ERow label="Cuota mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.cuotaMensualCLP))} shade />
+            <ERow label="Cuota mensual (UF)" valores={r.escenarios.map((e) => `${formatUF(e.cuotaMensualUF)} UF`)} />
+            {!esResidencial && (
+              <ERow label="Arriendo est. mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.arriendoMensualCLP))} shade />
+            )}
+            {!esResidencial && (
               <ERow label="Flujo mensual ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoMensualCLP))}
                 colorFn={(i) => r.escenarios[i].flujoMensualCLP >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'} />
+            )}
+            {!esResidencial && (
               <ERow label="Flujo acumulado 5 años ($)" valores={r.escenarios.map((e) => formatCLP(e.flujoAcumuladoCLP))} shade />
-            </tbody>
-          </table>
-        </section>
-      )}
+            )}
+          </tbody>
+        </table>
+      </section>
 
       {/* ── EVALUACIÓN 5 AÑOS (solo inversión) ─────────────── */}
       {!esResidencial && (

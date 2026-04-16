@@ -299,47 +299,43 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
           />
         </label>
 
-        {/* C3 — Plazo (solo inversión) */}
-        {!esResidencial && (
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Plazo</span>
+        {/* C3 — Plazo */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Plazo</span>
+          <select
+            value={plazo}
+            onChange={(e) => { setResultado(null); setPlazo(parseInt(e.target.value)) }}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {PLAZO_OPTIONS.map((o) => (
+              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {/* ── Fila D: Escenarios CAE ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {(['Escenario 1', 'Escenario 2', 'Escenario 3'] as const).map((label, i) => (
+          <label key={i} className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">{label} CAE</span>
             <select
-              value={plazo}
-              onChange={(e) => { setResultado(null); setPlazo(parseInt(e.target.value)) }}
+              value={tasasCAE[i]}
+              onChange={(e) => {
+                setResultado(null)
+                const next = [...tasasCAE] as [number, number, number]
+                next[i] = parseFloat(e.target.value)
+                setTasasCAE(next)
+              }}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              {PLAZO_OPTIONS.map((o) => (
+              {CAE_OPTIONS.map((o) => (
                 <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
               ))}
             </select>
           </label>
-        )}
+        ))}
       </div>
-
-      {/* ── Fila D: Escenarios CAE (solo inversión) ── */}
-      {!esResidencial && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {(['Escenario 1', 'Escenario 2', 'Escenario 3'] as const).map((label, i) => (
-            <label key={i} className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">{label} CAE</span>
-              <select
-                value={tasasCAE[i]}
-                onChange={(e) => {
-                  setResultado(null)
-                  const next = [...tasasCAE] as [number, number, number]
-                  next[i] = parseFloat(e.target.value)
-                  setTasasCAE(next)
-                }}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {CAE_OPTIONS.map((o) => (
-                  <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
-                ))}
-              </select>
-            </label>
-          ))}
-        </div>
-      )}
 
       {/* ── Fila E: Arriendo estimado (solo inversión) ── */}
       {!esResidencial && (
@@ -520,17 +516,15 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [], esResidencial = f
         <Row label="Crédito Hipotecario"  uf={r.creditoHipFinalUF} clp={r.creditoHipFinalCLP} bold />
       </Section>
 
-      {/* Escenarios CAE (solo inversión) */}
-      {!esResidencial && (
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-gray-800">Escenarios CAE</h4>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {r.escenarios.map((esc) => (
-              <EscenarioCard key={esc.cae} esc={esc} />
-            ))}
-          </div>
+      {/* Escenarios CAE */}
+      <div>
+        <h4 className="mb-3 text-sm font-semibold text-gray-800">Escenarios CAE</h4>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {r.escenarios.map((esc) => (
+            <EscenarioCard key={esc.cae} esc={esc} esResidencial={esResidencial} />
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Evaluación 5 años (solo inversión) */}
       {!esResidencial && (
@@ -543,7 +537,7 @@ function ResultadoPanel({ r, unidad, unidadesAdicionales = [], esResidencial = f
   )
 }
 
-function EscenarioCard({ esc }: { esc: EscenarioCAE }) {
+function EscenarioCard({ esc, esResidencial = false }: { esc: EscenarioCAE; esResidencial?: boolean }) {
   const positive = esc.flujoMensualCLP >= 0
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -552,15 +546,18 @@ function EscenarioCard({ esc }: { esc: EscenarioCAE }) {
       </p>
       <dl className="space-y-1 text-sm">
         <DT label="Cuota mensual" value={formatCLP(esc.cuotaMensualCLP)} />
-        <DT label="Arriendo est."  value={formatCLP(esc.arriendoMensualCLP)} />
-        <DT label="Flujo mensual"
-            value={formatCLP(esc.flujoMensualCLP)}
-            className={positive ? 'text-green-700' : 'text-red-600'}
-        />
-        <DT label="Flujo 5 años"  value={formatCLP(esc.flujoAcumuladoCLP)} />
-        <DT label="Cap Rate"      value={`${(esc.capRate * 100).toFixed(2)}%`} />
-        <DT label="ROI 5 años"    value={`${(esc.roi5Anios * 100).toFixed(1)}%`} />
-        <DT label="ROI anual"     value={`${(esc.roiAnual * 100).toFixed(1)}%`} />
+        <DT label="Cuota (UF)"    value={`${formatUF(esc.cuotaMensualUF)} UF`} />
+        {!esResidencial && <DT label="Arriendo est."  value={formatCLP(esc.arriendoMensualCLP)} />}
+        {!esResidencial && (
+          <DT label="Flujo mensual"
+              value={formatCLP(esc.flujoMensualCLP)}
+              className={positive ? 'text-green-700' : 'text-red-600'}
+          />
+        )}
+        {!esResidencial && <DT label="Flujo 5 años"  value={formatCLP(esc.flujoAcumuladoCLP)} />}
+        {!esResidencial && <DT label="Cap Rate"      value={`${(esc.capRate * 100).toFixed(2)}%`} />}
+        {!esResidencial && <DT label="ROI 5 años"    value={`${(esc.roi5Anios * 100).toFixed(1)}%`} />}
+        {!esResidencial && <DT label="ROI anual"     value={`${(esc.roiAnual * 100).toFixed(1)}%`} />}
       </dl>
     </div>
   )
