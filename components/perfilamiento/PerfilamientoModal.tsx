@@ -18,6 +18,7 @@ import { type FormData, initialFormData, type EvaluationOutput } from '@/lib/per
 import { guardarPerfilamientoAction } from '@/lib/perfilamiento/actions'
 import { cn } from '@/lib/utils/cn'
 import { formatPhone } from '@/lib/utils/phone'
+import { validateRut, formatRut } from '@/lib/utils/rut'
 
 // ── Tipos ────────────────────────────────────────────────────────
 export interface RangoCapacidad {
@@ -59,9 +60,30 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
   const [eval_, setEval_]         = useState<EvaluationOutput | null>(null)
   const [evaluado, setEvaluado]   = useState(false)
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([])
+  const [rutErrors, setRutErrors] = useState<{ rut?: string; comp_rut?: string }>({})
 
   const onChange = (partial: Partial<FormData>) =>
     setForm(prev => ({ ...prev, ...partial }))
+
+  function handleRutChange(field: 'rut' | 'comp_rut', raw: string) {
+    const clean = raw.replace(/[^0-9kK.\-]/gi, '')
+    onChange({ [field]: clean } as Partial<FormData>)
+    if (rutErrors[field] && validateRut(clean)) {
+      setRutErrors(e => ({ ...e, [field]: undefined }))
+    }
+  }
+
+  function handleRutBlur(field: 'rut' | 'comp_rut') {
+    const val = field === 'rut' ? form.rut : form.comp_rut
+    if (!val) return
+    const formatted = formatRut(val)
+    onChange({ [field]: formatted } as Partial<FormData>)
+    if (!validateRut(val)) {
+      setRutErrors(e => ({ ...e, [field]: 'RUT inválido — verifique el número y dígito verificador' }))
+    } else {
+      setRutErrors(e => ({ ...e, [field]: undefined }))
+    }
+  }
 
   const handleNum = (field: keyof FormData) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -70,12 +92,13 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
   // Validación paso 0 — Datos personales
   const validarPaso0 = (): string[] => {
     const f: string[] = []
-    if (!form.nombre.trim())        f.push('Nombre completo')
-    if (!form.rut.trim())           f.push('RUT')
-    if (!form.email.trim())         f.push('Email')
-    if (!form.telefono.trim())      f.push('Teléfono')
-    if (form.edad === '')           f.push('Edad')
-    if (form.dependientes === '')   f.push('Dependientes')
+    if (!form.nombre.trim())          f.push('Nombre completo')
+    if (!form.rut.trim())             f.push('RUT')
+    else if (!validateRut(form.rut))  { setRutErrors(e => ({ ...e, rut: 'RUT inválido — verifique el número y dígito verificador' })); f.push('RUT') }
+    if (!form.email.trim())           f.push('Email')
+    if (!form.telefono.trim())        f.push('Teléfono')
+    if (form.edad === '')             f.push('Edad')
+    if (form.dependientes === '')     f.push('Dependientes')
     if (form.antiguedadMeses === '')  f.push('Antigüedad laboral')
     if (!form.objetivoCompra)         f.push('Objetivo de compra')
     return f
@@ -165,11 +188,11 @@ export default function PerfilamientoModal({ open, onClose, onConfirmar, ufDelDi
 
             {/* Contenido del paso */}
             <div className="min-h-[320px]">
-              {paso === 0 && <StepPersonal       data={form} onChange={onChange} handleNum={handleNum} />}
+              {paso === 0 && <StepPersonal       data={form} onChange={onChange} handleNum={handleNum} rutErrors={rutErrors} onRutChange={handleRutChange} onRutBlur={handleRutBlur} />}
               {paso === 1 && <StepIncome         data={form} onChange={onChange} handleNum={handleNum} />}
               {paso === 2 && <StepDebts          data={form} onChange={onChange} handleNum={handleNum} />}
               {paso === 3 && <StepSavings        data={form} onChange={onChange} handleNum={handleNum} />}
-              {paso === 4 && <StepComplementary  data={form} onChange={onChange} handleNum={handleNum} />}
+              {paso === 4 && <StepComplementary  data={form} onChange={onChange} handleNum={handleNum} rutErrors={rutErrors} onRutChange={handleRutChange} onRutBlur={handleRutBlur} />}
               {paso === 5 && <StepSummary        data={form} />}
             </div>
 
@@ -209,10 +232,13 @@ interface StepProps {
   data: FormData
   onChange: (p: Partial<FormData>) => void
   handleNum: (f: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => void
+  rutErrors?: { rut?: string; comp_rut?: string }
+  onRutChange?: (field: 'rut' | 'comp_rut', raw: string) => void
+  onRutBlur?: (field: 'rut' | 'comp_rut') => void
 }
 
 // ── Paso 1: Datos personales ─────────────────────────────────────
-function StepPersonal({ data, onChange, handleNum }: StepProps) {
+function StepPersonal({ data, onChange, handleNum, rutErrors, onRutChange, onRutBlur }: StepProps) {
   return (
     <div className="space-y-4">
       <SectionTitle>Datos personales</SectionTitle>
@@ -220,8 +246,14 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
         <Field label="Nombre completo *">
           <Input value={data.nombre} onChange={e => onChange({ nombre: e.target.value })} placeholder="Juan Pérez" />
         </Field>
-        <Field label="RUT *">
-          <Input value={data.rut} onChange={e => onChange({ rut: e.target.value })} placeholder="12.345.678-9" />
+        <Field label="RUT *" error={rutErrors?.rut}>
+          <Input
+            value={data.rut}
+            onChange={e => onRutChange?.('rut', e.target.value)}
+            onBlur={() => onRutBlur?.('rut')}
+            placeholder="12.345.678-9"
+            className={rutErrors?.rut ? 'border-red-500' : ''}
+          />
         </Field>
         <Field label="Email *">
           <Input type="email" value={data.email} onChange={e => onChange({ email: e.target.value })} placeholder="cliente@ejemplo.cl" />
@@ -361,7 +393,7 @@ function StepSavings({ data, onChange }: Pick<StepProps, 'data' | 'onChange' | '
 }
 
 // ── Paso 5: Co-solicitante ───────────────────────────────────────
-function StepComplementary({ data, onChange, handleNum }: StepProps) {
+function StepComplementary({ data, onChange, handleNum, rutErrors, onRutChange, onRutBlur }: StepProps) {
   return (
     <div className="space-y-4">
       <SectionTitle>Co-solicitante (opcional)</SectionTitle>
@@ -381,8 +413,14 @@ function StepComplementary({ data, onChange, handleNum }: StepProps) {
             <Field label="Nombre">
               <Input value={data.comp_nombre} onChange={e => onChange({ comp_nombre: e.target.value })} placeholder="María López" />
             </Field>
-            <Field label="RUT">
-              <Input value={data.comp_rut} onChange={e => onChange({ comp_rut: e.target.value })} placeholder="11.222.333-4" />
+            <Field label="RUT" error={rutErrors?.comp_rut}>
+              <Input
+                value={data.comp_rut}
+                onChange={e => onRutChange?.('comp_rut', e.target.value)}
+                onBlur={() => onRutBlur?.('comp_rut')}
+                placeholder="11.222.333-4"
+                className={rutErrors?.comp_rut ? 'border-red-500' : ''}
+              />
             </Field>
           </div>
           <Field label="Relación">
@@ -580,16 +618,18 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function Field({
-  label, hint, children,
+  label, hint, error, children,
 }: {
   label: string
   hint?: string
+  error?: string
   children: React.ReactNode
 }) {
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
       {children}
+      {error && <p className="text-xs text-red-600">{error}</p>}
       {hint && <p className="text-xs text-gray-400">{hint}</p>}
     </div>
   )

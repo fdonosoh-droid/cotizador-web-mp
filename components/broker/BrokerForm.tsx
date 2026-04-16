@@ -57,18 +57,23 @@ export default function BrokerForm({ onSubmit, disabled, initialCliente, initial
   }
 
   function handleRutChange(raw: string) {
-    // Allow typing freely; format on blur
     const clean = raw.replace(/[^0-9kK.\-]/gi, '')
     setRutDisplay(clean)
     setValues((v) => ({ ...v, rut: clean }))
-    if (errors.rut) setErrors((e) => ({ ...e, rut: undefined }))
+    // Si ya había error, re-validar en cada tecla para que desaparezca en cuanto sea válido
+    if (errors.rut && validateRut(clean)) {
+      setErrors((e) => ({ ...e, rut: undefined }))
+    }
   }
 
   function handleRutBlur() {
-    if (values.rut) {
-      const formatted = formatRut(values.rut)
-      setRutDisplay(formatted)
-      setValues((v) => ({ ...v, rut: v.rut }))
+    if (!values.rut) return
+    const formatted = formatRut(values.rut)
+    setRutDisplay(formatted)
+    if (!validateRut(values.rut)) {
+      setErrors((e) => ({ ...e, rut: 'RUT inválido — verifique el número y dígito verificador' }))
+    } else {
+      setErrors((e) => ({ ...e, rut: undefined }))
     }
   }
 
