@@ -17,6 +17,7 @@ import { evaluar, defaultParams, formatCLP, formatUF } from '@/lib/perfilamiento
 import { type FormData, initialFormData, type EvaluationOutput } from '@/lib/perfilamiento/types/evaluation'
 import { guardarPerfilamientoAction } from '@/lib/perfilamiento/actions'
 import { cn } from '@/lib/utils/cn'
+import { formatPhone } from '@/lib/utils/phone'
 
 // ── Tipos ────────────────────────────────────────────────────────
 export interface RangoCapacidad {
@@ -226,7 +227,16 @@ function StepPersonal({ data, onChange, handleNum }: StepProps) {
           <Input type="email" value={data.email} onChange={e => onChange({ email: e.target.value })} placeholder="cliente@ejemplo.cl" />
         </Field>
         <Field label="Teléfono *">
-          <Input type="tel" value={data.telefono} onChange={e => onChange({ telefono: e.target.value })} placeholder="+56 9 1234 5678" />
+          <Input
+            type="tel"
+            value={data.telefono}
+            onChange={e => onChange({ telefono: e.target.value })}
+            onBlur={e => {
+              const { formatted } = formatPhone(e.target.value)
+              onChange({ telefono: formatted })
+            }}
+            placeholder="+56 9 1234 5678"
+          />
         </Field>
       </div>
       <div className="grid sm:grid-cols-3 gap-3">
