@@ -117,7 +117,7 @@ export async function getBrochureUrl(nombreProyecto: string): Promise<string | n
     const fila = rows.find(
       (r) => normalizarProyecto(String(r['PROYECTO'] ?? '')) === buscado
     )
-    const link = fila ? String(fila['LINKS'] ?? '').trim() : ''
+    const link = fila ? String(fila['LINK_PDF'] ?? '').trim() : ''
     return link || null
   } catch {
     return null
