@@ -3,10 +3,10 @@
 <!-- META_START -->
 | Campo | Valor |
 |---|---|
-| **Última actualización** | <!-- LAST_UPDATED -->2026-04-14<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->036ef99<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->fix: rango conservador = (pie + crédito máx) × 1.10<!-- /COMMIT_MSG --> |
+| **Última actualización** | <!-- LAST_UPDATED -->2026-04-16<!-- /LAST_UPDATED --> |
+| **Último commit** | <!-- COMMIT_HASH -->1364544<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza INPUT_FILES stock+condiciones+proyectos al 16-04-2026<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M31 aplicadas<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M47 aplicadas<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -709,6 +709,81 @@
 - **Unidades adicionales en modal:** al seleccionar una unidad principal, carga bodegas/estacionamientos disponibles vía `getAdicionales()`; selección múltiple con Checkbox; se pasan como array a `onSeleccionar`
 - **Botón "Perfilar comprador":** estilo `bg-blue-600 text-white` (mismo color que recuadro de unidad)
 
+### 2026-04-14 a 2026-04-16 — MEJORAS Y CORRECCIONES 14-16042026
+
+#### M32 — Historial de perfilamientos (2026-04-14)
+- `lib/perfilamiento/historial-perfilamiento.ts` — servicio dual JSON+CSV: guarda y lista perfilamientos; vincula `numeroCotizacion` al perfilamiento al confirmar
+- `lib/perfilamiento/actions.ts` — server actions: `guardarPerfilamiento()`, `listarPerfilamientos()`, `vincularCotizacion()`
+- `PerfilamientoModal.tsx` — guarda perfilamiento al confirmar rango (fire-and-forget)
+- `components/perfilamiento/TablaPerfilamientos.tsx` — tabla de perfilamientos con columnas: fecha, nombre, RUT, resultado, rango, cotización vinculada
+- `app/perfilamientos/page.tsx` — nueva página `/perfilamientos`
+- `app/api/perfilamiento/export/route.ts` — `GET /api/perfilamiento/export` genera XLSX con historial bajo demanda
+- Limpieza de repo: archivos operacionales (`.xlsx`, `.csv`) fuera de git vía `.gitignore`
+
+#### M33 — Traspaso de datos del perfilamiento al cotizador (2026-04-14)
+- `CotizadorShell.tsx`: al seleccionar unidad desde `ModalUnidades`, construye `CascadeSelection` con datos del perfilamiento (nombre, RUT, objetivo) pre-cargados en el formulario del paso 2
+
+#### M34 — Nombre inmobiliaria en ModalUnidades + filtro activo (2026-04-15)
+- `ModalUnidades.tsx`: columna inmobiliaria visible junto a cada unidad en la tabla de resultados
+- Agrega chip de filtro activo por nombre de inmobiliaria en el panel de filtros multi-select
+
+#### M35 — Filtro stock ≤ capacidad máxima calculada (2026-04-15)
+- `lib/perfilamiento/actions.ts` + `ModalUnidades.tsx`: el listado de unidades solo muestra unidades con `precioLista ≤ maxUF` calculado por el motor de evaluación; elimina unidades fuera del alcance financiero del comprador
+
+#### M36 — Objetivo de compra en formulario de perfilamiento (2026-04-15)
+- `PerfilamientoModal.tsx`: campo "Objetivo de compra" (Residencial / Inversión) incorporado en la pantalla de resultado del perfilamiento
+- `lib/perfilamiento/types/evaluation.ts`: `objetivoCompra: 'residencial' | 'inversion'` añadido a `FormData`
+- El objetivo se propaga al `CotizadorShell` junto con el rango de capacidad
+
+#### M37 — Favicon en pestaña del navegador (2026-04-15)
+- Agrega favicon VIVEPROP en `<head>` (navbar + metadatos Next.js)
+
+#### M38 — Campo Objetivo de compra en paso 2 del flujo regular (2026-04-15)
+- `BrokerForm.tsx`: selector "Objetivo de compra" (Residencial / Inversión) añadido al formulario del paso 2
+- Pre-rellena el valor cuando el flujo viene desde el perfilamiento (`objetivoCompra` propagado via `PerfilamientoModal → CotizadorShell → BrokerForm`)
+- `CotizadorShell.tsx`: transmite `objetivoCompra` en `initialData` del formulario
+
+#### M39 — Oculta secciones de inversión para objetivo Residencial (2026-04-15)
+**Fase inicial (luego refinada en M47):**
+- `PanelCotizacion.tsx`: cuando `broker.objetivoCompra === 'residencial'`, oculta Plazo, Escenarios CAE y Arriendo est. (1/2/3)
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: oculta tabla Escenarios CAE y tabla Evaluación a 5 años
+- Motor: para Residencial, `arriendos = [0, 0, 0]` (sin validación de arriendo)
+
+#### M40 — Visualización Descuento y Aporte Inmobiliaria (2026-04-15)
+- `PanelCotizacion.tsx` + `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: ajuste en cómo se muestran las filas de Descuento y Aporte Inmobiliaria (formato y posición en la sección Valores)
+
+#### M41 — Fix TypeScript — build Vercel (2026-04-15)
+- Corrige errores de tipado que rompían el build en Vercel tras los cambios de M38–M40
+
+#### M42 — Fix cálculo crédito hipotecario Maestra según lógica Simulador (2026-04-16)
+- `lib/calculators/cotizador.ts`: reemplaza `creditoHipFinalUF = tasacionUF × ltvMaxPct (80% fijo)` por `creditoHipFinalUF = tasacionUF × chPct`
+  - `chPct = 1 − piePct − bonoPiePct`
+  - Resultado: `creditoHipFinalUF = valorVentaUF × (1 − piePct)` — alineado con lógica del Simulador Excel Maestra
+  - Antes: el crédito quedaba sobredimensionado cuando bono era grande; ahora siempre es correcto
+
+#### M43 — Teléfono y Objetivo de compra obligatorios en paso 2 (2026-04-16)
+- `BrokerForm.tsx`: ambos campos pasan a ser `required` con validación Zod inline
+- El botón "Continuar" queda bloqueado hasta completarlos; error visible bajo el campo al intentar avanzar
+
+#### M44 — Formato números telefónicos (2026-04-16)
+- `BrokerForm.tsx`: campo teléfono aplica máscara de formato al perder foco (`+56 9 XXXX XXXX` o similar)
+
+#### M45 — Indicador * de obligatoriedad en flujo perfilador (2026-04-16)
+- `PerfilamientoModal.tsx`: campos obligatorios de la sección "Información del cliente" (paso resultado) muestran asterisco `*` junto al label
+
+#### M46 — Lógica actualizada Maestra (2026-04-16)
+- Actualización de lógica interna de cálculo específica para inmobiliaria Maestra, alineada con hoja Simulador actualizada en `INPUT_FILES.xlsx`
+
+#### M47 — Plazo y Escenarios CAE visibles para objetivo Residencial (2026-04-16)
+**Refinamiento de M39:**
+- `PanelCotizacion.tsx`: Residencial ahora muestra selectores de Plazo y Escenarios CAE (igual que Inversión)
+- Para Residencial: los escenarios CAE muestran únicamente **Cuota mensual** (oculta columnas arriendo, flujo y ROI)
+- Para Inversión: escenarios muestran análisis completo (arriendo, flujo, ROI, cap rate)
+- Arriendos (input) y Evaluación 5 años siguen ocultos para Residencial
+- `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: tabla CAE visible para ambos objetivos; columnas de inversión condicionales por objetivo
+
+---
+
 ### 2026-04-13 — MÓDULO PERFILAMIENTO DE COMPRADOR
 
 > Nuevo módulo completo agregado sobre el sistema base. Permite evaluar la capacidad financiera del comprador y pre-filtrar unidades por rango de precio resultante.
@@ -890,6 +965,21 @@ src/lib/data/
 <!-- HISTORIAL_START -->
 | Fecha | Commit | Branch | Descripción |
 |---|---|---|---|
+| 2026-04-16 | 1364544 | main | Actualiza INPUT_FILES stock+condiciones+proyectos al 16-04-2026 |
+| 2026-04-16 | 2d124d1 | main | M47: Plazo y Escenarios CAE visibles para objetivo Residencial (cuota mensual) |
+| 2026-04-16 | ee580d8 | main | M46: lógica actualizada Maestra |
+| 2026-04-16 | 24fe1ac | main | M45: indicador * de obligatoriedad en info cliente del perfilador |
+| 2026-04-16 | f17bd8a | main | M44: formato a números telefónicos en BrokerForm |
+| 2026-04-16 | 6cd9337 | main | M43: hace obligatorios Teléfono y Objetivo de compra en paso 2 |
+| 2026-04-16 | 3baffaa | main | M42: corrige cálculo crédito hipotecario Maestra (chPct en vez de ltvMaxPct) |
+| 2026-04-15 | e964d25 | main | M41: corrige errores TypeScript que rompían el build en Vercel |
+| 2026-04-15 | e0cf3a9 | main | M40: modifica visualización de Descuento y Aporte Inmobiliaria en Cotización |
+| 2026-04-15 | 4a7c249 | main | M39: oculta secciones de inversión cuando objetivo de compra es Residencial |
+| 2026-04-15 | 3d88251 | main | M38: agrega Objetivo de compra al paso 2 del flujo regular de cotización |
+| 2026-04-15 | 0c4fd82 | main | M36: Objetivo de compra en formulario de perfilamiento |
+| 2026-04-15 | 81f6361 | main | M35: filtra stock a valores ≤ máximo calculado en ModalUnidades |
+| 2026-04-15 | 1dc084a | main | M34: nombre inmobiliaria en ModalUnidades + filtro activo |
+| 2026-04-14 | 0484b1f | main | M32: historial de perfilamientos + página /perfilamientos + export XLSX |
 | 2026-04-14 | 036ef99 | main | M31: rango conservador = (pie + crédito máx) × 1.10 |
 | 2026-04-14 | 8906589 | main | M30: rango búsqueda = pie + crédito máx (financiamiento 90%) |
 | 2026-04-14 | 557ba8f | main | M29: limitar rango optimista a máximo +15% sobre conservador |

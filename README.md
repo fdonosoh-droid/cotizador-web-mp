@@ -25,17 +25,18 @@ Herramienta web interna para cotizar propiedades de mercado primario. Permite se
 ### Flujo estándar
 1. **Selección de unidad** — cascada: Comuna → Entrega → Inmobiliaria → Proyecto → N° Unidad
 2. **Agregar unidades adicionales** — estacionamientos y bodegas del mismo proyecto
-3. **Datos de cliente y corredor** — con validación RUT módulo-11
-4. **Cotización** — parámetros editables (pie%, CAE, plazo, plusvalía, arriendo)
+3. **Datos de cliente y corredor** — con validación RUT módulo-11; campos obligatorios: Teléfono y Objetivo de compra
+4. **Cotización** — parámetros editables (pie%, CAE, plazo, plusvalía, arriendo); secciones de inversión se ocultan automáticamente para objetivo Residencial
 5. **Generar documento** — PDF descargable, imprimible, envío por email
 6. **Historial** — todas las cotizaciones en `/historial` + exportación Excel
 
 ### Flujo perfilamiento
 1. Botón **"Perfilar comprador"** abre modal de evaluación financiera (6 pasos)
-2. El motor calcula capacidad de compra (rango conservador y optimista en UF)
-3. **ModalUnidades** muestra unidades disponibles en el rango con filtros multi-select
-4. Al seleccionar, la unidad se carga en paso 1 con opción de agregar adicionales
-5. Continúa con flujo estándar desde paso 2
+2. Se captura Objetivo de compra (Residencial / Inversión) en el perfilamiento
+3. El motor calcula capacidad de compra (rango conservador y optimista en UF)
+4. **ModalUnidades** muestra solo unidades con precio ≤ máximo calculado, con filtros multi-select (incluye nombre de inmobiliaria)
+5. Al seleccionar, la unidad se carga en paso 1; datos del comprador y objetivo pre-rellenados en paso 2
+6. Continúa con flujo estándar desde paso 2
 
 ---
 
@@ -96,11 +97,14 @@ El script es idempotente (upsert). Importa: programa, inmobiliaria, proyecto, un
 app/
   page.tsx                    — página principal (inyecta ufDelDia)
   historial/page.tsx          — historial de cotizaciones
+  perfilamientos/page.tsx     — historial de perfilamientos
   api/cotizacion/
     pdf/route.ts              — genera / regenera PDF
     email/route.ts            — envía cotización por email
     export/route.ts           — descarga historial como Excel
     salvar-excel/route.ts     — agrega fila al Historial_cotizaciones.xlsx
+  api/perfilamiento/
+    export/route.ts           — descarga historial de perfilamientos como XLSX
 
 components/
   CotizadorShell.tsx          — orquestador principal (pasos 1→3 + perfilamiento)
@@ -111,8 +115,9 @@ components/
     CotizacionTemplate.tsx    — documento HTML imprimible
     CotizacionPDF.tsx         — documento @react-pdf/renderer
   perfilamiento/
-    PerfilamientoModal.tsx    — modal 6 pasos evaluación financiera
-    ModalUnidades.tsx         — lista de unidades filtradas por rango
+    PerfilamientoModal.tsx    — modal 6 pasos evaluación financiera + objetivo compra
+    ModalUnidades.tsx         — lista de unidades filtradas por rango (precio ≤ máximo)
+    TablaPerfilamientos.tsx   — historial de perfilamientos
     UnidadesAdicionalesPanel.tsx — panel agregar bodega/estacionamiento
   ui/                         — componentes shadcn/ui (button, input, dialog, etc.)
     currency-input.tsx        — input con formato $xx.xxx.xxx (CLP)
@@ -125,7 +130,8 @@ lib/
     pg-adapter.ts             — adaptador PostgreSQL (prod)
   perfilamiento/
     evaluation-engine.ts      — evaluar() — capacidad financiera del comprador
-    actions.ts                — buscarUnidadesPorRango() + getAdicionales()
+    actions.ts                — buscarUnidadesPorRango() + getAdicionales() + guardarPerfilamiento()
+    historial-perfilamiento.ts — servicio JSON+CSV para historial de perfilamientos
   services/
     historial.ts              — guardar/listar cotizaciones (JSON dev / PG prod)
     email.ts                  — envío SMTP
@@ -161,6 +167,22 @@ El motor de evaluación (`lib/perfilamiento/evaluation-engine.ts`) calcula:
 - **Resultado**: `apto` / `apto_con_condiciones` / `no_apto`
 
 Con co-solicitante se usan los valores combinados (ingresos, deudas y pie sumados).
+
+### Objetivo de compra
+
+El campo **Objetivo de compra** (Residencial / Inversión) se captura tanto en el perfilamiento como en el paso 2 del flujo regular. Determina qué secciones se muestran en la cotización:
+
+| Sección | Residencial | Inversión |
+|---|---|---|
+| Plazo + Escenarios CAE | ✅ visible | ✅ visible |
+| Cuota mensual en escenarios | ✅ visible | ✅ visible |
+| Arriendo est. + Flujo mensual | ❌ oculto | ✅ visible |
+| Cap Rate + ROI | ❌ oculto | ✅ visible |
+| Evaluación a 5 años | ❌ oculto | ✅ visible |
+
+### Historial de perfilamientos
+
+Cada perfilamiento confirmado se guarda automáticamente en `/perfilamientos`. Al generar una cotización desde el flujo de perfilamiento, se vincula el número de cotización al registro del perfilamiento.
 
 ---
 
