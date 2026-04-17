@@ -28,7 +28,8 @@ Herramienta web interna para cotizar propiedades de mercado primario. Permite se
 3. **Datos de cliente y corredor** — con validación RUT módulo-11; campos obligatorios: Teléfono y Objetivo de compra
 4. **Cotización** — parámetros editables (pie%, CAE, plazo, plusvalía, arriendo); secciones de inversión se ocultan automáticamente para objetivo Residencial
 5. **Generar documento** — PDF descargable, imprimible, envío por email
-6. **Historial** — todas las cotizaciones en `/historial` + exportación Excel
+6. **Recotizar cliente** — botón en paso 3 que regresa al paso 1 manteniendo los datos del cliente/corredor pre-rellenados; oculta el botón "Perfilar comprador" del navbar (el cliente ya fue evaluado)
+7. **Historial** — todas las cotizaciones en `/historial` + exportación Excel
 
 ### Flujo perfilamiento
 1. Botón **"Perfilar comprador"** abre modal de evaluación financiera (6 pasos)

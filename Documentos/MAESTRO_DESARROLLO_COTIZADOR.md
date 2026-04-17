@@ -4,9 +4,9 @@
 | Campo | Valor |
 |---|---|
 | **Última actualización** | <!-- LAST_UPDATED -->2026-04-16<!-- /LAST_UPDATED --> |
-| **Último commit** | <!-- COMMIT_HASH -->1364544<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Actualiza INPUT_FILES stock+condiciones+proyectos al 16-04-2026<!-- /COMMIT_MSG --> |
+| **Último commit** | <!-- COMMIT_HASH -->53552f6<!-- /COMMIT_HASH --> — <!-- COMMIT_MSG -->Incorpora validación RUT módulo 11 Chile<!-- /COMMIT_MSG --> |
 | **Branch** | <!-- BRANCH -->main<!-- /BRANCH --> |
-| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M47 aplicadas<!-- /PROGRESS --> |
+| **Progreso general** | <!-- PROGRESS -->Etapas 0–7 completadas · Módulo Perfilamiento completo · Mejoras post-lanzamiento M1–M49 aplicadas<!-- /PROGRESS --> |
 <!-- META_END -->
 
 ---
@@ -781,6 +781,17 @@
 - Para Inversión: escenarios muestran análisis completo (arriendo, flujo, ROI, cap rate)
 - Arriendos (input) y Evaluación 5 años siguen ocultos para Residencial
 - `CotizacionTemplate.tsx` + `CotizacionPDF.tsx`: tabla CAE visible para ambos objetivos; columnas de inversión condicionales por objetivo
+
+#### M48 — Estilo cromático de botones de acción en PanelCotizacion (2026-04-16)
+- `PanelCotizacion.tsx`: botón **"Ver Brochure"** → fondo coral `#FE5B6A` (color primario VIVEPROP), texto blanco
+- `PanelCotizacion.tsx`: botón **"Recotizar Cliente"** → fondo verde `#00B050`, texto blanco
+- Reemplaza los estilos anteriores con borde/texto de color por fondos sólidos con `hover:opacity-90` / `hover:bg-*`
+
+#### M49 — Ocultar "Perfilar comprador" al recotizar mismo cliente (2026-04-16)
+- `CotizadorShell.tsx`: nuevo estado booleano `isRecotizando`; se activa en `recotizarCliente()` y se resetea en `resetCotizacion()`
+- Cuando `isRecotizando === true`, el botón **"Perfilar comprador"** del navbar se oculta condicionalmente (`{!isRecotizando && <button>}`)
+- Razón: al recotizar al mismo cliente ya perfilado, el flujo de perfilamiento no aplica; el usuario continúa directamente con el flujo base de cotización
+- Al presionar **"← Nueva Cotización"** se resetea todo (incluye `isRecotizando = false`) y el botón vuelve a aparecer
 
 ---
 
