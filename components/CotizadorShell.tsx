@@ -30,6 +30,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
   const [fromPerfilamiento, setFromPerfilamiento] = useState(false)
   const [perfilamientoId, setPerfilamientoId]     = useState<string>('')
   const [datosCliente, setDatosCliente]           = useState<{ nombre: string; rut: string; email: string; telefono: string; objetivoCompra?: string } | null>(null)
+  const [isRecotizando, setIsRecotizando]         = useState(false)
 
   // ── Reset completo ───────────────────────────────────────
   function resetCotizacion() {
@@ -42,6 +43,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
     setRango(null)
     setPerfilOpen(false)
     setUnidadesOpen(false)
+    setIsRecotizando(false)
     setCascadeKey(k => k + 1)
   }
 
@@ -50,6 +52,7 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
     setStep('select')
     setSelection(null)
     setFromPerfilamiento(false)
+    setIsRecotizando(true)
     setCascadeKey(k => k + 1)
     // broker se mantiene para pre-rellenar el formulario
   }
@@ -109,12 +112,14 @@ export default function CotizadorShell({ ufDelDia }: { ufDelDia: number }) {
             <span className="text-lg font-semibold text-gray-600">Cotizador Mercado Primario</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPerfilOpen(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 whitespace-nowrap"
-            >
-              Perfilar comprador
-            </button>
+            {!isRecotizando && (
+              <button
+                onClick={() => setPerfilOpen(true)}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 whitespace-nowrap"
+              >
+                Perfilar comprador
+              </button>
+            )}
             {/* Perfilamientos e Historial ocultos temporalmente */}
             <button
               onClick={resetCotizacion}
