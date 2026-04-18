@@ -38,12 +38,12 @@ export default function PanelCotizacion({ unidad, broker, unidadesAdicionales = 
   const [piePct,              setPiePct]              = useState(
     unidad.bonoPie > 0 ? Math.max(0, 0.20 - unidad.bonoPie) : DEFAULTS.pie
   )
-  const [upfrontPct,          setUpfrontPct]          = useState(DEFAULTS.upfront * 100)  // en %, default 2%
+  const [upfrontPct,          setUpfrontPct]          = useState(0)  // en %, default 0%
   const [descuentoAdicional,  setDescuentoAdicional]  = useState(0)  // delta en % sobre la base — default 0
   const [plazo,               setPlazo]               = useState(DEFAULTS.plazo)
   const [tasasCAE,            setTasasCAE]            = useState<[number, number, number]>([...DEFAULTS.cae])
   const [arriendos,           setArriendos]           = useState<[string, string, string]>(['', '', ''])
-  const [plusvalia,           setPlusvalia]           = useState(2)
+  const [plusvalia,           setPlusvalia]           = useState(3)
 
   // Condiciones comerciales editables (inicializadas desde la unidad seleccionada)
   const [bonoPiePct,          setBonoPiePct]          = useState(0)  // delta decimal sobre la base — default 0
